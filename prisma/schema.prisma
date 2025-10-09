@@ -30,3 +30,12 @@ model Session {
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
 }
+
+model Widget {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // "products-page", "cart", "checkout"
+  shop        String   // shop domain
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
