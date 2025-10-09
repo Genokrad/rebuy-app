@@ -69,6 +69,11 @@ export default function Index() {
   const loaderData = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const [clickedWidget, setClickedWidget] = useState<string | null>(null);
+  const [currentWidgets, setCurrentWidgets] = useState<{
+    id: string;
+    name: string;
+    type: string;
+  } | null>(null);
 
   // Выводим продукты в консоль при загрузке страницы
   React.useEffect(() => {
@@ -95,36 +100,55 @@ export default function Index() {
     fetcher.submit(formData, { method: "POST" });
   };
 
+  const handleEditeWidgets = (widgets: string, name: string, type: string) => {
+    setCurrentWidgets({
+      id: widgets,
+      name,
+      type,
+    });
+  };
+
   return (
     <Page>
       <TitleBar title="Rebuy App" />
       <BlockStack gap="500">
         <Layout>
           <Layout.Section>
-            <BlockStack gap="400">
-              <Text as="h1" variant="headingLg">
-                Widgets
-              </Text>
+            {!currentWidgets && (
+              <BlockStack gap="400">
+                <Text as="h1" variant="headingLg">
+                  Widgets
+                </Text>
 
-              <WidgetCards
-                widgetCards={widgetCards}
-                onWidgetClick={handleWidgetClick}
-              />
-
-              {clickedWidget && (
-                <WidgetSelectedNotification
-                  clickedWidget={clickedWidget}
-                  fetcher={fetcher}
+                <WidgetCards
+                  widgetCards={widgetCards}
+                  onWidgetClick={handleWidgetClick}
                 />
-              )}
 
-              {loaderData?.widgets && loaderData.widgets.length > 0 && (
-                <WidgetsTable
-                  widgets={loaderData.widgets}
-                  deleteWidget={handleDeleteWidget}
-                />
-              )}
-            </BlockStack>
+                {clickedWidget && (
+                  <WidgetSelectedNotification
+                    clickedWidget={clickedWidget}
+                    fetcher={fetcher}
+                  />
+                )}
+
+                {loaderData?.widgets && loaderData.widgets.length > 0 && (
+                  <WidgetsTable
+                    widgets={loaderData.widgets}
+                    deleteWidget={handleDeleteWidget}
+                    handleEditeWidgets={handleEditeWidgets}
+                  />
+                )}
+              </BlockStack>
+            )}
+
+            {currentWidgets && (
+              <BlockStack gap="400">
+                <Text as="h1" variant="headingLg">
+                  Edit Widget {currentWidgets.name}: id {currentWidgets.id}
+                </Text>
+              </BlockStack>
+            )}
           </Layout.Section>
         </Layout>
       </BlockStack>

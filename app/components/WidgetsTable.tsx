@@ -15,9 +15,14 @@ import type { Widget } from "./types";
 interface WidgetsTableProps {
   widgets: Widget[];
   deleteWidget: (widgetId: string) => void;
+  handleEditeWidgets: (widgets: string, name: string, type: string) => void;
 }
 
-export function WidgetsTable({ widgets, deleteWidget }: WidgetsTableProps) {
+export function WidgetsTable({
+  widgets,
+  deleteWidget,
+  handleEditeWidgets,
+}: WidgetsTableProps) {
   const tableRows = widgets.map((widget) => [
     <InlineStack key={`${widget.id}-name`} gap="200" align="start">
       <input type="checkbox" />
@@ -42,7 +47,11 @@ export function WidgetsTable({ widgets, deleteWidget }: WidgetsTableProps) {
       {formatDate(widget.createdAt)}
     </Text>,
     <ButtonGroup key={`${widget.id}-actions`} variant="segmented">
-      <Button icon={EditIcon} accessibilityLabel="Edit widget" />
+      <Button
+        icon={EditIcon}
+        accessibilityLabel="Edit widget"
+        onClick={() => handleEditeWidgets(widget.id, widget.name, widget.type)}
+      />
       <Button
         icon={DeleteIcon}
         accessibilityLabel="Delete widget"
