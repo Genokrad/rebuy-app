@@ -44,6 +44,7 @@ export function WidgetEditor({
   const [selectedChildProducts, setSelectedChildProducts] = useState<string[]>(
     [],
   );
+  const [showOnlySelected, setShowOnlySelected] = useState<boolean>(false);
 
   console.log("existingProducts", existingProducts);
   console.log("currentParentProduct", currentParentProduct);
@@ -76,6 +77,9 @@ export function WidgetEditor({
     } else {
       setSelectedChildProducts([]);
     }
+
+    // Сбрасываем фильтр при переключении родительского продукта
+    setShowOnlySelected(false);
   };
 
   const handleSave = () => {
@@ -271,12 +275,46 @@ export function WidgetEditor({
                             )}
                           </Text>
                         )}
+
+                        {/* Filter checkbox */}
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={showOnlySelected}
+                            onChange={(e) =>
+                              setShowOnlySelected(e.target.checked)
+                            }
+                            style={{ cursor: "pointer" }}
+                          />
+                          <Text as="span" variant="bodyMd">
+                            Show only selected products (
+                            {selectedChildProducts.length})
+                          </Text>
+                        </label>
+
                         <ProductSelector
-                          products={transformedProducts}
+                          products={
+                            showOnlySelected
+                              ? transformedProducts.filter((p) =>
+                                  selectedChildProducts.includes(p.id),
+                                )
+                              : transformedProducts
+                          }
                           selectedProducts={selectedChildProducts}
                           onSelectionChange={setSelectedChildProducts}
                           isMultiSelect={true}
-                          placeholder="Search for child products..."
+                          placeholder={
+                            showOnlySelected
+                              ? "All selected products..."
+                              : "Search for child products..."
+                          }
                         />
                       </BlockStack>
                     ) : (
