@@ -108,9 +108,9 @@ export function ProductSelector({
                   <Text as="p" variant="bodyMd" fontWeight="semibold">
                     {product.title}
                   </Text>
-                  <Text as="p" variant="bodySm" tone="subdued">
+                  {/* <Text as="p" variant="bodySm" tone="subdued">
                     {product.description}
-                  </Text>
+                  </Text> */}
                 </BlockStack>
               </InlineStack>
             </div>

@@ -78,12 +78,6 @@ export function WidgetEditor({
     }
   };
 
-  // Функция для добавления нового родительского продукта
-  const handleAddNewParentProduct = (parentProductId: string) => {
-    setCurrentParentProduct(parentProductId);
-    setSelectedChildProducts([]);
-  };
-
   const handleSave = () => {
     // Собираем все связи: существующие + текущую
     const allRelations = [...existingProducts];
@@ -127,74 +121,70 @@ export function WidgetEditor({
                   <Text as="h3" variant="headingMd">
                     All Product Relationships ({existingProducts.length})
                   </Text>
-                  <Layout>
-                    {existingProducts.map((rel, index) => {
-                      const parentProduct = transformedProducts.find(
-                        (p) => p.id === rel.parentProduct,
-                      );
-                      return (
-                        <Layout.Section key={index} variant="oneThird">
-                          <Card>
-                            <BlockStack gap="200">
-                              <Text as="h4" variant="headingSm">
+                  <div
+                    style={{
+                      maxHeight: "400px",
+                      overflowY: "auto",
+                      border: "1px solid #e1e3e5",
+                      borderRadius: "8px",
+                      padding: "12px",
+                    }}
+                  >
+                    <BlockStack gap="200">
+                      {existingProducts.map((rel, index) => {
+                        const parentProduct = transformedProducts.find(
+                          (p) => p.id === rel.parentProduct,
+                        );
+                        return (
+                          <div
+                            key={index}
+                            onClick={() =>
+                              handleParentProductChange(rel.parentProduct)
+                            }
+                            style={{
+                              padding: "12px",
+                              borderRadius: "8px",
+                              cursor: "pointer",
+                              backgroundColor:
+                                currentParentProduct === rel.parentProduct
+                                  ? "#f0f8ff"
+                                  : "transparent",
+                              border:
+                                currentParentProduct === rel.parentProduct
+                                  ? "2px solid #007ace"
+                                  : "1px solid #e1e3e5",
+                              transition: "all 0.2s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              if (currentParentProduct !== rel.parentProduct) {
+                                e.currentTarget.style.backgroundColor =
+                                  "#f9f9f9";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (currentParentProduct !== rel.parentProduct) {
+                                e.currentTarget.style.backgroundColor =
+                                  "transparent";
+                              }
+                            }}
+                          >
+                            <BlockStack gap="100">
+                              <Text
+                                as="p"
+                                variant="bodyMd"
+                                fontWeight="semibold"
+                              >
                                 {parentProduct?.title || rel.parentProduct}
                               </Text>
                               <Text as="p" variant="bodySm" tone="subdued">
-                                Children: {rel.childProducts.length}
+                                Children: {rel.childProducts.length} products
                               </Text>
-                              <Button
-                                variant="plain"
-                                size="slim"
-                                onClick={() =>
-                                  handleParentProductChange(rel.parentProduct)
-                                }
-                              >
-                                Edit this relationship
-                              </Button>
                             </BlockStack>
-                          </Card>
-                        </Layout.Section>
-                      );
-                    })}
-                  </Layout>
-                </BlockStack>
-              </Card>
-            )}
-
-            {/* Current Parent Product Selector */}
-            {currentParentProduct && (
-              <Card>
-                <BlockStack gap="300">
-                  <Text as="h3" variant="headingMd">
-                    Currently Editing:{" "}
-                    {transformedProducts.find(
-                      (p) => p.id === currentParentProduct,
-                    )?.title || "No parent selected"}
-                  </Text>
-                  <Text as="p" variant="bodyMd" tone="subdued">
-                    Child products: {selectedChildProducts.length} selected
-                    {selectedChildProducts.length > 0 && (
-                      <span>
-                        {" "}
-                        (
-                        {selectedChildProducts
-                          .map((id) => {
-                            const product = transformedProducts.find(
-                              (p) => p.id === id,
-                            );
-                            return product?.title || id;
-                          })
-                          .join(", ")}
-                        )
-                      </span>
-                    )}
-                  </Text>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setCurrentParentProduct("")}
-                  >
-                    Add New Parent Product
-                  </Button>
+                          </div>
+                        );
+                      })}
+                    </BlockStack>
+                  </div>
                 </BlockStack>
               </Card>
             )}
@@ -232,28 +222,17 @@ export function WidgetEditor({
                 <Card>
                   <BlockStack gap="300">
                     <Text as="h3" variant="headingMd">
-                      Parent product:{" "}
-                      {transformedProducts.find(
-                        (p) => p.id === currentParentProduct,
-                      )?.title || "No parent selected"}
+                      Parent product
                     </Text>
-                    {/* <Text as="h3" variant="headingMd">
-                      {currentParentProduct
-                        ? "Add New Parent Product"
-                        : "Select Parent Product"}
-                    </Text> */}
                     <ProductSelector
                       products={transformedProducts}
-                      selectedProducts={currentParentProduct ? [] : []}
+                      selectedProducts={
+                        currentParentProduct ? [currentParentProduct] : []
+                      }
                       onSelectionChange={(selectedIds) => {
                         if (selectedIds.length > 0) {
-                          if (currentParentProduct) {
-                            // Добавляем новый родительский продукт
-                            handleAddNewParentProduct(selectedIds[0]);
-                          } else {
-                            // Устанавливаем первый родительский продукт
-                            handleParentProductChange(selectedIds[0]);
-                          }
+                          // Переключаемся на выбранный родительский продукт
+                          handleParentProductChange(selectedIds[0]);
                         }
                       }}
                       isMultiSelect={false}
