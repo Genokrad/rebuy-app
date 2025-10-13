@@ -1,17 +1,20 @@
 import prisma from "../db.server";
 import type { Widget } from "../graphql/createWidget";
+import type { ProductRelationship } from "../components/types";
 
 export async function createWidget(
   name: string,
   type: string,
   shop: string,
+  products?: ProductRelationship[],
 ): Promise<Widget> {
   const widget = await prisma.widget.create({
     data: {
       name,
       type,
       shop,
-    },
+      products: products ? JSON.stringify(products) : null,
+    } as any,
   });
 
   return {
@@ -19,6 +22,9 @@ export async function createWidget(
     name: widget.name,
     type: widget.type,
     shop: widget.shop,
+    products: (widget as any).products
+      ? JSON.parse((widget as any).products)
+      : undefined,
     createdAt: widget.createdAt.toISOString(),
     updatedAt: widget.updatedAt.toISOString(),
   };
@@ -34,10 +40,15 @@ export async function updateWidget(
   id: string,
   name: string,
   type: string,
+  products?: ProductRelationship[],
 ): Promise<Widget> {
   const widget = await prisma.widget.update({
     where: { id },
-    data: { name, type },
+    data: {
+      name,
+      type,
+      products: products ? JSON.stringify(products) : null,
+    } as any,
   });
 
   return {
@@ -45,6 +56,9 @@ export async function updateWidget(
     name: widget.name,
     type: widget.type,
     shop: widget.shop,
+    products: (widget as any).products
+      ? JSON.parse((widget as any).products)
+      : undefined,
     createdAt: widget.createdAt.toISOString(),
     updatedAt: widget.updatedAt.toISOString(),
   };
@@ -65,6 +79,9 @@ export async function getWidgetsByShop(shop: string): Promise<Widget[]> {
     name: widget.name,
     type: widget.type,
     shop: widget.shop,
+    products: (widget as any).products
+      ? JSON.parse((widget as any).products)
+      : undefined,
     createdAt: widget.createdAt.toISOString(),
     updatedAt: widget.updatedAt.toISOString(),
   }));
@@ -86,6 +103,9 @@ export async function getWidgetById(id: string): Promise<Widget | null> {
     name: widget.name,
     type: widget.type,
     shop: widget.shop,
+    products: (widget as any).products
+      ? JSON.parse((widget as any).products)
+      : undefined,
     createdAt: widget.createdAt.toISOString(),
     updatedAt: widget.updatedAt.toISOString(),
   };

@@ -28,6 +28,7 @@ export interface Widget {
   name: string;
   type: string;
   shop: string;
+  products?: any[];
   createdAt: string;
   updatedAt: string;
 }

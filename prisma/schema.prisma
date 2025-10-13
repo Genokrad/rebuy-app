@@ -36,6 +36,7 @@ model Widget {
   name        String
   type        String   // "products-page", "cart", "checkout"
   shop        String   // shop domain
+  products    String?  // JSON string with product relationships
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

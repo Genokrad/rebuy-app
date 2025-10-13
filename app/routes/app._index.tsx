@@ -8,6 +8,7 @@ import { getAllProducts } from "../graphql/productsService";
 import {
   createWidget,
   deleteWidget,
+  updateWidget,
   getWidgetsByShop,
 } from "../services/widgetService";
 import { widgetCards } from "../data/default-data";
@@ -15,6 +16,7 @@ import {
   WidgetCards,
   WidgetsTable,
   WidgetSelectedNotification,
+  WidgetEditor,
 } from "../components";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -47,6 +49,37 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   }
 
+  // Проверяем, это обновление существующего виджета
+  const updateWidgetId = formData.get("updateWidgetId") as string;
+  if (updateWidgetId) {
+    const widgetName = formData.get("widgetName") as string;
+    const widgetType = formData.get("widgetType") as string;
+    const allRelations = formData.get("allRelations") as string;
+
+    if (!widgetName || !widgetType) {
+      return { error: "Missing widget name or type", success: false };
+    }
+
+    try {
+      let products = undefined;
+      if (allRelations) {
+        products = JSON.parse(allRelations);
+      }
+
+      const widget = await updateWidget(
+        updateWidgetId,
+        widgetName,
+        widgetType,
+        products,
+      );
+      console.log("Updated widget:", widget);
+      return { success: true, widget, error: null };
+    } catch (error) {
+      console.error("Error updating widget:", error);
+      return { error: "Failed to update widget", success: false, widget: null };
+    }
+  }
+
   // Проверяем данные для создания виджета
   const widgetType = formData.get("widgetType") as string;
   const widgetName = formData.get("widgetName") as string;
@@ -73,6 +106,7 @@ export default function Index() {
     id: string;
     name: string;
     type: string;
+    products?: any[];
   } | null>(null);
 
   // Выводим продукты в консоль при загрузке страницы
@@ -101,11 +135,47 @@ export default function Index() {
   };
 
   const handleEditeWidgets = (widgets: string, name: string, type: string) => {
+    // Находим виджет в данных для получения products
+    const widget = loaderData?.widgets?.find((w) => w.id === widgets);
     setCurrentWidgets({
       id: widgets,
       name,
       type,
+      products: widget?.products,
     });
+  };
+
+  const handleBackToWidgets = () => {
+    setCurrentWidgets(null);
+  };
+
+  const handleSaveWidget = (
+    name: string,
+    value: string,
+    parentProduct: any,
+    allRelations: any[],
+    widgetId: string,
+  ) => {
+    console.log("Saving widget:", {
+      name,
+      value,
+      parentProduct,
+      allRelations,
+      widgetId,
+    });
+
+    // Отправляем данные в action для обновления виджета
+    const formData = new FormData();
+    formData.append("updateWidgetId", widgetId);
+    formData.append("widgetName", name);
+    formData.append("widgetType", currentWidgets?.type || "");
+
+    if (allRelations && allRelations.length > 0) {
+      formData.append("allRelations", JSON.stringify(allRelations));
+    }
+
+    fetcher.submit(formData, { method: "POST" });
+    setCurrentWidgets(null);
   };
 
   return (
@@ -143,11 +213,15 @@ export default function Index() {
             )}
 
             {currentWidgets && (
-              <BlockStack gap="400">
-                <Text as="h1" variant="headingLg">
-                  Edit Widget {currentWidgets.name}: id {currentWidgets.id}
-                </Text>
-              </BlockStack>
+              <WidgetEditor
+                widgetName={currentWidgets.name}
+                widgetId={currentWidgets.id}
+                widgetType={currentWidgets.type}
+                products={loaderData?.products || []}
+                existingProducts={currentWidgets.products}
+                onBack={handleBackToWidgets}
+                onSave={handleSaveWidget}
+              />
             )}
           </Layout.Section>
         </Layout>
