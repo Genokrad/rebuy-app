@@ -9,7 +9,6 @@ import {
 import React, { useState } from "react";
 import { ProductSelector } from "./ProductSelector";
 import { transformShopifyProducts } from "../utils/productUtils";
-import { ProductDebug } from "./ProductDebug";
 
 interface WidgetEditorProps {
   widgetName: string;
@@ -114,9 +113,6 @@ export function WidgetEditor({
             <Text as="h1" variant="headingLg">
               Edit Widget {widgetName}: id {widgetId}
             </Text>
-
-            {/* Debug component - remove after testing */}
-            <ProductDebug products={products} />
 
             {/* Show all existing relationships */}
             {existingProducts.length > 0 && (

@@ -1,0 +1,132 @@
+{% comment %}
+  Rebuy Widget Block - Simple Start
+{% endcomment %}
+
+<div class="rebuy-widget" id="rebuy-widget-{{ block.id }}">
+  <h2>Привет!!</h2>
+  <p id="rebuy-status-{{ block.id }}">Загрузка данных...</p>
+</div>
+
+<style>
+  .rebuy-widget {
+    padding: 20px;
+    text-align: center;
+    background: #f0f8ff;
+    border: 2px solid #2c6ecb;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+
+  .rebuy-widget h2 {
+    font-size: 24px;
+    color: #2c6ecb;
+    margin: 0;
+  }
+
+  .rebuy-widget p {
+    margin: 10px 0 0 0;
+    font-size: 14px;
+    color: #666;
+  }
+</style>
+
+<script>
+(function() {
+  const widgetId = '{{ block.settings.widget_id }}';
+  const appUrl = '{{ block.settings.app_url }}';
+  const currentProductId = '{{ product.id }}';
+  const statusElement = document.getElementById('rebuy-status-{{ block.id }}');
+
+  console.log('=== REBUY WIDGET INIT ===');
+  console.log('Widget ID:', widgetId);
+  console.log('App URL:', appUrl);
+  console.log('Current Product ID:', currentProductId);
+
+  // Проверяем настройки
+  if (!widgetId) {
+    statusElement.innerHTML = '❌ Widget ID не указан в настройках блока';
+    statusElement.style.color = 'red';
+    return;
+  }
+
+  if (!appUrl) {
+    statusElement.innerHTML = '❌ App URL не указан в настройках блока';
+    statusElement.style.color = 'red';
+    return;
+  }
+
+  // Функция для загрузки данных виджета
+  async function loadWidget() {
+    try {
+      statusElement.innerHTML = '⏳ Загружаем данные виджета...';
+      
+      // Формируем URL для API
+      const cleanUrl = appUrl.replace(/\/$/, '');
+      const apiUrl = cleanUrl + '/api/widget/' + widgetId + '?productId=' + encodeURIComponent(currentProductId);
+      
+      console.log('Fetching from:', apiUrl);
+      
+      const response = await fetch(apiUrl);
+      
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error('HTTP error! status: ' + response.status);
+      }
+
+      const data = await response.json();
+      
+      // Выводим ВСЕ данные виджета в консоль
+      console.log('==============================================');
+      console.log('📦 WIDGET DATA LOADED:');
+      console.log('==============================================');
+      console.log('Full Response:', data);
+      console.log('');
+      console.log('Widget Object:', data.widget);
+      console.log('  - ID:', data.widget.id);
+      console.log('  - Name:', data.widget.name);
+      console.log('  - Type:', data.widget.type);
+      console.log('  - Shop:', data.widget.shop);
+      console.log('  - Product:', data.widget.product);
+      console.log('  - Created At:', data.widget.createdAt);
+      console.log('');
+      console.log('Current Product ID:', data.currentProductId);
+      console.log('==============================================');
+
+      statusElement.innerHTML = '✅ Данные загружены! Смотрите консоль (F12)';
+      statusElement.style.color = 'green';
+      
+    } catch (error) {
+      console.error('Error loading widget:', error);
+      statusElement.innerHTML = '❌ Ошибка: ' + error.message;
+      statusElement.style.color = 'red';
+    }
+  }
+
+  // Загружаем данные
+  loadWidget();
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Rebuy Widget",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "widget_id",
+      "label": "Widget ID",
+      "info": "Enter the Widget ID from your Rebuy app admin panel"
+    },
+    {
+      "type": "text",
+      "id": "app_url",
+      "label": "App URL",
+      "info": "Your app URL from terminal (e.g., https://abc123.cloudflare-tunnel.com)",
+      "placeholder": "https://your-tunnel-url.com"
+    }
+  ]
+}
+{% endschema %}
+
