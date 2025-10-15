@@ -6,5 +6,7 @@ export function transformShopifyProducts(shopifyProducts: any[]): Product[] {
     title: product.title,
     description: product.description || "No description available",
     image: product.image?.url || undefined,
+    handle: product.handle || "",
+    status: product.status || "unknown",
   }));
 }
