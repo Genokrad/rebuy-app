@@ -6,7 +6,7 @@ import {
   Layout,
   Card,
 } from "@shopify/polaris";
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { ProductSelector } from "./ProductSelector";
 import { transformShopifyProducts } from "../utils/productUtils";
 
@@ -44,13 +44,56 @@ export function WidgetEditor({
     [],
   );
   const [showOnlySelected, setShowOnlySelected] = useState<boolean>(false);
+  const [hasLoadedData, setHasLoadedData] = useState<boolean>(false);
 
-  console.log("existingProducts", existingProducts);
-  console.log("currentParentProduct", currentParentProduct);
-  console.log("selectedChildProducts", selectedChildProducts);
+  // Transform Shopify products to our format (memoized to prevent unnecessary re-renders)
+  const transformedProducts = useMemo(() => {
+    return transformShopifyProducts(products);
+  }, [products]);
+
+  // Загружаем только рынки при открытии WidgetEditor
+  useEffect(() => {
+    if (hasLoadedData) {
+      return;
+    }
+
+    const loadMarkets = async () => {
+      try {
+        console.log("=== LOADING MARKETS IN WIDGET EDITOR ===");
+
+        // Загружаем только рынки
+        const marketsResponse = await fetch("/api/markets");
+        const marketsData = await marketsResponse.json();
+
+        if (marketsData.success) {
+          const markets = marketsData.markets;
+          console.log("=== AVAILABLE MARKETS ===");
+          console.log("Total markets found:", markets.length);
+          markets.forEach((market: any, index: number) => {
+            console.log(`${index + 1}. ${market.name}`, {
+              id: market.id,
+              enabled: market.enabled,
+              primary: market.primary,
+              code: market.conditions.regionsCondition.regions.nodes[0].code,
+              name: market.conditions.regionsCondition.regions.nodes[0].name,
+            });
+          });
+          console.log("=== END OF MARKETS ===");
+        } else {
+          console.error("Failed to load markets:", marketsData.error);
+        }
+
+        setHasLoadedData(true);
+      } catch (error) {
+        console.error("Error loading markets:", error);
+      }
+    };
+
+    loadMarkets();
+  }, [hasLoadedData]);
 
   // Инициализация при загрузке компонента
-  React.useEffect(() => {
+  useEffect(() => {
     if (existingProducts.length > 0 && !currentParentProduct) {
       // Устанавливаем первый родительский продукт по умолчанию
       const firstParent = existingProducts[0].parentProduct;
@@ -58,9 +101,6 @@ export function WidgetEditor({
       setSelectedChildProducts(existingProducts[0].childProducts);
     }
   }, [existingProducts, currentParentProduct]);
-
-  // Transform Shopify products to our format
-  const transformedProducts = transformShopifyProducts(products);
 
   // Функция для переключения между родительскими продуктами
   const handleParentProductChange = (parentProductId: string) => {

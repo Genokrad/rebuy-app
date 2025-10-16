@@ -16,7 +16,6 @@ export async function getAllProducts(request: Request): Promise<Product[]> {
   });
 
   const responseJson = await response.json();
-  console.log("Products response:", responseJson);
 
   const data = responseJson.data as ProductsResponse;
 
