@@ -26,7 +26,15 @@ export async function getAllProducts(request: Request): Promise<Product[]> {
     status: edge.node.status,
     handle: edge.node.handle,
     image: edge.node.images.edges[0]?.node || undefined,
-  }));
+    variants: edge.node.variants.edges.map((variant) => ({
+      id: variant.node.id,
+      title: variant.node.title,
+      price: variant.node.price,
+      compareAtPrice: variant.node.compareAtPrice,
+      availableForSale: variant.node.availableForSale,
+      image: variant.node.image || undefined,
+    })),
+  })) as Product[];
 
   console.log(`Found ${products.length} active products`);
   return products;

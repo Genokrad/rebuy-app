@@ -68,6 +68,7 @@ export function WidgetEditor({
 
         if (marketsData.success) {
           const markets = marketsData.markets;
+          console.log("Markets: ====>>>>>", markets);
           const arrayMarkets = markets.map((market: any) => ({
             id: market.id,
             name: market.name,

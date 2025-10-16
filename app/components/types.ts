@@ -30,6 +30,18 @@ export interface ShopifyProduct {
   description?: string;
 }
 
+export interface ProductVariant {
+  id: string;
+  title: string;
+  price: string;
+  compareAtPrice?: string;
+  availableForSale: boolean;
+  image?: {
+    url: string;
+    altText?: string;
+  };
+}
+
 export interface Product {
   id: string;
   title: string;
@@ -37,4 +49,5 @@ export interface Product {
   image?: string;
   handle: string;
   status: string;
+  variants: ProductVariant[];
 }
