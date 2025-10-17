@@ -8,7 +8,6 @@ import {
 } from "@shopify/polaris";
 import React, { useState, useEffect, useMemo } from "react";
 import { ProductSelector } from "./ProductSelector";
-import { transformShopifyProducts } from "../utils/productUtils";
 
 interface WidgetEditorProps {
   widgetName: string;
@@ -45,11 +44,10 @@ export function WidgetEditor({
   );
   const [showOnlySelected, setShowOnlySelected] = useState<boolean>(false);
   const [hasLoadedData, setHasLoadedData] = useState<boolean>(false);
-  const [allMarkets, setAllMarkets] = useState<any[]>([]);
 
-  // Transform Shopify products to our format (memoized to prevent unnecessary re-renders)
+  // Products are already transformed in the loader, no need to transform again
   const transformedProducts = useMemo(() => {
-    return transformShopifyProducts(products);
+    return products;
   }, [products]);
 
   // Загружаем только рынки при открытии WidgetEditor
@@ -68,7 +66,6 @@ export function WidgetEditor({
 
         if (marketsData.success) {
           const markets = marketsData.markets;
-          console.log("Markets: ====>>>>>", markets);
           const arrayMarkets = markets.map((market: any) => ({
             id: market.id,
             name: market.name,
@@ -78,18 +75,6 @@ export function WidgetEditor({
             regionName:
               market.conditions.regionsCondition.regions.nodes[0].name,
           }));
-          setAllMarkets(arrayMarkets);
-          // console.log("=== AVAILABLE MARKETS ===");
-          // console.log("Total markets found:", markets.length);
-          // markets.forEach((market: any, index: number) => {
-          //   console.log(`${index + 1}. ${market.name}`, {
-          //     id: market.id,
-          //     enabled: market.enabled,
-          //     primary: market.primary,
-          //     code: market.conditions.regionsCondition.regions.nodes[0].code,
-          //     name: market.conditions.regionsCondition.regions.nodes[0].name,
-          //   });
-          // });
           console.log(arrayMarkets);
           console.log("=== END OF MARKETS ===");
         } else {

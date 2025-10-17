@@ -37,11 +37,6 @@
   const currentProductId = '{{ product.id }}';
   const statusElement = document.getElementById('rebuy-status-{{ block.id }}');
 
-  console.log('=== REBUY WIDGET INIT ===');
-  console.log('Widget ID:', widgetId);
-  console.log('App URL:', appUrl);
-  console.log('Current Product ID:', currentProductId);
-
   // Проверяем настройки
   if (!widgetId) {
     statusElement.innerHTML = '❌ Widget ID не указан в настройках блока';
@@ -64,11 +59,7 @@
       const cleanUrl = appUrl.replace(/\/$/, '');
       const apiUrl = cleanUrl + '/api/widget/' + widgetId + '?productId=' + encodeURIComponent(currentProductId);
       
-      console.log('Fetching from:', apiUrl);
-      
       const response = await fetch(apiUrl);
-      
-      console.log('Response status:', response.status);
       
       if (!response.ok) {
         throw new Error('HTTP error! status: ' + response.status);

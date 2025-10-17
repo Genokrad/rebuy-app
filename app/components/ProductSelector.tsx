@@ -7,12 +7,24 @@ import {
   Thumbnail,
 } from "@shopify/polaris";
 import { useState } from "react";
+import { ProductVariants } from "./ProductVariants";
 
 interface Product {
   id: string;
   title: string;
   description: string;
   image?: string;
+  variants?: Array<{
+    id: string;
+    title: string;
+    price: string;
+    compareAtPrice?: string;
+    availableForSale: boolean;
+    image?: {
+      url: string;
+      altText?: string;
+    };
+  }>;
 }
 
 interface ProductSelectorProps {
@@ -31,6 +43,8 @@ export function ProductSelector({
   placeholder = "Search products...",
 }: ProductSelectorProps) {
   const [searchQuery, setSearchQuery] = useState("");
+
+  console.log(products);
 
   const filteredProducts = products.filter(
     (product) =>
@@ -113,6 +127,12 @@ export function ProductSelector({
                   </Text> */}
                 </BlockStack>
               </InlineStack>
+              {product.variants && product.variants.length > 1 && (
+                <ProductVariants
+                  variants={product.variants}
+                  productTitle={product.title}
+                />
+              )}
             </div>
           ))}
 

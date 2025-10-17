@@ -4,9 +4,8 @@ import { getAllMarkets } from "../graphql/marketsService";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
-    console.log("API: Fetching markets...");
     const markets = await getAllMarkets(request);
-    
+
     return json({
       success: true,
       markets,
@@ -21,7 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         markets: [],
         count: 0,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

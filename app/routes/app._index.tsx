@@ -38,7 +38,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   // Проверяем, это запрос на удаление виджета
   if (formData.get("widgetId")) {
-    console.log("Deleting widget:", formData.get("widgetId"));
     const widgetId = formData.get("widgetId") as string;
     try {
       await deleteWidget(widgetId);
@@ -72,7 +71,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         widgetType,
         products,
       );
-      console.log("Updated widget:", widget);
       return { success: true, widget, error: null };
     } catch (error) {
       console.error("Error updating widget:", error);
@@ -90,7 +88,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const widget = await createWidget(widgetName, widgetType, session.shop);
-    console.log("Created widget:", widget);
     return { success: true, widget, error: null };
   } catch (error) {
     console.error("Error creating widget:", error);
@@ -110,16 +107,14 @@ export default function Index() {
   } | null>(null);
 
   // Выводим продукты в консоль при загрузке страницы
-  React.useEffect(() => {
-    if (loaderData?.products) {
-      console.log("Загруженные продукты:", loaderData.products);
-    }
-  }, [loaderData?.products]);
+  // React.useEffect(() => {
+  //   if (loaderData?.products) {
+  //     console.log("Загруженные продукты:", loaderData.products);
+  //   }
+  // }, [loaderData?.products]);
 
   const handleWidgetClick = (widgetName: string, widgetType: string) => {
     setClickedWidget(widgetName);
-    console.log(`Clicked on: ${widgetName}`);
-
     // Отправляем данные в action для сохранения в БД
     const formData = new FormData();
     formData.append("widgetName", widgetName);
@@ -156,14 +151,6 @@ export default function Index() {
     allRelations: any[],
     widgetId: string,
   ) => {
-    console.log("Saving widget:", {
-      name,
-      value,
-      parentProduct,
-      allRelations,
-      widgetId,
-    });
-
     // Отправляем данные в action для обновления виджета
     const formData = new FormData();
     formData.append("updateWidgetId", widgetId);
