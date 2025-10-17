@@ -127,12 +127,15 @@ export function ProductSelector({
                   </Text> */}
                 </BlockStack>
               </InlineStack>
-              {product.variants && product.variants.length > 1 && (
-                <ProductVariants
-                  variants={product.variants}
-                  productTitle={product.title}
-                />
-              )}
+              {isMultiSelect &&
+                product.variants &&
+                product.variants.length > 1 &&
+                selectedProducts.includes(product.id) && (
+                  <ProductVariants
+                    variants={product.variants}
+                    productTitle={product.title}
+                  />
+                )}
             </div>
           ))}
 
