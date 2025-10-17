@@ -1,6 +1,11 @@
 export interface ProductRelationship {
   parentProduct: string; // productId
-  childProducts: string[]; // array of productIds
+  childProducts: ChildProduct[]; // array of child products with variants
+}
+
+export interface ChildProduct {
+  productId: string;
+  variantId: string; // always required - default to first variant
 }
 
 export interface Widget {

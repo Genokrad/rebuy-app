@@ -6,8 +6,10 @@ import {
   Layout,
   Card,
 } from "@shopify/polaris";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { ProductSelector } from "./ProductSelector";
+import { ProductWithVariantsSelector } from "./ProductWithVariantsSelector";
+import type { ChildProduct } from "./types";
 
 interface WidgetEditorProps {
   widgetName: string;
@@ -39,9 +41,9 @@ export function WidgetEditor({
 
   // Состояние для работы с множественными родительскими продуктами
   const [currentParentProduct, setCurrentParentProduct] = useState<string>("");
-  const [selectedChildProducts, setSelectedChildProducts] = useState<string[]>(
-    [],
-  );
+  const [selectedChildProducts, setSelectedChildProducts] = useState<
+    ChildProduct[]
+  >([]);
   const [showOnlySelected, setShowOnlySelected] = useState<boolean>(false);
   const [hasLoadedData, setHasLoadedData] = useState<boolean>(false);
 
@@ -49,6 +51,33 @@ export function WidgetEditor({
   const transformedProducts = useMemo(() => {
     return products;
   }, [products]);
+
+  // Функция для преобразования старых данных в новый формат
+  const convertToChildProducts = useCallback(
+    (childProducts: any[]): ChildProduct[] => {
+      return childProducts.map((item: any) => {
+        // Если это уже новый формат (объект с productId и variantId)
+        if (typeof item === "object" && item.productId) {
+          return item;
+        }
+        // Если это старый формат (просто строка с ID продукта)
+        // Находим продукт и берем его первый вариант
+        const product = transformedProducts.find((p) => p.id === item);
+        if (product && product.variants && product.variants.length > 0) {
+          return {
+            productId: item,
+            variantId: product.variants[0].id,
+          };
+        }
+        // Если продукт без вариантов, возвращаем как есть (но это не должно происходить)
+        return {
+          productId: item,
+          variantId: item, // fallback
+        };
+      });
+    },
+    [transformedProducts],
+  );
 
   // Загружаем только рынки при открытии WidgetEditor
   useEffect(() => {
@@ -96,9 +125,11 @@ export function WidgetEditor({
       // Устанавливаем первый родительский продукт по умолчанию
       const firstParent = existingProducts[0].parentProduct;
       setCurrentParentProduct(firstParent);
-      setSelectedChildProducts(existingProducts[0].childProducts);
+      setSelectedChildProducts(
+        convertToChildProducts(existingProducts[0].childProducts),
+      );
     }
-  }, [existingProducts, currentParentProduct]);
+  }, [existingProducts, currentParentProduct, convertToChildProducts]);
 
   // Функция для переключения между родительскими продуктами
   const handleParentProductChange = (parentProductId: string) => {
@@ -110,7 +141,9 @@ export function WidgetEditor({
     );
 
     if (existingRelation) {
-      setSelectedChildProducts(existingRelation.childProducts);
+      setSelectedChildProducts(
+        convertToChildProducts(existingRelation.childProducts),
+      );
     } else {
       setSelectedChildProducts([]);
     }
@@ -297,11 +330,18 @@ export function WidgetEditor({
                                 {" "}
                                 (
                                 {selectedChildProducts
-                                  .map((id) => {
+                                  .map((childProduct) => {
                                     const product = transformedProducts.find(
-                                      (p) => p.id === id,
+                                      (p) => p.id === childProduct.productId,
                                     );
-                                    return product?.title || id;
+                                    const variant = product?.variants?.find(
+                                      (v: any) =>
+                                        v.id === childProduct.variantId,
+                                    );
+                                    return variant
+                                      ? `${product?.title} - ${variant.title}`
+                                      : product?.title ||
+                                          childProduct.productId;
                                   })
                                   .join(", ")}
                                 )
@@ -333,11 +373,13 @@ export function WidgetEditor({
                           </Text>
                         </label>
 
-                        <ProductSelector
+                        <ProductWithVariantsSelector
                           products={
                             showOnlySelected
                               ? transformedProducts.filter((p) =>
-                                  selectedChildProducts.includes(p.id),
+                                  selectedChildProducts.some(
+                                    (cp) => cp.productId === p.id,
+                                  ),
                                 )
                               : transformedProducts
                           }
