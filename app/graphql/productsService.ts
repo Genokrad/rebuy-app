@@ -1,4 +1,5 @@
 import { authenticate } from "../shopify.server";
+import { ApiVersion } from "@shopify/shopify-api";
 import {
   GET_PRODUCTS_QUERY,
   type Product,
@@ -13,6 +14,7 @@ export async function getAllProducts(request: Request): Promise<Product[]> {
       first: 150, // Получаем первые 150 продуктов
       query: "status:active", // Фильтруем только активные продукты
     },
+    apiVersion: ApiVersion.January25,
   });
 
   const responseJson = await response.json();

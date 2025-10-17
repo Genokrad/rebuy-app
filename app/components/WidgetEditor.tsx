@@ -100,9 +100,13 @@ export function WidgetEditor({
             name: market.name,
             enabled: market.enabled,
             primary: market.primary,
-            code: market.conditions.regionsCondition.regions.nodes[0].code,
+            // Используем fallback значения, так как conditions может не быть доступен
+            code:
+              market.conditions?.regionsCondition?.regions?.nodes?.[0]?.code ||
+              market.name.substring(0, 2).toUpperCase(),
             regionName:
-              market.conditions.regionsCondition.regions.nodes[0].name,
+              market.conditions?.regionsCondition?.regions?.nodes?.[0]?.name ||
+              market.name,
           }));
           console.log(arrayMarkets);
           console.log("=== END OF MARKETS ===");

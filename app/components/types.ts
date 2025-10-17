@@ -3,9 +3,47 @@ export interface ProductRelationship {
   childProducts: ChildProduct[]; // array of child products with variants
 }
 
+export interface VariantInventoryLevel {
+  quantity: number;
+}
+
+export interface VariantLocation {
+  id: string;
+  name: string;
+  address: {
+    country: string;
+    countryCode: string;
+  };
+  shipsInventory: boolean;
+  inventoryLevels: {
+    nodes: Array<{
+      quantities: VariantInventoryLevel[];
+    }>;
+  };
+}
+
+export interface VariantInventoryItem {
+  inventoryLevels: {
+    edges: Array<{
+      node: {
+        location: VariantLocation;
+      };
+    }>;
+  };
+}
+
+export interface VariantDetails {
+  inventoryQuantity: number;
+  availableForSale: boolean;
+  inventoryPolicy: string;
+  id: string;
+  inventoryItem: VariantInventoryItem;
+}
+
 export interface ChildProduct {
   productId: string;
   variantId: string; // always required - default to first variant
+  variantDetails?: VariantDetails; // optional variant details
 }
 
 export interface Widget {
