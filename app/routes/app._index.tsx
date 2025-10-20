@@ -111,14 +111,8 @@ export default function Index() {
     name: string;
     type: string;
     products?: any[];
+    settings?: any;
   } | null>(null);
-
-  // Выводим продукты в консоль при загрузке страницы
-  // React.useEffect(() => {
-  //   if (loaderData?.products) {
-  //     console.log("Загруженные продукты:", loaderData.products);
-  //   }
-  // }, [loaderData?.products]);
 
   const handleWidgetClick = (widgetName: string, widgetType: string) => {
     setClickedWidget(widgetName);
@@ -144,6 +138,8 @@ export default function Index() {
       name,
       type,
       products: widget?.products,
+      // прокидываем сохраненные настройки
+      settings: (widget as any)?.settings,
     });
   };
 
@@ -218,6 +214,8 @@ export default function Index() {
                 widgetType={currentWidgets.type}
                 products={loaderData?.products || []}
                 existingProducts={currentWidgets.products}
+                // прокидываем сохраненные настройки
+                settings={(currentWidgets as any)?.settings}
                 onBack={handleBackToWidgets}
                 onSave={handleSaveWidget}
               />

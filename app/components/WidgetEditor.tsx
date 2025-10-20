@@ -13,6 +13,7 @@ interface WidgetEditorProps {
   widgetType: string;
   products: any[];
   existingProducts?: any[];
+  settings?: any;
   onBack: () => void;
   onSave: (
     name: string,
@@ -30,18 +31,21 @@ export function WidgetEditor({
   widgetType,
   products,
   existingProducts = [],
+  settings: initialSettings,
   onBack,
   onSave,
 }: WidgetEditorProps) {
   const [name, setName] = useState(widgetName);
   const [value, setValue] = useState("");
-  const [settings, setSettings] = useState({
-    discount1: "",
-    discount2: "",
-    discount3: "",
-    discount4: "",
-    discount5: "",
-  });
+  const [settings, setSettings] = useState(
+    initialSettings || {
+      discount1: "",
+      discount2: "",
+      discount3: "",
+      discount4: "",
+      discount5: "",
+    },
+  );
 
   // Состояние для работы с множественными родительскими продуктами
   const [currentParentProduct, setCurrentParentProduct] = useState<string>("");
@@ -71,7 +75,7 @@ export function WidgetEditor({
 
         if (marketsData.success) {
           const markets = marketsData.markets;
-          const arrayMarkets = markets.map((market: any) => ({
+          markets.map((market: any) => ({
             id: market.id,
             name: market.name,
             enabled: market.enabled,
@@ -84,7 +88,7 @@ export function WidgetEditor({
               market.conditions?.regionsCondition?.regions?.nodes?.[0]?.name ||
               market.name,
           }));
-          // console.log(arrayMarkets);
+          // console.log(mappedMarkets);
           // console.log("=== END OF MARKETS ===");
         } else {
           console.error("Failed to load markets:", marketsData.error);
