@@ -6,9 +6,9 @@ import {
   Layout,
   Card,
 } from "@shopify/polaris";
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { ProductSelector } from "./ProductSelector";
-import { ProductWithVariantsSelector } from "./ProductWithVariantsSelector";
+import React, { useState, useEffect, useMemo } from "react";
+import { ProductRelationshipSelector } from "./ProductRelationshipSelector";
+import { ExistingProductRelationships } from "./ExistingProductRelationships";
 import type { ChildProduct } from "./types";
 
 interface WidgetEditorProps {
@@ -44,40 +44,12 @@ export function WidgetEditor({
   const [selectedChildProducts, setSelectedChildProducts] = useState<
     ChildProduct[]
   >([]);
-  const [showOnlySelected, setShowOnlySelected] = useState<boolean>(false);
   const [hasLoadedData, setHasLoadedData] = useState<boolean>(false);
 
   // Products are already transformed in the loader, no need to transform again
   const transformedProducts = useMemo(() => {
     return products;
   }, [products]);
-
-  // Функция для преобразования старых данных в новый формат
-  const convertToChildProducts = useCallback(
-    (childProducts: any[]): ChildProduct[] => {
-      return childProducts.map((item: any) => {
-        // Если это уже новый формат (объект с productId и variantId)
-        if (typeof item === "object" && item.productId) {
-          return item;
-        }
-        // Если это старый формат (просто строка с ID продукта)
-        // Находим продукт и берем его первый вариант
-        const product = transformedProducts.find((p) => p.id === item);
-        if (product && product.variants && product.variants.length > 0) {
-          return {
-            productId: item,
-            variantId: product.variants[0].id,
-          };
-        }
-        // Если продукт без вариантов, возвращаем как есть (но это не должно происходить)
-        return {
-          productId: item,
-          variantId: item, // fallback
-        };
-      });
-    },
-    [transformedProducts],
-  );
 
   // Загружаем только рынки при открытии WidgetEditor
   useEffect(() => {
@@ -129,31 +101,41 @@ export function WidgetEditor({
       // Устанавливаем первый родительский продукт по умолчанию
       const firstParent = existingProducts[0].parentProduct;
       setCurrentParentProduct(firstParent);
+
+      // Преобразуем старые данные в новый формат
+      const convertToChildProducts = (childProducts: any[]): ChildProduct[] => {
+        return childProducts.map((item: any) => {
+          if (typeof item === "object" && item.productId) {
+            return item;
+          }
+          const product = transformedProducts.find((p) => p.id === item);
+          if (product && product.variants && product.variants.length > 0) {
+            return {
+              productId: item,
+              variantId: product.variants[0].id,
+            };
+          }
+          return {
+            productId: item,
+            variantId: item,
+          };
+        });
+      };
+
       setSelectedChildProducts(
         convertToChildProducts(existingProducts[0].childProducts),
       );
     }
-  }, [existingProducts, currentParentProduct, convertToChildProducts]);
+  }, [existingProducts, currentParentProduct, transformedProducts]);
 
   // Функция для переключения между родительскими продуктами
   const handleParentProductChange = (parentProductId: string) => {
     setCurrentParentProduct(parentProductId);
+  };
 
-    // Находим дочерние продукты для выбранного родительского
-    const existingRelation = existingProducts.find(
-      (rel) => rel.parentProduct === parentProductId,
-    );
-
-    if (existingRelation) {
-      setSelectedChildProducts(
-        convertToChildProducts(existingRelation.childProducts),
-      );
-    } else {
-      setSelectedChildProducts([]);
-    }
-
-    // Сбрасываем фильтр при переключении родительского продукта
-    setShowOnlySelected(false);
+  // Функция для изменения дочерних продуктов
+  const handleChildProductsChange = (childProducts: ChildProduct[]) => {
+    setSelectedChildProducts(childProducts);
   };
 
   const handleSave = () => {
@@ -190,79 +172,12 @@ export function WidgetEditor({
             </Text>
 
             {/* Show all existing relationships */}
-            {existingProducts.length > 0 && (
-              <Card>
-                <BlockStack gap="300">
-                  <Text as="h3" variant="headingMd">
-                    All Product Relationships ({existingProducts.length})
-                  </Text>
-                  <div
-                    style={{
-                      maxHeight: "400px",
-                      overflowY: "auto",
-                      border: "1px solid #e1e3e5",
-                      borderRadius: "8px",
-                      padding: "12px",
-                    }}
-                  >
-                    <BlockStack gap="200">
-                      {existingProducts.map((rel, index) => {
-                        const parentProduct = transformedProducts.find(
-                          (p) => p.id === rel.parentProduct,
-                        );
-                        return (
-                          <div
-                            key={index}
-                            onClick={() =>
-                              handleParentProductChange(rel.parentProduct)
-                            }
-                            style={{
-                              padding: "12px",
-                              borderRadius: "8px",
-                              cursor: "pointer",
-                              backgroundColor:
-                                currentParentProduct === rel.parentProduct
-                                  ? "#f0f8ff"
-                                  : "transparent",
-                              border:
-                                currentParentProduct === rel.parentProduct
-                                  ? "2px solid #007ace"
-                                  : "1px solid #e1e3e5",
-                              transition: "all 0.2s ease",
-                            }}
-                            onMouseEnter={(e) => {
-                              if (currentParentProduct !== rel.parentProduct) {
-                                e.currentTarget.style.backgroundColor =
-                                  "#f9f9f9";
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              if (currentParentProduct !== rel.parentProduct) {
-                                e.currentTarget.style.backgroundColor =
-                                  "transparent";
-                              }
-                            }}
-                          >
-                            <BlockStack gap="100">
-                              <Text
-                                as="p"
-                                variant="bodyMd"
-                                fontWeight="semibold"
-                              >
-                                {parentProduct?.title || rel.parentProduct}
-                              </Text>
-                              <Text as="p" variant="bodySm" tone="subdued">
-                                Children: {rel.childProducts.length} products
-                              </Text>
-                            </BlockStack>
-                          </div>
-                        );
-                      })}
-                    </BlockStack>
-                  </div>
-                </BlockStack>
-              </Card>
-            )}
+            <ExistingProductRelationships
+              existingProducts={existingProducts}
+              transformedProducts={transformedProducts}
+              currentParentProduct={currentParentProduct}
+              onParentProductChange={handleParentProductChange}
+            />
 
             {/* Name and Value fields */}
             <Card>
@@ -292,129 +207,14 @@ export function WidgetEditor({
             </Text>
 
             {/* Product Selection */}
-            <Layout>
-              <Layout.Section variant="oneHalf">
-                <Card>
-                  <BlockStack gap="300">
-                    <Text as="h3" variant="headingMd">
-                      Parent product
-                    </Text>
-                    <ProductSelector
-                      products={transformedProducts}
-                      selectedProducts={
-                        currentParentProduct ? [currentParentProduct] : []
-                      }
-                      onSelectionChange={(selectedIds) => {
-                        if (selectedIds.length > 0) {
-                          // Переключаемся на выбранный родительский продукт
-                          handleParentProductChange(selectedIds[0]);
-                        }
-                      }}
-                      isMultiSelect={false}
-                      placeholder="Search for parent product..."
-                    />
-                  </BlockStack>
-                </Card>
-              </Layout.Section>
-
-              <Layout.Section variant="oneHalf">
-                <Card>
-                  <BlockStack gap="300">
-                    <Text as="h3" variant="headingMd">
-                      Child products
-                    </Text>
-                    {currentParentProduct ? (
-                      <BlockStack gap="200">
-                        {selectedChildProducts.length !== 0 && (
-                          <Text as="p" variant="bodySm" tone="subdued">
-                            Selected child products:{" "}
-                            {selectedChildProducts.length}
-                            {selectedChildProducts.length > 0 && (
-                              <span>
-                                {" "}
-                                (
-                                {selectedChildProducts
-                                  .map((childProduct) => {
-                                    const product = transformedProducts.find(
-                                      (p) => p.id === childProduct.productId,
-                                    );
-                                    const variant = product?.variants?.find(
-                                      (v: any) =>
-                                        v.id === childProduct.variantId,
-                                    );
-                                    return variant
-                                      ? `${product?.title} - ${variant.title}`
-                                      : product?.title ||
-                                          childProduct.productId;
-                                  })
-                                  .join(", ")}
-                                )
-                              </span>
-                            )}
-                          </Text>
-                        )}
-
-                        {/* Filter checkbox */}
-                        <label
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={showOnlySelected}
-                            onChange={(e) =>
-                              setShowOnlySelected(e.target.checked)
-                            }
-                            style={{ cursor: "pointer" }}
-                          />
-                          <Text as="span" variant="bodyMd">
-                            Show only selected products (
-                            {selectedChildProducts.length})
-                          </Text>
-                        </label>
-
-                        <ProductWithVariantsSelector
-                          products={
-                            showOnlySelected
-                              ? transformedProducts.filter((p) =>
-                                  selectedChildProducts.some(
-                                    (cp) => cp.productId === p.id,
-                                  ),
-                                )
-                              : transformedProducts
-                          }
-                          selectedProducts={selectedChildProducts}
-                          onSelectionChange={setSelectedChildProducts}
-                          isMultiSelect={true}
-                          placeholder={
-                            showOnlySelected
-                              ? "All selected products..."
-                              : "Search for child products..."
-                          }
-                        />
-                      </BlockStack>
-                    ) : (
-                      <div
-                        style={{
-                          padding: "20px",
-                          textAlign: "center",
-                          background: "#f6f6f7",
-                          borderRadius: "4px",
-                        }}
-                      >
-                        <Text as="p" variant="bodyMd" tone="subdued">
-                          Please select a parent product first
-                        </Text>
-                      </div>
-                    )}
-                  </BlockStack>
-                </Card>
-              </Layout.Section>
-            </Layout>
+            <ProductRelationshipSelector
+              transformedProducts={transformedProducts}
+              currentParentProduct={currentParentProduct}
+              selectedChildProducts={selectedChildProducts}
+              existingProducts={existingProducts}
+              onParentProductChange={handleParentProductChange}
+              onChildProductsChange={handleChildProductsChange}
+            />
 
             {/* Action buttons */}
             <Layout>
