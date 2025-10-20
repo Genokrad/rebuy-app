@@ -8,5 +8,6 @@ export { ProductWithVariantsSelector } from "./ProductWithVariantsSelector";
 export { ProductRelationshipSelector } from "./ProductRelationshipSelector";
 export { ExistingProductRelationships } from "./ExistingProductRelationships";
 export { SelectedChildProducts } from "./SelectedChildProducts";
+export { WidgetForm } from "./WidgetForm";
 export type { Widget, WidgetCard } from "./types";
 

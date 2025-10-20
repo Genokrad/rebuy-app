@@ -1,15 +1,10 @@
-import {
-  BlockStack,
-  TextField,
-  Text,
-  Button,
-  Layout,
-  Card,
-} from "@shopify/polaris";
+import { BlockStack, Text, Button, Layout } from "@shopify/polaris";
 import React, { useState, useEffect, useMemo } from "react";
 import { ProductRelationshipSelector } from "./ProductRelationshipSelector";
 import { ExistingProductRelationships } from "./ExistingProductRelationships";
+import { WidgetForm } from "./WidgetForm";
 import type { ChildProduct } from "./types";
+import HowItWorks from "./HowItWorks";
 
 interface WidgetEditorProps {
   widgetName: string;
@@ -180,31 +175,15 @@ export function WidgetEditor({
             />
 
             {/* Name and Value fields */}
-            <Card>
-              <BlockStack gap="300">
-                <TextField
-                  label="Name"
-                  value={name}
-                  onChange={setName}
-                  placeholder="Enter widget name"
-                  autoComplete="off"
-                />
-                <TextField
-                  label="Value"
-                  value={value}
-                  onChange={setValue}
-                  placeholder="Enter widget value"
-                  autoComplete="off"
-                />
-              </BlockStack>
-            </Card>
+            <WidgetForm
+              name={name}
+              value={value}
+              onNameChange={setName}
+              onValueChange={setValue}
+            />
 
             {/* How it works link */}
-            <Text as="p" variant="bodyMd">
-              <Button variant="plain" size="slim">
-                How it works?
-              </Button>
-            </Text>
+            <HowItWorks />
 
             {/* Product Selection */}
             <ProductRelationshipSelector
