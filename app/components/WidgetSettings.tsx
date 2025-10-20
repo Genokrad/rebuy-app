@@ -6,7 +6,7 @@ import {
   InlineStack,
   Button,
 } from "@shopify/polaris";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 interface WidgetSettingsProps {
   settings?: {
@@ -48,6 +48,24 @@ export const WidgetSettings = ({
     return Math.min(Math.max(filled.length || 1, 1), 5);
   })();
   const [visibleCount, setVisibleCount] = useState<number>(initialCount);
+
+  // sync when settings prop changes (e.g., loaded from DB)
+  useEffect(() => {
+    const next = {
+      discount1: settings.discount1 || "",
+      discount2: settings.discount2 || "",
+      discount3: settings.discount3 || "",
+      discount4: settings.discount4 || "",
+      discount5: settings.discount5 || "",
+    };
+    setDiscounts(next);
+    const filled = [1, 2, 3, 4, 5].filter(
+      (q) =>
+        (settings as any)[`discount${q}`] &&
+        String((settings as any)[`discount${q}`]).trim() !== "",
+    );
+    setVisibleCount(Math.min(Math.max(filled.length || 1, 1), 5));
+  }, [settings]);
 
   const sanitizeToPercent = (raw: string) => {
     // Keep only digits and dot/comma, normalize comma to dot
@@ -154,12 +172,12 @@ export const WidgetSettings = ({
               </InlineStack>
             );
           })}
-          <InlineStack gap="200">
+          <InlineStack gap="200" blockAlign="center">
             <Button
               onClick={() => setVisibleCount((c) => Math.min(c + 1, 5))}
               disabled={visibleCount >= 5}
             >
-              Add discount
+              Add rule
             </Button>
             {visibleCount < 5 && (
               <Text as="p" variant="bodySm" tone="subdued">
