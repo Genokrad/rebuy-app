@@ -5,6 +5,7 @@ import { ExistingProductRelationships } from "./ExistingProductRelationships";
 import { WidgetForm } from "./WidgetForm";
 import type { ChildProduct } from "./types";
 import HowItWorks from "./HowItWorks";
+import { WidgetSettings } from "./WidgetSettings";
 
 interface WidgetEditorProps {
   widgetName: string;
@@ -19,6 +20,7 @@ interface WidgetEditorProps {
     parentProduct: any,
     childProducts: any[],
     widgetId: string,
+    settings?: any,
   ) => void;
 }
 
@@ -33,6 +35,13 @@ export function WidgetEditor({
 }: WidgetEditorProps) {
   const [name, setName] = useState(widgetName);
   const [value, setValue] = useState("");
+  const [settings, setSettings] = useState({
+    discount1: "",
+    discount2: "",
+    discount3: "",
+    discount4: "",
+    discount5: "",
+  });
 
   // Состояние для работы с множественными родительскими продуктами
   const [currentParentProduct, setCurrentParentProduct] = useState<string>("");
@@ -54,7 +63,7 @@ export function WidgetEditor({
 
     const loadMarkets = async () => {
       try {
-        console.log("=== LOADING MARKETS IN WIDGET EDITOR ===");
+        // console.log("=== LOADING MARKETS IN WIDGET EDITOR ===");
 
         // Загружаем только рынки
         const marketsResponse = await fetch("/api/markets");
@@ -75,8 +84,8 @@ export function WidgetEditor({
               market.conditions?.regionsCondition?.regions?.nodes?.[0]?.name ||
               market.name,
           }));
-          console.log(arrayMarkets);
-          console.log("=== END OF MARKETS ===");
+          // console.log(arrayMarkets);
+          // console.log("=== END OF MARKETS ===");
         } else {
           console.error("Failed to load markets:", marketsData.error);
         }
@@ -153,8 +162,8 @@ export function WidgetEditor({
       });
     }
 
-    // Отправляем все связи
-    onSave(name, value, null, allRelations, widgetId);
+    // Отправляем все связи вместе с настройками
+    onSave(name, value, null, allRelations, widgetId, settings);
   };
 
   return (
@@ -193,6 +202,11 @@ export function WidgetEditor({
               existingProducts={existingProducts}
               onParentProductChange={handleParentProductChange}
               onChildProductsChange={handleChildProductsChange}
+            />
+
+            <WidgetSettings
+              settings={settings}
+              onSettingsChange={setSettings}
             />
 
             {/* Action buttons */}

@@ -12,7 +12,7 @@ export async function getVariantDetails(
 ): Promise<VariantDetails | null> {
   const { admin } = await authenticate.admin(request);
 
-  console.log(`Fetching variant details for ${variantId}...`);
+  // console.log(`Fetching variant details for ${variantId}...`);
 
   try {
     const response = await admin.graphql(GET_VARIANT_DETAILS_QUERY, {
@@ -23,10 +23,10 @@ export async function getVariantDetails(
     });
 
     const responseJson: any = await response.json();
-    console.log(
-      "Variant details response:",
-      JSON.stringify(responseJson, null, 2),
-    );
+    // console.log(
+    //   "Variant details response:",
+    //   JSON.stringify(responseJson, null, 2),
+    // );
 
     if (responseJson?.errors?.length) {
       const firstMessage =

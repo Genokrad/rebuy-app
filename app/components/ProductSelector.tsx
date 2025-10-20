@@ -44,7 +44,7 @@ export function ProductSelector({
 }: ProductSelectorProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
-  console.log(products);
+  // console.log(products);
 
   const filteredProducts = products.filter(
     (product) =>

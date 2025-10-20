@@ -9,10 +9,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const currentProductId = url.searchParams.get("productId");
 
-  console.log("=== API Widget Request ===");
-  console.log("Widget ID:", widgetId);
-  console.log("Product ID:", currentProductId);
-
   if (!widgetId) {
     return json({ error: "Widget ID is required" }, { status: 400 });
   }
@@ -25,12 +21,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       return json({ error: "Widget not found" }, { status: 404 });
     }
 
-    console.log("Widget found:", widget);
-
     const currentproductObject = widget.products?.find((product) =>
       product.parentProduct.includes(currentProductId),
     );
-    console.log("Current product object:", currentproductObject);
+    // console.log("Current product object:", currentproductObject);
 
     // Возвращаем все данные виджета
     return json(
@@ -41,6 +35,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
           name: widget.name,
           type: widget.type,
           shop: widget.shop,
+          settings: (widget as any).settings,
           product: currentproductObject || [],
           createdAt: widget.createdAt,
         },

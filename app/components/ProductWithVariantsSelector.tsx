@@ -141,7 +141,7 @@ export function ProductWithVariantsSelector({
       const data = await response.json();
 
       if (data.success && data.details) {
-        console.log(`Loaded variant details for ${variantId}:`, data.details);
+        // console.log(`Loaded variant details for ${variantId}:`, data.details);
         return data.details;
       } else {
         // Проверяем, является ли ошибка связанной с разрешениями
@@ -189,7 +189,7 @@ export function ProductWithVariantsSelector({
       onSelectionChange(newSelection);
     } else {
       // Загружаем детали варианта
-      console.log(`Loading variant details for ${variantId}...`);
+      // console.log(`Loading variant details for ${variantId}...`);
 
       // Показываем индикатор загрузки
       setLoadingVariants((prev) => new Set(prev).add(variantId));

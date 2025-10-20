@@ -19,8 +19,8 @@ export async function getAllProducts(request: Request): Promise<Product[]> {
 
   const responseJson = await response.json();
 
-  console.log("=== PRODUCTS SERVICE DEBUG ===");
-  console.log("Raw GraphQL response:", JSON.stringify(responseJson, null, 2));
+  // console.log("=== PRODUCTS SERVICE DEBUG ===");
+  // console.log("Raw GraphQL response:", JSON.stringify(responseJson, null, 2));
 
   const data = responseJson.data as ProductsResponse;
 
@@ -41,10 +41,10 @@ export async function getAllProducts(request: Request): Promise<Product[]> {
     })),
   })) as Product[];
 
-  console.log(`Found ${products.length} active products`);
-  console.log(
-    "First product with variants:",
-    JSON.stringify(products[0], null, 2),
-  );
+  // console.log(`Found ${products.length} active products`);
+  // console.log(
+  //   "First product with variants:",
+  //   JSON.stringify(products[0], null, 2),
+  // );
   return products;
 }

@@ -7,6 +7,7 @@ export async function createWidget(
   type: string,
   shop: string,
   products?: ProductRelationship[],
+  settings?: any,
 ): Promise<Widget> {
   const widget = await prisma.widget.create({
     data: {
@@ -14,6 +15,7 @@ export async function createWidget(
       type,
       shop,
       products: products ? JSON.stringify(products) : null,
+      settings: settings ? JSON.stringify(settings) : null,
     } as any,
   });
 
@@ -25,6 +27,9 @@ export async function createWidget(
     products: (widget as any).products
       ? JSON.parse((widget as any).products)
       : undefined,
+    ...((widget as any).settings
+      ? { settings: JSON.parse((widget as any).settings) }
+      : {}),
     createdAt: widget.createdAt.toISOString(),
     updatedAt: widget.updatedAt.toISOString(),
   };
@@ -41,6 +46,7 @@ export async function updateWidget(
   name: string,
   type: string,
   products?: ProductRelationship[],
+  settings?: any,
 ): Promise<Widget> {
   const widget = await prisma.widget.update({
     where: { id },
@@ -48,6 +54,7 @@ export async function updateWidget(
       name,
       type,
       products: products ? JSON.stringify(products) : null,
+      settings: settings ? JSON.stringify(settings) : null,
     } as any,
   });
 
@@ -59,6 +66,9 @@ export async function updateWidget(
     products: (widget as any).products
       ? JSON.parse((widget as any).products)
       : undefined,
+    ...((widget as any).settings
+      ? { settings: JSON.parse((widget as any).settings) }
+      : {}),
     createdAt: widget.createdAt.toISOString(),
     updatedAt: widget.updatedAt.toISOString(),
   };
@@ -82,6 +92,9 @@ export async function getWidgetsByShop(shop: string): Promise<Widget[]> {
     products: (widget as any).products
       ? JSON.parse((widget as any).products)
       : undefined,
+    ...((widget as any).settings
+      ? { settings: JSON.parse((widget as any).settings) }
+      : {}),
     createdAt: widget.createdAt.toISOString(),
     updatedAt: widget.updatedAt.toISOString(),
   }));
@@ -105,6 +118,9 @@ export async function getWidgetById(id: string): Promise<Widget | null> {
     shop: widget.shop,
     products: (widget as any).products
       ? JSON.parse((widget as any).products)
+      : undefined,
+    settings: (widget as any).settings
+      ? JSON.parse((widget as any).settings)
       : undefined,
     createdAt: widget.createdAt.toISOString(),
     updatedAt: widget.updatedAt.toISOString(),

@@ -9,18 +9,18 @@ import {
 export async function getAllMarkets(request: Request): Promise<Market[]> {
   const { admin } = await authenticate.admin(request);
 
-  console.log("Fetching all markets...");
+  // console.log("Fetching all markets...");
 
   // Сначала попробуем базовый запрос без conditions
   let responseJson: any;
   try {
-    console.log("Trying base query without conditions...");
+    // console.log("Trying base query without conditions...");
     const response = await admin.graphql(GET_MARKETS_QUERY_BASE, {
       variables: { first: 50 },
       apiVersion: ApiVersion.January25,
     });
     responseJson = await response.json();
-    console.log("Base query response:", JSON.stringify(responseJson, null, 2));
+    // console.log("Base query response:", JSON.stringify(responseJson, null, 2));
   } catch (error) {
     console.error("Error in base GraphQL request:", error);
     throw error;
@@ -43,10 +43,10 @@ export async function getAllMarkets(request: Request): Promise<Market[]> {
     .map((edge) => edge.node)
     .filter((market) => market.enabled);
 
-  console.log(
-    `Found ${markets.length} active markets:`,
-    markets.map((m) => `${m.name} (${m.id}) - Primary: ${m.primary}`),
-  );
+  // console.log(
+  //   `Found ${markets.length} active markets:`,
+  //   markets.map((m) => `${m.name} (${m.id}) - Primary: ${m.primary}`),
+  // );
 
   return markets;
 }

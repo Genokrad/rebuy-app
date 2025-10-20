@@ -54,6 +54,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const widgetName = formData.get("widgetName") as string;
     const widgetType = formData.get("widgetType") as string;
     const allRelations = formData.get("allRelations") as string;
+    const settingsStr = formData.get("settings") as string;
 
     if (!widgetName || !widgetType) {
       return { error: "Missing widget name or type", success: false };
@@ -65,11 +66,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         products = JSON.parse(allRelations);
       }
 
+      let settings = undefined;
+      if (settingsStr) {
+        settings = JSON.parse(settingsStr);
+      }
+
       const widget = await updateWidget(
         updateWidgetId,
         widgetName,
         widgetType,
         products,
+        settings,
       );
       return { success: true, widget, error: null };
     } catch (error) {
@@ -150,6 +157,7 @@ export default function Index() {
     parentProduct: any,
     allRelations: any[],
     widgetId: string,
+    settings?: any,
   ) => {
     // Отправляем данные в action для обновления виджета
     const formData = new FormData();
@@ -159,6 +167,10 @@ export default function Index() {
 
     if (allRelations && allRelations.length > 0) {
       formData.append("allRelations", JSON.stringify(allRelations));
+    }
+
+    if (settings) {
+      formData.append("settings", JSON.stringify(settings));
     }
 
     fetcher.submit(formData, { method: "POST" });

@@ -29,6 +29,7 @@ export interface Widget {
   type: string;
   shop: string;
   products?: any[];
+  settings?: any;
   createdAt: string;
   updatedAt: string;
 }
