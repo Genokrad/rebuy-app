@@ -36,7 +36,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
           type: widget.type,
           shop: widget.shop,
           settings: (widget as any).settings,
-          product: currentproductObject || [],
+          product: currentproductObject || { parentProduct: null },
           createdAt: widget.createdAt,
         },
         currentProductId,

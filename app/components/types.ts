@@ -37,6 +37,9 @@ export interface VariantDetails {
   availableForSale: boolean;
   inventoryPolicy: string;
   id: string;
+  image: {
+    url: string;
+  } | null;
   inventoryItem: VariantInventoryItem;
 }
 

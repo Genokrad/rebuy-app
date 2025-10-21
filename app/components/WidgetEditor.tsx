@@ -6,6 +6,7 @@ import { WidgetForm } from "./WidgetForm";
 import type { ChildProduct } from "./types";
 import HowItWorks from "./HowItWorks";
 import { WidgetSettings } from "./WidgetSettings";
+import WidgetPlacements, { type PlacementKey } from "./WidgetPlacements";
 
 interface WidgetEditorProps {
   widgetName: string;
@@ -37,13 +38,13 @@ export function WidgetEditor({
 }: WidgetEditorProps) {
   const [name, setName] = useState(widgetName);
   const [value, setValue] = useState("");
+  const [placements, setPlacements] = useState<PlacementKey[]>(
+    (initialSettings?.placements as PlacementKey[] | undefined) || [],
+  );
   const [settings, setSettings] = useState(
     initialSettings || {
-      discount1: "",
-      discount2: "",
-      discount3: "",
-      discount4: "",
-      discount5: "",
+      discounts: [],
+      placements: [],
     },
   );
 
@@ -166,8 +167,9 @@ export function WidgetEditor({
       });
     }
 
-    // Отправляем все связи вместе с настройками
-    onSave(name, value, null, allRelations, widgetId, settings);
+    // Отправляем все связи вместе с настройками (включая placements)
+    const finalSettings = { ...(settings || {}), placements };
+    onSave(name, value, null, allRelations, widgetId, finalSettings);
   };
 
   return (
@@ -178,6 +180,8 @@ export function WidgetEditor({
             <Text as="h1" variant="headingLg">
               Edit Widget {widgetName}: id {widgetId}
             </Text>
+
+            <WidgetPlacements selected={placements} onChange={setPlacements} />
 
             {/* Show all existing relationships */}
             <ExistingProductRelationships
@@ -210,7 +214,9 @@ export function WidgetEditor({
 
             <WidgetSettings
               settings={settings}
-              onSettingsChange={setSettings}
+              onSettingsChange={(newSettings) => {
+                setSettings((prev: any) => ({ ...prev, ...newSettings }));
+              }}
             />
 
             {/* Action buttons */}

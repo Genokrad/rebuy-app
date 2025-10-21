@@ -360,9 +360,16 @@ export function ProductWithVariantsSelector({
                                       blockAlign="center"
                                     >
                                       <InlineStack gap="200" align="start">
-                                        {variant.image && (
+                                        {(variant.image ||
+                                          selectedChildProduct?.variantDetails
+                                            ?.image) && (
                                           <Thumbnail
-                                            source={variant.image.url}
+                                            source={
+                                              selectedChildProduct
+                                                ?.variantDetails?.image?.url ||
+                                              variant.image?.url ||
+                                              ""
+                                            }
                                             alt={variant.title}
                                             size="extraSmall"
                                           />

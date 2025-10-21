@@ -5,6 +5,9 @@ export const GET_VARIANT_DETAILS_QUERY = `
       availableForSale
       inventoryPolicy
       id
+      image {
+        url
+      }
       inventoryItem {
         inventoryLevels(first: 10) {
           edges {
@@ -67,6 +70,9 @@ export interface VariantDetails {
   availableForSale: boolean;
   inventoryPolicy: string;
   id: string;
+  image: {
+    url: string;
+  } | null;
   inventoryItem: VariantInventoryItem;
 }
 

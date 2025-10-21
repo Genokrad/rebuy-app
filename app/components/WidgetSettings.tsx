@@ -10,18 +10,12 @@ import React, { useEffect, useState } from "react";
 
 interface WidgetSettingsProps {
   settings?: {
-    discount1?: string;
-    discount2?: string;
-    discount3?: string;
-    discount4?: string;
-    discount5?: string;
+    discounts?: Array<{ [key: number]: number }>;
+    placements?: string[];
   };
   onSettingsChange?: (settings: {
-    discount1: string;
-    discount2: string;
-    discount3: string;
-    discount4: string;
-    discount5: string;
+    discounts: Array<{ [key: number]: number }>;
+    placements?: string[];
   }) => void;
 }
 
@@ -29,42 +23,57 @@ export const WidgetSettings = ({
   settings = {},
   onSettingsChange,
 }: WidgetSettingsProps) => {
+  // Convert new format to old format for internal state
+  const convertFromNewFormat = (newSettings: any) => {
+    const discounts = newSettings.discounts || [];
+    const result = {
+      discount1: "",
+      discount2: "",
+      discount3: "",
+      discount4: "",
+      discount5: "",
+    };
+    
+    discounts.forEach((discount: any, index: number) => {
+      const key = Object.keys(discount)[0];
+      const value = Object.values(discount)[0];
+      if (index < 5) {
+        result[`discount${index + 1}` as keyof typeof result] = String(value);
+      }
+    });
+    
+    return result;
+  };
+
+  // Convert old format to new format for emission
+  const convertToNewFormat = (oldDiscounts: any) => {
+    const discounts: Array<{ [key: number]: number }> = [];
+    [1, 2, 3, 4, 5].forEach((q) => {
+      const key = `discount${q}` as keyof typeof oldDiscounts;
+      const v = (oldDiscounts[key] || "").trim();
+      if (v !== "" && Number(v) > 0) {
+        discounts.push({ [q]: Number(v) });
+      }
+    });
+    return discounts;
+  };
+
   // Internal state keeps all 5 fields (for UI), we render a dynamic count from 1..maxFields
-  const [discounts, setDiscounts] = useState({
-    discount1: settings.discount1 || "",
-    discount2: settings.discount2 || "",
-    discount3: settings.discount3 || "",
-    discount4: settings.discount4 || "",
-    discount5: settings.discount5 || "",
-  });
+  const [discounts, setDiscounts] = useState(() => convertFromNewFormat(settings));
 
   // Determine initial visible fields: if there are prefilled settings, show up to the highest non-empty key; otherwise 1
   const initialCount = (() => {
-    const filled = [1, 2, 3, 4, 5].filter(
-      (q) =>
-        (settings as any)[`discount${q}`] &&
-        String((settings as any)[`discount${q}`]).trim() !== "",
-    );
-    return Math.min(Math.max(filled.length || 1, 1), 5);
+    const discountsArray = settings.discounts || [];
+    return Math.min(Math.max(discountsArray.length || 1, 1), 5);
   })();
   const [visibleCount, setVisibleCount] = useState<number>(initialCount);
 
   // sync when settings prop changes (e.g., loaded from DB)
   useEffect(() => {
-    const next = {
-      discount1: settings.discount1 || "",
-      discount2: settings.discount2 || "",
-      discount3: settings.discount3 || "",
-      discount4: settings.discount4 || "",
-      discount5: settings.discount5 || "",
-    };
+    const next = convertFromNewFormat(settings);
     setDiscounts(next);
-    const filled = [1, 2, 3, 4, 5].filter(
-      (q) =>
-        (settings as any)[`discount${q}`] &&
-        String((settings as any)[`discount${q}`]).trim() !== "",
-    );
-    setVisibleCount(Math.min(Math.max(filled.length || 1, 1), 5));
+    const discountsArray = settings.discounts || [];
+    setVisibleCount(Math.min(Math.max(discountsArray.length || 1, 1), 5));
   }, [settings]);
 
   const sanitizeToPercent = (raw: string) => {
@@ -74,15 +83,8 @@ export const WidgetSettings = ({
   };
 
   const emitNonZeroOnly = (all: typeof discounts) => {
-    const payload: Record<string, string> = {};
-    [1, 2, 3, 4, 5].forEach((q) => {
-      const key = `discount${q}` as keyof typeof discounts;
-      const v = (all[key] || "").trim();
-      if (v !== "" && Number(v) > 0) {
-        payload[key] = v;
-      }
-    });
-    onSettingsChange?.(payload as any);
+    const discountsArray = convertToNewFormat(all);
+    onSettingsChange?.({ discounts: discountsArray });
   };
 
   const handleRemoveAt = (index: number) => {
