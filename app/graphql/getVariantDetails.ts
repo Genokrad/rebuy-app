@@ -25,6 +25,13 @@ export const GET_VARIANT_DETAILS_QUERY = `
                     quantities(names: "available") {
                       quantity
                     }
+                    item {
+                      id
+                      unitCost {
+                        amount
+                        currencyCode
+                      }
+                    }
                   }
                 }
               }
