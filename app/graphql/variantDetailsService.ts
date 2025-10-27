@@ -118,9 +118,13 @@ export async function getVariantDetails(
       });
     }
 
+    // Определяем изображение: сначала вариант, потом продукт
+    const finalImage = variant.image || variant.product?.featuredImage;
+
     // Возвращаем обновленную структуру
     return {
       ...variant,
+      image: finalImage,
       inventoryLevels: simplifiedInventoryLevels,
     };
   } catch (error) {

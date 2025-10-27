@@ -163,6 +163,18 @@
     color: #e74c3c;
   }
 
+  .sellence-widget-price-currency-code {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e74c3c;
+  }
+
+  .sellence-widget-price-old-currency-code {
+    font-size: 14px;
+    color: #999;
+    text-decoration: line-through;
+  }
+
   .sellence-widget-price-old {
     font-size: 14px;
     color: #999;
@@ -248,12 +260,63 @@
 <script>  
 
   console.log('{{ market.country_code | default: "US" }}');
+  
+  // Currency utilities
+  const CURRENCY_SYMBOLS = {
+    'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': 'C$',
+    'AUD': 'A$', 'CHF': 'CHF', 'CNY': '¥', 'SEK': 'kr', 'NOK': 'kr',
+    'DKK': 'kr', 'PLN': 'zł', 'CZK': 'Kč', 'HUF': 'Ft', 'RUB': '₽',
+    'BRL': 'R$', 'INR': '₹', 'KRW': '₩', 'SGD': 'S$', 'HKD': 'HK$',
+    'NZD': 'NZ$', 'MXN': '$', 'ZAR': 'R', 'TRY': '₺', 'ILS': '₪',
+    'AED': 'د.إ', 'SAR': '﷼', 'THB': '฿', 'MYR': 'RM', 'PHP': '₱',
+    'IDR': 'Rp', 'VND': '₫', 'EGP': '£', 'NGN': '₦', 'KES': 'KSh',
+    'GHS': '₵', 'MAD': 'د.م.', 'TND': 'د.ت', 'DZD': 'د.ج', 'LBP': 'ل.ل',
+    'JOD': 'د.ا', 'KWD': 'د.ك', 'BHD': 'د.ب', 'QAR': 'ر.ق', 'OMR': 'ر.ع.',
+    'YER': '﷼', 'IQD': 'د.ع', 'AFN': '؋', 'PKR': '₨', 'BDT': '৳',
+    'LKR': '₨', 'NPR': '₨', 'MMK': 'K', 'KHR': '៛', 'LAK': '₭',
+    'BND': 'B$', 'FJD': 'FJ$', 'PGK': 'K', 'SBD': 'SI$', 'VUV': 'Vt',
+    'WST': 'WS$', 'TOP': 'T$', 'BTN': 'Nu.', 'MVR': 'ރ.', 'SCR': '₨',
+    'MUR': '₨', 'KMF': 'CF', 'DJF': 'Fdj', 'ETB': 'Br', 'SOS': 'S',
+    'TZS': 'TSh', 'UGX': 'USh', 'RWF': 'RF', 'BIF': 'FBu', 'MWK': 'MK',
+    'ZMW': 'ZK', 'BWP': 'P', 'SZL': 'L', 'LSL': 'L', 'NAD': 'N$',
+    'AOA': 'Kz', 'MZN': 'MT', 'MGA': 'Ar', 'CDF': 'FC', 'XAF': 'FCFA',
+    'XOF': 'CFA', 'GMD': 'D', 'GNF': 'FG', 'LRD': 'L$', 'SLL': 'Le',
+    'CVE': '$', 'STN': 'Db', 'ERN': 'Nfk', 'SDG': 'ج.س.', 'SSP': '£',
+    'LYD': 'ل.د', 'MRO': 'UM', 'MRU': 'UM', 'XPF': '₣', 'NIO': 'C$',
+    'GTQ': 'Q', 'HNL': 'L', 'SVC': '$', 'BZD': 'BZ$', 'JMD': 'J$',
+    'TTD': 'TT$', 'BBD': 'Bds$', 'XCD': '$', 'AWG': 'ƒ', 'ANG': 'ƒ',
+    'SRD': '$', 'GYD': 'G$', 'VES': 'Bs.S', 'COP': '$', 'PEN': 'S/',
+    'BOB': 'Bs', 'CLP': '$', 'ARS': '$', 'UYU': '$U', 'PYG': '₲',
+    'FKP': '£', 'GIP': '£', 'ISK': 'kr', 'RON': 'lei', 'BGN': 'лв',
+    'HRK': 'kn', 'RSD': 'дин.', 'MKD': 'ден', 'ALL': 'L', 'BAM': 'КМ',
+    'MDL': 'L', 'UAH': '₴', 'BYN': 'Br', 'AMD': '֏', 'GEL': '₾',
+    'AZN': '₼', 'KZT': '₸', 'KGS': 'с', 'TJS': 'SM', 'TMT': 'T',
+    'UZS': 'лв', 'MNT': '₮'
+  };
+
+  function getCurrencySymbol(currencyCode) {
+    if (!currencyCode) return '';
+    const symbol = CURRENCY_SYMBOLS[currencyCode.toUpperCase()];
+    return symbol || currencyCode;
+  }
+
+  function formatWidgetPrice(amount, currencyCode) {
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(numericAmount)) return '0';
+    
+    const formattedAmount = numericAmount.toFixed(2);
+    const symbol = getCurrencySymbol(currencyCode);
+    
+    return `${symbol}${formattedAmount}`;
+  }
+
   (function() {
     const widgetId = '{{ block.settings.widget_id }}';
     const appUrl = '{{ block.settings.app_url }}';
     const currentProductId = '{{ product.id }}';
     const statusElement = document.getElementById('sellence-status-{{ block.id }}');
     const contentElement = document.getElementById('sellence-widget-content-{{ block.id }}');
+    let howManyProductsPicked = 0;
 
     // Инициализация Splide.js слайдера
     function initSlider() {
@@ -397,8 +460,14 @@
             const currencyCode = inventoryLevel?.currencyCode || 'USD';
             const compareAtPrice = childProduct.variantDetails?.compareAtPrice;
             
-            // Получаем название товара (можно расширить логику)
-            const productName = `Product ${index + 1}`; // Заглушка, нужно получать из API
+            // Получаем название товара из данных варианта
+            const productName = childProduct.variantDetails?.title || 
+                               childProduct.variantDetails?.product?.title || 
+                               `Product ${index + 1}`;
+            
+            // Форматируем цены с символами валют
+            const formattedPrice = formatWidgetPrice(price, currencyCode);
+            const formattedComparePrice = compareAtPrice ? formatWidgetPrice(compareAtPrice, currencyCode) : '';
             
             item.innerHTML = `
               <label class="sellence-widget-item-label">
@@ -407,8 +476,8 @@
                 <div class="sellence-widget-item-content">
                   <span class="sellence-widget-item-name">${productName}</span>
                   <div class="sellence-widget-item-price">
-                    <span class="sellence-widget-price-new">$${price} ${currencyCode}</span>
-                    ${compareAtPrice ? `<span class="sellence-widget-price-old">$${compareAtPrice} ${currencyCode}</span>` : ''}
+                    <p class="sellence-widget-price-new">Now: <span class="sellence-widget-price-new">${formattedPrice}</span></p>
+                    <p class="sellence-widget-price-old">Was: <span class="sellence-widget-price-old-price">${formattedPrice}</span></p>
                   </div>
                 </div>
               </label>
@@ -416,6 +485,9 @@
             
             itemsList.appendChild(item);
           });
+
+          howManyProductsPicked = widget?.product?.childProducts?.length || 0;
+          console.log('How many products picked:', howManyProductsPicked);
         }
         
         // Функция для обновления общей цены
@@ -427,6 +499,7 @@
           
           let totalNew = 0;
           let totalOld = 0;
+          let currencyCode = 'USD';
           
           widget.product.childProducts.forEach(childProduct => {
             const inventoryLevel = childProduct.variantDetails?.inventoryLevels?.find(
@@ -436,15 +509,20 @@
             const price = parseFloat(inventoryLevel?.price || childProduct.variantDetails?.price || '0');
             const compareAtPrice = parseFloat(childProduct.variantDetails?.compareAtPrice || '0');
             
+            // Используем валюту из первого товара
+            if (inventoryLevel?.currencyCode) {
+              currencyCode = inventoryLevel.currencyCode;
+            }
+            
             totalNew += price;
             if (compareAtPrice > 0) {
               totalOld += compareAtPrice;
             }
           });
           
-          totalPriceNew.textContent = `$${totalNew.toFixed(2)}`;
+          totalPriceNew.textContent = formatWidgetPrice(totalNew, currencyCode);
           if (totalOld > 0) {
-            totalPriceOld.textContent = `$${totalOld.toFixed(2)}`;
+            totalPriceOld.textContent = formatWidgetPrice(totalOld, currencyCode);
             totalPriceOld.style.display = 'inline';
           } else {
             totalPriceOld.style.display = 'none';

@@ -14,6 +14,13 @@ export const GET_VARIANT_DETAILS_QUERY = `
       }
       price
       compareAtPrice
+      product {
+        id
+        title
+        featuredImage {
+          url
+        }
+      }
       inventoryItem {
         inventoryLevels(first: 10) {
           edges {
@@ -97,11 +104,19 @@ export interface VariantDetails {
   availableForSale: boolean;
   inventoryPolicy: string;
   id: string;
+  title: string;
   image: {
     url: string;
   } | null;
   price: string;
   compareAtPrice?: string;
+  product: {
+    id: string;
+    title: string;
+    featuredImage: {
+      url: string;
+    } | null;
+  };
   inventoryItem: VariantInventoryItem;
   inventoryLevels: SimplifiedInventoryLevel[];
 }

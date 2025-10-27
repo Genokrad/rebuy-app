@@ -47,11 +47,19 @@ export interface VariantDetails {
   availableForSale: boolean;
   inventoryPolicy: string;
   id: string;
+  title: string;
   image: {
     url: string;
   } | null;
   price: string;
   compareAtPrice?: string;
+  product: {
+    id: string;
+    title: string;
+    featuredImage: {
+      url: string;
+    } | null;
+  };
   inventoryItem: VariantInventoryItem;
   inventoryLevels: SimplifiedInventoryLevel[];
 }
