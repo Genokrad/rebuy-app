@@ -305,6 +305,8 @@
 </div>
 
 <script>  
+
+  console.log('{{ market.country_code | default: "US" }}');
   (function() {
     const widgetId = '{{ block.settings.widget_id }}';
     const appUrl = '{{ block.settings.app_url }}';

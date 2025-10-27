@@ -1,5 +1,8 @@
 export const GET_VARIANT_DETAILS_QUERY = `
   query getVariantDetails($id: ID!) {
+    shop {
+      currencyCode
+    }
     productVariant(id: $id) {
       inventoryQuantity
       availableForSale
@@ -8,6 +11,8 @@ export const GET_VARIANT_DETAILS_QUERY = `
       image {
         url
       }
+      price
+      compareAtPrice
       inventoryItem {
         inventoryLevels(first: 10) {
           edges {
@@ -25,13 +30,6 @@ export const GET_VARIANT_DETAILS_QUERY = `
                     quantities(names: "available") {
                       quantity
                     }
-                    item {
-                      id
-                      unitCost {
-                        amount
-                        currencyCode
-                      }
-                    }
                   }
                 }
               }
@@ -43,8 +41,29 @@ export const GET_VARIANT_DETAILS_QUERY = `
   }
 `;
 
+export const GET_CONTEXTUAL_PRICING_QUERY = `
+  query getContextualPricing($id: ID!, $country: CountryCode!) {
+    productVariant(id: $id) {
+      contextualPricing(context: { country: $country }) {
+        price { amount currencyCode }
+        compareAtPrice { amount currencyCode }
+      }
+    }
+  }
+`;
+
 export interface VariantInventoryLevel {
   quantity: number;
+}
+
+export interface SimplifiedInventoryLevel {
+  id: string;
+  name: string;
+  countryCode: string;
+  shipsInventory: boolean;
+  quantity: number;
+  price: string;
+  currencyCode: string;
 }
 
 export interface VariantLocation {
@@ -80,7 +99,10 @@ export interface VariantDetails {
   image: {
     url: string;
   } | null;
+  price: string;
+  compareAtPrice?: string;
   inventoryItem: VariantInventoryItem;
+  inventoryLevels: SimplifiedInventoryLevel[];
 }
 
 export interface VariantDetailsResponse {

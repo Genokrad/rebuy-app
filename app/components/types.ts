@@ -3,6 +3,16 @@ export interface ProductRelationship {
   childProducts: ChildProduct[]; // array of child products with variants
 }
 
+export interface SimplifiedInventoryLevel {
+  id: string;
+  name: string;
+  countryCode: string;
+  shipsInventory: boolean;
+  quantity: number;
+  price: string;
+  currencyCode: string;
+}
+
 export interface VariantInventoryLevel {
   quantity: number;
 }
@@ -40,7 +50,10 @@ export interface VariantDetails {
   image: {
     url: string;
   } | null;
+  price: string;
+  compareAtPrice?: string;
   inventoryItem: VariantInventoryItem;
+  inventoryLevels: SimplifiedInventoryLevel[];
 }
 
 export interface ChildProduct {

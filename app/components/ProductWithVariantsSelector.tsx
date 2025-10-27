@@ -492,8 +492,7 @@ export function ProductWithVariantsSelector({
                                             </InlineStack>
 
                                             {selectedChildProduct.variantDetails
-                                              .inventoryItem.inventoryLevels
-                                              .edges.length > 0 && (
+                                              .inventoryLevels.length > 0 && (
                                               <BlockStack gap="100">
                                                 <Text
                                                   as="p"
@@ -502,33 +501,25 @@ export function ProductWithVariantsSelector({
                                                 >
                                                   Локации:
                                                 </Text>
-                                                {selectedChildProduct.variantDetails.inventoryItem.inventoryLevels.edges.map(
-                                                  (edge, index) => (
+                                                {selectedChildProduct.variantDetails.inventoryLevels.map(
+                                                  (inventoryLevel, index) => (
                                                     <Text
                                                       key={index}
                                                       as="p"
                                                       variant="bodySm"
                                                       tone="subdued"
                                                     >
-                                                      {edge.node.location.name}{" "}
-                                                      (
+                                                      {inventoryLevel.name} (
                                                       {
-                                                        edge.node.location
-                                                          .address.countryCode
+                                                        inventoryLevel.countryCode
                                                       }
                                                       ):{" "}
-                                                      {edge.node.location.inventoryLevels.nodes
-                                                        .map(
-                                                          (node) =>
-                                                            node.quantities[0]
-                                                              ?.quantity || 0,
-                                                        )
-                                                        .reduce(
-                                                          (sum, qty) =>
-                                                            sum + qty,
-                                                          0,
-                                                        )}{" "}
-                                                      шт.
+                                                      {inventoryLevel.quantity}{" "}
+                                                      шт. - $
+                                                      {inventoryLevel.price}{" "}
+                                                      {
+                                                        inventoryLevel.currencyCode
+                                                      }
                                                     </Text>
                                                   ),
                                                 )}
