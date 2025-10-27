@@ -217,34 +217,15 @@
   }
 </style>
 
-<div class="sellence-widget" id="sellence-widget-{{ block.id }}">
+<div class="sellence-widget" id="sellence-widget-{{ block.id }}" data-current-marketplace="{{ market.country_code | default: 'US' }}">
   <div id="sellence-widget-content" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
     <h2 class="sellence-widget-title">Buy more at a lower price</h2>
 
     <!-- Splide.js слайдер -->
     <div class="splide sellence-products-slider" id="products-slider">
       <div class="splide__track">
-        <ul class="splide__list">
-          <li class="splide__slide">
-            <div class="sellence-pdp-widget-product-image">
-              <img src="{{ product.featured_image | image_url: width: 100 }}" alt="{{ product.featured_image.altText }}" width="120" height="120">
-            </div>
-          </li>
-          <li class="splide__slide">
-            <div class="sellence-pdp-widget-product-image">
-              <img src="{{ product.featured_image | image_url: width: 100 }}" alt="{{ product.featured_image.altText }}" width="120" height="120">
-            </div>
-          </li>
-          <li class="splide__slide">
-            <div class="sellence-pdp-widget-product-image">
-              <img src="{{ product.featured_image | image_url: width: 100 }}" alt="{{ product.featured_image.altText }}" width="120" height="120">
-            </div>
-          </li>
-          <li class="splide__slide">
-            <div class="sellence-pdp-widget-product-image">
-              <img src="{{ product.featured_image | image_url: width: 100 }}" alt="{{ product.featured_image.altText }}" width="120" height="120">
-            </div>
-          </li>
+        <ul class="splide__list" id="products-list">
+          <!-- Товары будут добавлены динамически через JavaScript -->
         </ul>
       </div>
     </div>
@@ -258,48 +239,8 @@
 
     <strong class="rebuy-product-label">This item:</strong>
 
-    <ul class="sellence-widget-this-item-list">
-      <li class="sellence-widget-item">
-        <label class="sellence-widget-item-label">
-          <input type="checkbox" class="sellence-widget-checkbox" checked>
-          <span class="sellence-widget-checkmark"></span>
-          <div class="sellence-widget-item-content">
-            <span class="sellence-widget-item-name">WunderBox 4-7 years old – developmental box for kids</span>
-            <div class="sellence-widget-item-price">
-              <span class="sellence-widget-price-new">$40.85</span>
-              <span class="sellence-widget-price-old">$43.00</span>
-            </div>
-          </div>
-        </label>
-      </li>
-      
-      <li class="sellence-widget-item">
-        <label class="sellence-widget-item-label">
-          <input type="checkbox" class="sellence-widget-checkbox" checked>
-          <span class="sellence-widget-checkmark"></span>
-          <div class="sellence-widget-item-content">
-            <span class="sellence-widget-item-name">Cushion for Climbing Arch & Rocker Balance (Cushion Only)</span>
-            <div class="sellence-widget-item-price">
-              <span class="sellence-widget-price-new">$71.25</span>
-              <span class="sellence-widget-price-old">$75.00</span>
-            </div>
-          </div>
-        </label>
-      </li>
-      
-      <li class="sellence-widget-item">
-        <label class="sellence-widget-item-label">
-          <input type="checkbox" class="sellence-widget-checkbox" checked>
-          <span class="sellence-widget-checkmark"></span>
-          <div class="sellence-widget-item-content">
-            <span class="sellence-widget-item-name">Helper Tower: A Multi-functional Foldable Step Stool for Kids</span>
-            <div class="sellence-widget-item-price">
-              <span class="sellence-widget-price-new">$94.05</span>
-              <span class="sellence-widget-price-old">$99.00</span>
-            </div>
-          </div>
-        </label>
-      </li>
+    <ul class="sellence-widget-this-item-list" id="items-list">
+      <!-- Товары будут добавлены динамически через JavaScript -->
     </ul>
   </div>
 </div>
@@ -356,7 +297,158 @@
         const data = await response.json();
 
         const initializeWidget = (widget) => {
-          console.log(widget);
+          console.log('Widget data:', widget);
+          
+          // Получаем текущий маркетплейс
+          const currentMarketplace = document.getElementById('sellence-widget-{{ block.id }}').dataset.currentMarketplace || 'US';
+          console.log('Current marketplace:', currentMarketplace);
+          
+          // Инициализируем слайдер с товарами
+          initializeProductsSlider(widget, currentMarketplace);
+          
+          // Инициализируем список товаров
+          initializeItemsList(widget, currentMarketplace);
+          
+          // Обновляем общую цену
+          updateTotalPrice(widget, currentMarketplace);
+        }
+        
+        // Функция для создания слайдера с товарами
+        function initializeProductsSlider(widget, currentMarketplace) {
+          const productsList = document.getElementById('products-list');
+          if (!productsList || !widget.product?.childProducts) return;
+          
+          // Очищаем список
+          productsList.innerHTML = '';
+          
+          // Добавляем товары в слайдер
+          widget.product.childProducts.forEach((childProduct, index) => {
+            const slide = document.createElement('li');
+            slide.className = 'splide__slide';
+            
+            // Получаем цену для текущего маркетплейса
+            const inventoryLevel = childProduct.variantDetails?.inventoryLevels?.find(
+              level => level.countryCode === currentMarketplace
+            ) || childProduct.variantDetails?.inventoryLevels?.[0];
+            
+            const imageUrl = childProduct.variantDetails?.image?.url || 
+                           'https://via.placeholder.com/120x120?text=No+Image';
+            
+            slide.innerHTML = `
+              <div class="sellence-pdp-widget-product-image">
+                <img src="${imageUrl}" alt="Product ${index + 1}" width="120" height="120">
+              </div>
+            `;
+            
+            productsList.appendChild(slide);
+          });
+          
+          // Переинициализируем слайдер
+          if (typeof Splide !== 'undefined') {
+            const splideElement = document.querySelector('#products-slider');
+            if (splideElement) {
+              // Уничтожаем существующий слайдер если есть
+              if (splideElement.splide) {
+                splideElement.splide.destroy();
+              }
+              
+              // Создаем новый слайдер
+              new Splide('#products-slider', {
+                type: 'slide',
+                perPage: Math.min(4, widget.product.childProducts.length),
+                perMove: 1,
+                gap: '20px',
+                arrows: false,
+                pagination: false,
+                drag: true,
+                snap: true,
+                breakpoints: {
+                  768: {
+                    perPage: Math.min(2, widget.product.childProducts.length),
+                  },
+                  480: {
+                    perPage: 1,
+                  }
+                }
+              }).mount();
+            }
+          }
+        }
+        
+        // Функция для создания списка товаров
+        function initializeItemsList(widget, currentMarketplace) {
+          const itemsList = document.getElementById('items-list');
+          if (!itemsList || !widget.product?.childProducts) return;
+          
+          // Очищаем список
+          itemsList.innerHTML = '';
+          
+          // Добавляем товары в список
+          widget.product.childProducts.forEach((childProduct, index) => {
+            const item = document.createElement('li');
+            item.className = 'sellence-widget-item';
+            
+            // Получаем цену для текущего маркетплейса
+            const inventoryLevel = childProduct.variantDetails?.inventoryLevels?.find(
+              level => level.countryCode === currentMarketplace
+            ) || childProduct.variantDetails?.inventoryLevels?.[0];
+            
+            const price = inventoryLevel?.price || childProduct.variantDetails?.price || '0';
+            const currencyCode = inventoryLevel?.currencyCode || 'USD';
+            const compareAtPrice = childProduct.variantDetails?.compareAtPrice;
+            
+            // Получаем название товара (можно расширить логику)
+            const productName = `Product ${index + 1}`; // Заглушка, нужно получать из API
+            
+            item.innerHTML = `
+              <label class="sellence-widget-item-label">
+                <input type="checkbox" class="sellence-widget-checkbox" checked>
+                <span class="sellence-widget-checkmark"></span>
+                <div class="sellence-widget-item-content">
+                  <span class="sellence-widget-item-name">${productName}</span>
+                  <div class="sellence-widget-item-price">
+                    <span class="sellence-widget-price-new">$${price} ${currencyCode}</span>
+                    ${compareAtPrice ? `<span class="sellence-widget-price-old">$${compareAtPrice} ${currencyCode}</span>` : ''}
+                  </div>
+                </div>
+              </label>
+            `;
+            
+            itemsList.appendChild(item);
+          });
+        }
+        
+        // Функция для обновления общей цены
+        function updateTotalPrice(widget, currentMarketplace) {
+          const totalPriceNew = document.querySelector('.sellence-widget-total-price-new');
+          const totalPriceOld = document.querySelector('.sellence-widget-total-price-old');
+          
+          if (!totalPriceNew || !widget.product?.childProducts) return;
+          
+          let totalNew = 0;
+          let totalOld = 0;
+          
+          widget.product.childProducts.forEach(childProduct => {
+            const inventoryLevel = childProduct.variantDetails?.inventoryLevels?.find(
+              level => level.countryCode === currentMarketplace
+            ) || childProduct.variantDetails?.inventoryLevels?.[0];
+            
+            const price = parseFloat(inventoryLevel?.price || childProduct.variantDetails?.price || '0');
+            const compareAtPrice = parseFloat(childProduct.variantDetails?.compareAtPrice || '0');
+            
+            totalNew += price;
+            if (compareAtPrice > 0) {
+              totalOld += compareAtPrice;
+            }
+          });
+          
+          totalPriceNew.textContent = `$${totalNew.toFixed(2)}`;
+          if (totalOld > 0) {
+            totalPriceOld.textContent = `$${totalOld.toFixed(2)}`;
+            totalPriceOld.style.display = 'inline';
+          } else {
+            totalPriceOld.style.display = 'none';
+          }
         }
 
         const productPagePlacement = data?.widget?.settings?.placements?.includes('products');
@@ -397,336 +489,3 @@
   ]
 }
 {% endschema %}
-
-
-{% comment %} <div class="sellence-progress-bar">
-  <div class="sellence-progress-bar-header">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles h-4 w-4 sm:h-5 sm:w-5 text-accent shrink-0"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>
-    <p>Add 1 more item to unlock 5% off 💫</p>
-  </div>
-  <div class="sellence-progress-bar-wrapper">
-    <div class="sellence-progress-bar-round-content active">
-      <div class="sellence-progress-bar-round"></div>
-      <p class="sellence-progress-bar-round-content-text">
-        <span>5%</span>
-        <span>1 item</span>
-      </p>
-    </div>
-    <div class="sellence-progress-bar-round-content">
-      <div class="sellence-progress-bar-round"></div>
-      <p class="sellence-progress-bar-round-content-text">
-        <span>10%</span>
-        <span>2 items</span>
-      </p>
-    </div>
-    <div class="sellence-progress-bar-round-content">
-      <div class="sellence-progress-bar-round"></div>
-      <p class="sellence-progress-bar-round-content-text">
-        <span>15%</span>
-        <span>3 items</span>
-      </p>
-    </div>
-    <div class="sellence-progress-bar-round-content">
-      <div class="sellence-progress-bar-round"></div>
-      <p class="sellence-progress-bar-round-content-text">
-        <span>20%</span>
-        <span>4 items</span>
-      </p>
-    </div>
-    <div class="sellence-progress-bar-line"></div>
-  </div>
-</div>
-<ul class="sellence-products">
-  <li class="sellence-product">
-    <div class="sellence-product-image">
-      <img src="{{ product.featured_image | image_url: width: 100 }}" alt="{{ product.featured_image.altText }}" width="100" height="100">
-    </div>
-    <div class="sellence-product-content">
-      <h3 class="sellence-product-title">Double-Sided Drawing Board (Chalk/Marker)</h3>
-      <p class="sellence-product-description">Attaches to the triangle for creative play with chalk and markers</p>
-      <p class="sellence-product-gliches">Best Seller</p>
-      <div class="sellence-product-price-wrapper">
-        <p class="sellence-product-price-old-new">
-          <span class="sellence-product-price-old">$59.00</span>
-          <span class="sellence-product-price-new">$56.05</span>
-          <span class="sellence-product-price-discount">(5% off)</span>
-        </p>
-        <p class="sellence-product-price-new-old">
-          <span class="sellence-product-price-arrow">→ $</span>
-          <span class="sellence-product-price-new">56.05</span>
-          <span class="sellence-product-price-save"> if added now (save <span class="sellence-product-price-save-amount">$2.95</span>)</span>
-        </p>
-      </div>
-      <div class="sellence-product-add-to-cart">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus h-3.5 w-3.5"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
-        Add
-      </div>
-    </div>
-  </li>
-  <li class="sellence-product">
-    <div class="sellence-product-image">
-      <img src="{{ product.featured_image | image_url: width: 100 }}" alt="{{ product.featured_image.altText }}" width="100" height="100">
-    </div>
-    <div class="sellence-product-content">
-      <h3 class="sellence-product-title">Double-Sided Drawing Board (Chalk/Marker)</h3>
-      <p class="sellence-product-description">Attaches to the triangle for creative play with chalk and markers</p>
-      <p class="sellence-product-gliches">Best Seller</p>
-      <div class="sellence-product-price-wrapper">
-        <p class="sellence-product-price-old-new">
-          <span class="sellence-product-price-old">$59.00</span>
-          <span class="sellence-product-price-new">$56.05</span>
-          <span class="sellence-product-price-discount">(5% off)</span>
-        </p>
-        <p class="sellence-product-price-new-old">
-          <span class="sellence-product-price-arrow">→ $</span>
-          <span class="sellence-product-price-new">56.05</span>
-          <span class="sellence-product-price-save"> if added now (save <span class="sellence-product-price-save-amount">$2.95</span>)</span>
-        </p>
-      </div>
-      <div class="sellence-product-add-to-cart">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus h-3.5 w-3.5"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
-        Add
-      </div>
-    </div>
-  </li>
-  <li class="sellence-product">
-    <div class="sellence-product-image">
-      <img src="{{ product.featured_image | image_url: width: 100 }}" alt="{{ product.featured_image.altText }}" width="100" height="100">
-    </div>
-    <div class="sellence-product-content">
-      <h3 class="sellence-product-title">Double-Sided Drawing Board (Chalk/Marker)</h3>
-      <p class="sellence-product-description">Attaches to the triangle for creative play with chalk and markers</p>
-      <p class="sellence-product-gliches">Best Seller</p>
-      <div class="sellence-product-price-wrapper">
-        <p class="sellence-product-price-old-new">
-          <span class="sellence-product-price-old">$59.00</span>
-          <span class="sellence-product-price-new">$56.05</span>
-          <span class="sellence-product-price-discount">(5% off)</span>
-        </p>
-        <p class="sellence-product-price-new-old">
-          <span class="sellence-product-price-arrow">→ $</span>
-          <span class="sellence-product-price-new">56.05</span>
-          <span class="sellence-product-price-save"> if added now (save <span class="sellence-product-price-save-amount">$2.95</span>)</span>
-        </p>
-      </div>
-      <div class="sellence-product-add-to-cart">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus h-3.5 w-3.5"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
-        Add
-      </div>
-    </div>
-  </li>
-  <li class="sellence-product">
-    <div class="sellence-product-image">
-      <img src="{{ product.featured_image | image_url: width: 100 }}" alt="{{ product.featured_image.altText }}" width="100" height="100">
-    </div>
-    <div class="sellence-product-content">
-      <h3 class="sellence-product-title">Double-Sided Drawing Board (Chalk/Marker)</h3>
-      <p class="sellence-product-description">Attaches to the triangle for creative play with chalk and markers</p>
-      <p class="sellence-product-gliches">Best Seller</p>
-      <div class="sellence-product-price-wrapper">
-        <p class="sellence-product-price-old-new">
-          <span class="sellence-product-price-old">$59.00</span>
-          <span class="sellence-product-price-new">$56.05</span>
-          <span class="sellence-product-price-discount">(5% off)</span>
-        </p>
-        <p class="sellence-product-price-new-old">
-          <span class="sellence-product-price-arrow">→ $</span>
-          <span class="sellence-product-price-new">56.05</span>
-          <span class="sellence-product-price-save"> if added now (save <span class="sellence-product-price-save-amount">$2.95</span>)</span>
-        </p>
-      </div>
-      <div class="sellence-product-add-to-cart">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus h-3.5 w-3.5"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
-        Add
-      </div>
-    </div>
-  </li>
-</ul> {% endcomment %}
-
-{% comment %} .sellence-progress-bar {
-  padding: 16px;
-  background-color: #e979531a;
-  border-radius: 8px;
-  border: 1px solid #e4cec7;
-}
-
-.sellence-progress-bar-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.sellence-progress-bar-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: space-between;
-  position: relative;
-}
-
-.sellence-progress-bar-round-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.sellence-progress-bar-wrapper .sellence-progress-bar-round-content:nth-last-child(2) .sellence-progress-bar-round {
-  margin-right: 8px;
-}
-
-.sellence-progress-bar-wrapper .sellence-progress-bar-round {
-  display: block;
-  position: relative;
-  z-index: 1;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: white;
-  border: 1px solid #8e8e8e;
-}
-
-.sellence-progress-bar-wrapper .sellence-progress-bar-line {
-  display: block;
-  width: 100%;
-  height: 2px;
-  background-color: #8e8e8e;
-  position: absolute;
-  top: 10px;
-  left: 0;
-  transform: translateY(-50%);
-  z-index: 0;
-  width: calc(100% - 10px);
-}
-
-.sellence-progress-bar-wrapper .sellence-progress-bar-round-content.active .sellence-progress-bar-round {
-  border: 6px solid #e48363;
-}
-
-.sellence-progress-bar-round-content-text {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin: 4px 0 0 0;
-}
-.sellence-progress-bar-round-content-text span {
-  line-height: 1;
-  font-size: 10px;
-}
-
-.sellence-products {
-  display: flex;
-  flex-direction: column;
-  list-style: none;
-  gap: 12px;
-  padding: 0;
-  margin: 0;
-  margin-top: 12px;
-}
-
-.sellence-product {
-  display: grid;
-  grid-template-columns: 76px 1fr;
-  gap: 12px;
-  border-bottom: 1px solid #e4cec7;
-  background-color: white;
-  padding: 12px;
-  border-radius: 4px;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-}
-
-.sellence-product-image {
-  width: 76px;
-  height: 76px;
-  border-radius: 4px;
-  overflow: hidden;
-}
-.sellence-product-content {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.sellence-product-title {
-  font-size: 15px;
-  font-weight: 500;
-  margin: 0;
-}
-
-.sellence-product-description {
-  font-size: 12px;
-  line-height: 1;
-  margin-top: 4px;
-  margin: 0;
-}
-
-.sellence-product-gliches {
-  font-size: 11px;
-  line-height: 1;
-  margin-top: 4px;
-  margin: 0;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background-color: rgb(244 244 245 / var(--tw-bg-opacity, 1));
-  width: fit-content;
-}
-
-.sellence-product-price-old-new {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  margin: 0;
-}
-
-.sellence-product-price-old-new .sellence-product-price-old {
-  font-size: 13px;
-  line-height: 1;
-  font-weight: 500;
-  color: #8e8e8e;
-  text-decoration: line-through;
-}
-
-.sellence-product-price-old-new .sellence-product-price-new {
-  font-size: 18px;
-  line-height: 1;
-  font-weight: 500;
-  color: #000;
-}
-
-.sellence-product-price-discount {
-  font-size: 12px;
-  line-height: 1;
-  margin: 0;
-  color: rgb(5 150 105);
-}
-
-.sellence-product-price-new-old {
-  margin: 0;
-}
-
-.sellence-product-price-new-old span {
-  font-size: 12px;
-  line-height: 1;
-  margin: 0;
-  color: rgb(4 120 87);
-  margin: 0;
-}
-
-.sellence-product-add-to-cart svg{
-  width: 14px;
-  height: 14px;
-}
-
-.sellence-product-add-to-cart {
-  font-size: 14px;
-  padding: 6px 14px;
-  border-radius: 14px;
-  font-weight: 500;
-  text-align: center;
-  text-decoration: none;
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  width: fit-content;
-  border: 1px solid #8e8e8e;
-} {% endcomment %}
