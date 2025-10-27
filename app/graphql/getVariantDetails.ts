@@ -8,6 +8,7 @@ export const GET_VARIANT_DETAILS_QUERY = `
       availableForSale
       inventoryPolicy
       id
+      title
       image {
         url
       }
