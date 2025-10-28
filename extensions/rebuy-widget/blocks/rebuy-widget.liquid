@@ -6,9 +6,11 @@
 {% comment %} <script src="https://cdn.tailwindcss.com"></script> {% endcomment %}
 
 <!-- Splide.js CSS -->
+{% comment %} theme-check-disable RemoteAsset {% endcomment %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
 
 <!-- Splide.js JavaScript -->
+{% comment %} theme-check-disable RemoteAsset {% endcomment %}
 <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
 
 <style>
@@ -161,6 +163,7 @@
     font-size: 14px;
     font-weight: 600;
     color: #e74c3c;
+    margin: 0;
   }
 
   .sellence-widget-price-currency-code {
@@ -179,6 +182,7 @@
     font-size: 14px;
     color: #999;
     text-decoration: line-through;
+    margin: 0;
   }
   
   .sellence-widget-checkbox {
@@ -229,7 +233,7 @@
   }
 </style>
 
-<div class="sellence-widget" id="sellence-widget-{{ block.id }}" data-current-marketplace="{{ market.country_code | default: 'US' }}">
+<div class="sellence-widget" id="sellence-widget-{{ block.id }}">
   <div id="sellence-widget-content" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
     <h2 class="sellence-widget-title">Buy more at a lower price</h2>
 
@@ -241,7 +245,7 @@
         </ul>
       </div>
     </div>
-   
+
     <p class="sellence-widget-total-price">Total Price:
       <span class="sellence-widget-total-price-new">$395.20</span>
       <span class="sellence-widget-total-price-old">$416.00</span>
@@ -257,11 +261,10 @@
   </div>
 </div>
 
-<script>  
+<script>
 
-  console.log('{{ market.country_code | default: "US" }}');
-  
-  // Currency utilities
+  // console.log('{{ market.country_code | default: "US" }}');
+
   const CURRENCY_SYMBOLS = {
     'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': 'C$',
     'AUD': 'A$', 'CHF': 'CHF', 'CNY': '¥', 'SEK': 'kr', 'NOK': 'kr',
@@ -303,10 +306,12 @@
   function formatWidgetPrice(amount, currencyCode) {
     const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     if (isNaN(numericAmount)) return '0';
-    
+
+    console.log('numericAmount:', numericAmount);
+
     const formattedAmount = numericAmount.toFixed(2);
     const symbol = getCurrencySymbol(currencyCode);
-    
+
     return `${symbol}${formattedAmount}`;
   }
 
@@ -360,52 +365,61 @@
         const data = await response.json();
 
         const initializeWidget = (widget) => {
+          const productSelectedCount = widget.product.childProducts.length;
+          const sortedDiscounts = widget.settings.discounts
+          let finalDiscount = 0;
+          const arraySortedDiscounts = sortedDiscounts.forEach(discount => {
+            if (productSelectedCount >= Number(Object.entries(discount)[0][0])) {
+              finalDiscount = Number(Object.entries(discount)[0][1]);
+            }
+          });
+
+          console.log('finalDiscount: ===>>>', finalDiscount);
           console.log('Widget data:', widget);
-          
           // Получаем текущий маркетплейс
           const currentMarketplace = document.getElementById('sellence-widget-{{ block.id }}').dataset.currentMarketplace || 'US';
-          console.log('Current marketplace:', currentMarketplace);
-          
+          // console.log('Current marketplace:', currentMarketplace);
+
           // Инициализируем слайдер с товарами
           initializeProductsSlider(widget, currentMarketplace);
-          
+
           // Инициализируем список товаров
-          initializeItemsList(widget, currentMarketplace);
-          
+          initializeItemsList(widget, currentMarketplace, finalDiscount);
+
           // Обновляем общую цену
-          updateTotalPrice(widget, currentMarketplace);
+          updateTotalPrice(widget, currentMarketplace, finalDiscount);
         }
-        
+
         // Функция для создания слайдера с товарами
         function initializeProductsSlider(widget, currentMarketplace) {
           const productsList = document.getElementById('products-list');
           if (!productsList || !widget.product?.childProducts) return;
-          
+
           // Очищаем список
           productsList.innerHTML = '';
-          
+
           // Добавляем товары в слайдер
           widget.product.childProducts.forEach((childProduct, index) => {
             const slide = document.createElement('li');
             slide.className = 'splide__slide';
-            
+
             // Получаем цену для текущего маркетплейса
             const inventoryLevel = childProduct.variantDetails?.inventoryLevels?.find(
               level => level.countryCode === currentMarketplace
             ) || childProduct.variantDetails?.inventoryLevels?.[0];
-            
+
             const imageUrl = childProduct.variantDetails?.image?.url || 
                            'https://via.placeholder.com/120x120?text=No+Image';
-            
+
             slide.innerHTML = `
               <div class="sellence-pdp-widget-product-image">
                 <img src="${imageUrl}" alt="Product ${index + 1}" width="120" height="120">
               </div>
             `;
-            
+
             productsList.appendChild(slide);
           });
-          
+
           // Переинициализируем слайдер
           if (typeof Splide !== 'undefined') {
             const splideElement = document.querySelector('#products-slider');
@@ -414,7 +428,7 @@
               if (splideElement.splide) {
                 splideElement.splide.destroy();
               }
-              
+
               // Создаем новый слайдер
               new Splide('#products-slider', {
                 type: 'slide',
@@ -437,38 +451,43 @@
             }
           }
         }
-        
+
         // Функция для создания списка товаров
-        function initializeItemsList(widget, currentMarketplace) {
+        function initializeItemsList(widget, currentMarketplace, finalDiscount) {
           const itemsList = document.getElementById('items-list');
           if (!itemsList || !widget.product?.childProducts) return;
-          
+
           // Очищаем список
           itemsList.innerHTML = '';
-          
+
           // Добавляем товары в список
           widget.product.childProducts.forEach((childProduct, index) => {
             const item = document.createElement('li');
             item.className = 'sellence-widget-item';
-            
+
             // Получаем цену для текущего маркетплейса
             const inventoryLevel = childProduct.variantDetails?.inventoryLevels?.find(
               level => level.countryCode === currentMarketplace
             ) || childProduct.variantDetails?.inventoryLevels?.[0];
-            
+
             const price = inventoryLevel?.price || childProduct.variantDetails?.price || '0';
             const currencyCode = inventoryLevel?.currencyCode || 'USD';
             const compareAtPrice = childProduct.variantDetails?.compareAtPrice;
-            
+
             // Получаем название товара из данных варианта
             const productName = childProduct.variantDetails?.title || 
                                childProduct.variantDetails?.product?.title || 
                                `Product ${index + 1}`;
-            
+
             // Форматируем цены с символами валют
             const formattedPrice = formatWidgetPrice(price, currencyCode);
+            const formattedPriceWithDiscount = formatWidgetPrice(price * (1 - finalDiscount / 100), currencyCode);
             const formattedComparePrice = compareAtPrice ? formatWidgetPrice(compareAtPrice, currencyCode) : '';
+            // console.log('formattedPrice compare price:', formattedPrice);
+            // const newPrice = 
             
+            // console.log('sortedDiscounts:', sortedDiscounts);
+
             item.innerHTML = `
               <label class="sellence-widget-item-label">
                 <input type="checkbox" class="sellence-widget-checkbox" checked>
@@ -476,51 +495,54 @@
                 <div class="sellence-widget-item-content">
                   <span class="sellence-widget-item-name">${productName}</span>
                   <div class="sellence-widget-item-price">
-                    <p class="sellence-widget-price-new">Now: <span class="sellence-widget-price-new">${formattedPrice}</span></p>
+                    <p class="sellence-widget-price-new">Now: <span class="sellence-widget-price-new">${formattedPriceWithDiscount}</span></p>
                     <p class="sellence-widget-price-old">Was: <span class="sellence-widget-price-old-price">${formattedPrice}</span></p>
                   </div>
                 </div>
               </label>
             `;
-            
+
             itemsList.appendChild(item);
           });
 
           howManyProductsPicked = widget?.product?.childProducts?.length || 0;
           console.log('How many products picked:', howManyProductsPicked);
         }
-        
+
         // Функция для обновления общей цены
-        function updateTotalPrice(widget, currentMarketplace) {
+        function updateTotalPrice(widget, currentMarketplace, finalDiscount) {
           const totalPriceNew = document.querySelector('.sellence-widget-total-price-new');
           const totalPriceOld = document.querySelector('.sellence-widget-total-price-old');
-          
+
           if (!totalPriceNew || !widget.product?.childProducts) return;
-          
+
           let totalNew = 0;
           let totalOld = 0;
           let currencyCode = 'USD';
-          
+
           widget.product.childProducts.forEach(childProduct => {
             const inventoryLevel = childProduct.variantDetails?.inventoryLevels?.find(
               level => level.countryCode === currentMarketplace
             ) || childProduct.variantDetails?.inventoryLevels?.[0];
-            
+
             const price = parseFloat(inventoryLevel?.price || childProduct.variantDetails?.price || '0');
             const compareAtPrice = parseFloat(childProduct.variantDetails?.compareAtPrice || '0');
-            
+
             // Используем валюту из первого товара
             if (inventoryLevel?.currencyCode) {
               currencyCode = inventoryLevel.currencyCode;
             }
-            
+
             totalNew += price;
-            if (compareAtPrice > 0) {
-              totalOld += compareAtPrice;
-            }
+            totalOld += price;
+            // if (compareAtPrice > 0) {
+            //   totalOld += compareAtPrice;
+            // }
           });
-          
-          totalPriceNew.textContent = formatWidgetPrice(totalNew, currencyCode);
+
+          console.log('totalNew: <<<<<<<<<', totalNew);
+
+          totalPriceNew.textContent = formatWidgetPrice(totalNew * (1 - finalDiscount / 100), currencyCode);
           if (totalOld > 0) {
             totalPriceOld.textContent = formatWidgetPrice(totalOld, currencyCode);
             totalPriceOld.style.display = 'inline';

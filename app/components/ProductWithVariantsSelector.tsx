@@ -99,9 +99,6 @@ export function ProductWithVariantsSelector({
       onSelectionChange(newSelection);
     } else {
       // Загружаем детали первого варианта
-      console.log(
-        `Loading variant details for first variant ${firstVariant}...`,
-      );
 
       // Показываем индикатор загрузки
       setLoadingVariants((prev) => new Set(prev).add(firstVariant));
