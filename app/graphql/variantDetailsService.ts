@@ -100,10 +100,13 @@ export async function getVariantDetails(
         // Определяем цену и валюту
         let price = variant.price;
         let currencyCode = data.shop?.currencyCode || "USD";
+        let compareAtPrice: string | null = variant.compareAtPrice ?? null;
 
         if (contextualPricing[countryCode]) {
           price = contextualPricing[countryCode].price.amount;
           currencyCode = contextualPricing[countryCode].price.currencyCode;
+          compareAtPrice =
+            contextualPricing[countryCode].compareAtPrice?.amount ?? null;
         }
 
         simplifiedInventoryLevels.push({
@@ -113,6 +116,7 @@ export async function getVariantDetails(
           shipsInventory: location.shipsInventory,
           quantity: totalQuantity,
           price: price,
+          compareAtPrice: compareAtPrice,
           currencyCode: currencyCode,
         });
       });

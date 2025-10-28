@@ -71,6 +71,7 @@ export interface SimplifiedInventoryLevel {
   shipsInventory: boolean;
   quantity: number;
   price: string;
+  compareAtPrice: string | null;
   currencyCode: string;
 }
 
