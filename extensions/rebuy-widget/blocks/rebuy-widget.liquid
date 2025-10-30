@@ -247,8 +247,8 @@
     </div>
 
     <p class="sellence-widget-total-price">Total Price:
-      <span class="sellence-widget-total-price-new">$395.20</span>
-      <span class="sellence-widget-total-price-old">$416.00</span>
+      <span class="sellence-widget-total-price-new"></span>
+      <span class="sellence-widget-total-price-old"></span>
     </p>
 
     <button class="sellence-widget-add-to-cart">Add all</button>
@@ -364,15 +364,21 @@
 
         const data = await response.json();
 
-        const initializeWidget = (widget) => {
-          const productSelectedCount = widget.product.childProducts.length;
-          const sortedDiscounts = widget.settings.discounts
+        function getFinalDiscount(productSelectedCount, sortedDiscounts) {
           let finalDiscount = 0;
-          const arraySortedDiscounts = sortedDiscounts.forEach(discount => {
+          sortedDiscounts.forEach(discount => {
             if (productSelectedCount >= Number(Object.entries(discount)[0][0])) {
               finalDiscount = Number(Object.entries(discount)[0][1]);
             }
           });
+          console.log('return finalDiscount: ===>>>', finalDiscount);
+          return finalDiscount;
+        }
+
+        const initializeWidget = (widget) => {
+          let productSelectedCount = widget.product.childProducts.length;
+          const sortedDiscounts = widget.settings.discounts
+          let finalDiscount = getFinalDiscount(productSelectedCount, sortedDiscounts);
 
           console.log('finalDiscount: ===>>>', finalDiscount);
           console.log('Widget data:', widget);
@@ -452,6 +458,24 @@
           }
         }
 
+        function addListenersToItemsList(itemsList) {
+          itemsList.addEventListener('change', () => {
+            const checkedCheckboxes = itemsList.querySelectorAll('.sellence-widget-checkbox:checked');
+            const selectedNames = Array.from(checkedCheckboxes).map((checkbox) => {
+              const label = checkbox.closest('label');
+              const nameEl = label ? label.querySelector('.sellence-widget-item-name') : null;
+              return nameEl ? nameEl.textContent.trim() : '';
+            }).filter(Boolean);
+
+            howManyProductsPicked = checkedCheckboxes.length;
+
+            
+
+            console.log('Выбрано элементов:', howManyProductsPicked);
+            console.log('Список выбранных:', selectedNames);
+          });
+        }
+
         // Функция для создания списка товаров
         function initializeItemsList(widget, currentMarketplace, finalDiscount) {
           const itemsList = document.getElementById('items-list');
@@ -483,16 +507,12 @@
             const formattedPrice = formatWidgetPrice(price, currencyCode);
             const formattedPriceWithDiscount = formatWidgetPrice(price * (1 - finalDiscount / 100), currencyCode);
             const formattedComparePrice = compareAtPrice ? formatWidgetPrice(compareAtPrice, currencyCode) : '';
-            // console.log('formattedPrice compare price:', formattedPrice);
-            // const newPrice = 
-            
-            // console.log('sortedDiscounts:', sortedDiscounts);
 
             item.innerHTML = `
               <label class="sellence-widget-item-label">
                 <input type="checkbox" class="sellence-widget-checkbox" checked>
                 <span class="sellence-widget-checkmark"></span>
-                <div class="sellence-widget-item-content">
+                <div class="sellence-widget-item-content" product-data="${JSON.stringify(childProduct)}">
                   <span class="sellence-widget-item-name">${productName}</span>
                   <div class="sellence-widget-item-price">
                     <p class="sellence-widget-price-new">Now: <span class="sellence-widget-price-new">${formattedPriceWithDiscount}</span></p>
@@ -506,6 +526,8 @@
           });
 
           howManyProductsPicked = widget?.product?.childProducts?.length || 0;
+
+          addListenersToItemsList(itemsList);
           console.log('How many products picked:', howManyProductsPicked);
         }
 
