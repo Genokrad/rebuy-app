@@ -251,6 +251,8 @@
       <span class="sellence-widget-total-price-old"></span>
     </p>
 
+    
+
     <button class="sellence-widget-add-to-cart">Add all</button>
 
     <strong class="rebuy-product-label">This item:</strong>
@@ -264,6 +266,38 @@
 <script>
 
   // console.log('{{ market.country_code | default: "US" }}');
+
+  const buyButton = document.querySelector('.sellence-widget-add-to-cart');
+
+  if (buyButton) {
+    buyButton.addEventListener('click', () => {
+      const checkedCheckboxes = document.querySelectorAll('#items-list .sellence-widget-checkbox:checked');
+      const selectedProducts = Array.from(checkedCheckboxes).map((checkbox) => {
+        const contentEl = checkbox.closest('label')?.querySelector('.sellence-widget-item-content');
+        if (!contentEl) return null;
+        const encoded = contentEl.getAttribute('data-product');
+        if (!encoded) return null;
+        try {
+          return JSON.parse(decodeURIComponent(encoded));
+        } catch (_) {
+          return null;
+        }
+      }).filter(Boolean);
+
+      const selectedProductsIds = selectedProducts.map((product) => product.productId);
+
+      console.log('selectedProducts: ===>>>', selectedProducts);
+      console.log('selectedProductsIds: ===>>>', selectedProductsIds.join(','));
+      console.log('buyButton clicked');
+
+      // const response = await fetch(`${appUrl}/api/cart/add`, {
+      //   method: 'POST',
+      //   body: JSON.stringify({
+      //     products: selectedProductsIds,
+      //   }),
+      // });
+    });
+  }
 
   const CURRENCY_SYMBOLS = {
     'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': 'C$',
@@ -315,6 +349,17 @@
     return `${symbol}${formattedAmount}`;
   }
 
+  function getFinalDiscount(productSelectedCount, sortedDiscounts) {
+    let finalDiscount = 0;
+    sortedDiscounts.forEach(discount => {
+      if (productSelectedCount >= Number(Object.entries(discount)[0][0])) {
+        finalDiscount = Number(Object.entries(discount)[0][1]);
+      }
+    });
+    console.log('return finalDiscount: ===>>>', finalDiscount);
+    return finalDiscount;
+  }
+
   (function() {
     const widgetId = '{{ block.settings.widget_id }}';
     const appUrl = '{{ block.settings.app_url }}';
@@ -363,17 +408,6 @@
         }
 
         const data = await response.json();
-
-        function getFinalDiscount(productSelectedCount, sortedDiscounts) {
-          let finalDiscount = 0;
-          sortedDiscounts.forEach(discount => {
-            if (productSelectedCount >= Number(Object.entries(discount)[0][0])) {
-              finalDiscount = Number(Object.entries(discount)[0][1]);
-            }
-          });
-          console.log('return finalDiscount: ===>>>', finalDiscount);
-          return finalDiscount;
-        }
 
         const initializeWidget = (widget) => {
           let productSelectedCount = widget.product.childProducts.length;
@@ -458,21 +492,123 @@
           }
         }
 
-        function addListenersToItemsList(itemsList) {
+        // Перестраиваем слайдер из выбранных товаров
+        function rebuildProductsSliderFromChecked(currentMarketplace) {
+          const productsList = document.getElementById('products-list');
+          if (!productsList) return;
+
+          // Собираем данные из отмеченных элементов списка
+          const checkedCheckboxes = document.querySelectorAll('#items-list .sellence-widget-checkbox:checked');
+          const selectedProducts = Array.from(checkedCheckboxes).map((checkbox) => {
+            const contentEl = checkbox.closest('label')?.querySelector('.sellence-widget-item-content');
+            if (!contentEl) return null;
+            const encoded = contentEl.getAttribute('data-product');
+            if (!encoded) return null;
+            try {
+              return JSON.parse(decodeURIComponent(encoded));
+            } catch (_) {
+              return null;
+            }
+          }).filter(Boolean);
+
+          // Очищаем текущий список слайдов
+          productsList.innerHTML = '';
+
+          // Добавляем слайды по выбранным товарам
+          selectedProducts.forEach((childProduct, index) => {
+            const slide = document.createElement('li');
+            slide.className = 'splide__slide';
+
+            const imageUrl = childProduct?.variantDetails?.image?.url || 
+                           'https://via.placeholder.com/120x120?text=No+Image';
+
+            slide.innerHTML = `
+              <div class="sellence-pdp-widget-product-image">
+                <img src="${imageUrl}" alt="Product ${index + 1}" width="120" height="120">
+              </div>
+            `;
+
+            productsList.appendChild(slide);
+          });
+
+          // Переинициализируем Splide
+          if (typeof Splide !== 'undefined') {
+            const splideElement = document.querySelector('#products-slider');
+            if (splideElement) {
+              if (splideElement.splide) {
+                splideElement.splide.destroy();
+              }
+              new Splide('#products-slider', {
+                type: 'slide',
+                perPage: Math.min(4, Math.max(1, selectedProducts.length)),
+                perMove: 1,
+                gap: '20px',
+                arrows: false,
+                pagination: false,
+                drag: true,
+                snap: true,
+                breakpoints: {
+                  768: {
+                    perPage: Math.min(2, Math.max(1, selectedProducts.length)),
+                  },
+                  480: {
+                    perPage: 1,
+                  }
+                }
+              }).mount();
+            }
+          }
+        }
+
+        function addListenersToItemsList(itemsList, currentMarketplace, sortedDiscounts, widget) {
           itemsList.addEventListener('change', () => {
             const checkedCheckboxes = itemsList.querySelectorAll('.sellence-widget-checkbox:checked');
+            // СНАЧАЛА обновляем количество выбранных, затем считаем скидку — иначе будет лаг на 1 шаг
+            howManyProductsPicked = checkedCheckboxes.length;
+            const finalDiscount = getFinalDiscount(howManyProductsPicked, sortedDiscounts);
+
             const selectedNames = Array.from(checkedCheckboxes).map((checkbox) => {
               const label = checkbox.closest('label');
               const nameEl = label ? label.querySelector('.sellence-widget-item-name') : null;
               return nameEl ? nameEl.textContent.trim() : '';
             }).filter(Boolean);
 
-            howManyProductsPicked = checkedCheckboxes.length;
+            const itemContents = itemsList.querySelectorAll('.sellence-widget-item-content');
+            itemContents.forEach(itemContent => {
+              const encoded = itemContent.getAttribute('data-product');
+              if (!encoded) return;
+              let childProduct;
+              try {
+                childProduct = JSON.parse(decodeURIComponent(encoded));
+              } catch (_) {
+                return;
+              }
+              const inventoryLevel = childProduct.variantDetails?.inventoryLevels?.find(
+                level => level.countryCode === currentMarketplace
+              ) || childProduct.variantDetails?.inventoryLevels?.[0];
+              const price = parseFloat(inventoryLevel?.price || childProduct?.variantDetails?.price || '0');
+              const currencyCode = inventoryLevel?.currencyCode || 'USD';
+              const formattedPrice = formatWidgetPrice(price, currencyCode);
+              const formattedPriceWithDiscount = formatWidgetPrice(price * (1 - finalDiscount / 100), currencyCode);
 
-            
+              const priceContainer = itemContent.querySelector('.sellence-widget-item-price');
+              if (priceContainer) {
+                const newPriceSpan = priceContainer.querySelector('p.sellence-widget-price-new > span.sellence-widget-price-new');
+                const oldPriceSpan = priceContainer.querySelector('.sellence-widget-price-old-price');
+                if (newPriceSpan) newPriceSpan.textContent = formattedPriceWithDiscount;
+                if (oldPriceSpan) oldPriceSpan.textContent = formattedPrice;
+              }
+            });
 
-            console.log('Выбрано элементов:', howManyProductsPicked);
-            console.log('Список выбранных:', selectedNames);
+
+            // Обновляем общую цену после пересчета скидки
+            updateTotalPrice(widget, currentMarketplace, finalDiscount);
+
+            // Обновляем слайдер по текущему набору выбранных товаров
+            rebuildProductsSliderFromChecked(currentMarketplace);
+
+            // console.log('Выбрано элементов:', howManyProductsPicked);
+            // console.log('Список выбранных:', selectedNames);
           });
         }
 
@@ -512,7 +648,7 @@
               <label class="sellence-widget-item-label">
                 <input type="checkbox" class="sellence-widget-checkbox" checked>
                 <span class="sellence-widget-checkmark"></span>
-                <div class="sellence-widget-item-content" product-data="${JSON.stringify(childProduct)}">
+                <div class="sellence-widget-item-content" data-product="${encodeURIComponent(JSON.stringify(childProduct))}">
                   <span class="sellence-widget-item-name">${productName}</span>
                   <div class="sellence-widget-item-price">
                     <p class="sellence-widget-price-new">Now: <span class="sellence-widget-price-new">${formattedPriceWithDiscount}</span></p>
@@ -527,48 +663,95 @@
 
           howManyProductsPicked = widget?.product?.childProducts?.length || 0;
 
-          addListenersToItemsList(itemsList);
+          addListenersToItemsList(itemsList, currentMarketplace, widget.settings.discounts, widget);
           console.log('How many products picked:', howManyProductsPicked);
         }
 
         // Функция для обновления общей цены
         function updateTotalPrice(widget, currentMarketplace, finalDiscount) {
+          const totalPriceContainer = document.querySelector('.sellence-widget-total-price');
           const totalPriceNew = document.querySelector('.sellence-widget-total-price-new');
           const totalPriceOld = document.querySelector('.sellence-widget-total-price-old');
 
-          if (!totalPriceNew || !widget.product?.childProducts) return;
+          if (!totalPriceNew || !totalPriceContainer) return;
 
           let totalNew = 0;
           let totalOld = 0;
           let currencyCode = 'USD';
 
-          widget.product.childProducts.forEach(childProduct => {
-            const inventoryLevel = childProduct.variantDetails?.inventoryLevels?.find(
-              level => level.countryCode === currentMarketplace
-            ) || childProduct.variantDetails?.inventoryLevels?.[0];
+          const checkedCheckboxes = document.querySelectorAll('#items-list .sellence-widget-checkbox:checked');
+          const checkedCount = checkedCheckboxes.length;
 
-            const price = parseFloat(inventoryLevel?.price || childProduct.variantDetails?.price || '0');
-            const compareAtPrice = parseFloat(childProduct.variantDetails?.compareAtPrice || '0');
+          if (checkedCount === 0) {
+            // Спрятать Total
+            totalPriceContainer.style.display = 'none';
 
-            // Используем валюту из первого товара
-            if (inventoryLevel?.currencyCode) {
+            // Найти скидку за 1 товар
+            let oneItemDiscount = 0;
+            (widget?.settings?.discounts || []).forEach((discount) => {
+              const [threshold, value] = Object.entries(discount)[0] || [];
+              if (Number(threshold) === 1) {
+                oneItemDiscount = Number(value) || 0;
+              }
+            });
+
+            // Создать/показать подсказку
+            let promptEl = document.getElementById('sellence-widget-empty-prompt');
+            if (!promptEl) {
+              promptEl = document.createElement('p');
+              promptEl.id = 'sellence-widget-empty-prompt';
+              promptEl.style.margin = '0';
+              promptEl.style.marginBottom = '16px';
+              promptEl.style.fontWeight = '600';
+              totalPriceContainer.parentElement?.insertBefore(promptEl, totalPriceContainer.nextSibling);
+            }
+            promptEl.textContent = oneItemDiscount > 0
+              ? `Add one more product to get ${oneItemDiscount}% off`
+              : 'Add one product to unlock a discount';
+
+            return;
+          } else {
+            // Есть выбранные — удалить подсказку и показать Total
+            const promptEl = document.getElementById('sellence-widget-empty-prompt');
+            if (promptEl && promptEl.parentElement) {
+              promptEl.parentElement.removeChild(promptEl);
+            }
+            totalPriceContainer.style.display = '';
+          }
+
+          checkedCheckboxes.forEach((checkbox, idx) => {
+            const contentEl = checkbox.closest('label')?.querySelector('.sellence-widget-item-content');
+            if (!contentEl) return;
+            const encoded = contentEl.getAttribute('data-product');
+            if (!encoded) return;
+            let childProduct;
+            try {
+              childProduct = JSON.parse(decodeURIComponent(encoded));
+            } catch (_) {
+              return;
+            }
+
+            const inventoryLevel = childProduct?.variantDetails?.inventoryLevels?.find(
+              (level) => level.countryCode === currentMarketplace
+            ) || childProduct?.variantDetails?.inventoryLevels?.[0];
+
+            const price = parseFloat(inventoryLevel?.price || childProduct?.variantDetails?.price || '0');
+
+            if (idx === 0 && inventoryLevel?.currencyCode) {
               currencyCode = inventoryLevel.currencyCode;
             }
 
-            totalNew += price;
-            totalOld += price;
-            // if (compareAtPrice > 0) {
-            //   totalOld += compareAtPrice;
-            // }
+            totalOld += price; // сумма без скидки только по выбранным
+            totalNew += price * (1 - finalDiscount / 100); // сумма со скидкой только по выбранным
           });
 
-          console.log('totalNew: <<<<<<<<<', totalNew);
-
-          totalPriceNew.textContent = formatWidgetPrice(totalNew * (1 - finalDiscount / 100), currencyCode);
+          // Устанавливаем значения тоталов
+          totalPriceNew.textContent = formatWidgetPrice(totalNew, currencyCode);
           if (totalOld > 0) {
             totalPriceOld.textContent = formatWidgetPrice(totalOld, currencyCode);
             totalPriceOld.style.display = 'inline';
           } else {
+            totalPriceOld.textContent = '';
             totalPriceOld.style.display = 'none';
           }
         }
@@ -584,6 +767,8 @@
         statusElement.innerHTML = '❌ Ошибка: ' + error.message;
         statusElement.className = 'text-red-600 font-medium';
       }
+
+
     }
 
     loadWidget();
