@@ -17,7 +17,7 @@ Access denied for name field. Required access: `read_locations` access scope or 
 
 ```toml
 [access_scopes]
-scopes = "write_products,read_markets,write_markets,read_inventory,read_locations"
+scopes = "write_products,read_markets,write_markets,read_inventory,read_locations,read_cart_transforms,write_cart_transforms"
 ```
 
 ### 2. Необходимые действия

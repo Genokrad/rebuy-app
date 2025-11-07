@@ -1,10 +1,22 @@
 import React, { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useFetcher } from "@remix-run/react";
-import { Page, Layout, Text, BlockStack } from "@shopify/polaris";
+import {
+  Page,
+  Layout,
+  Text,
+  BlockStack,
+  Banner,
+  InlineStack,
+} from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { getAllProducts } from "../graphql/productsService";
+import { GET_SHOP_PLAN_QUERY } from "../graphql/getShopPlan";
+import {
+  ACTIVATE_CART_TRANSFORM_MUTATION,
+  GET_CART_TRANSFORM_FUNCTIONS_QUERY,
+} from "../graphql/activateCartTransform";
 import {
   createWidget,
   deleteWidget,
@@ -20,15 +32,132 @@ import {
 } from "../components";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { admin } = await authenticate.admin(request);
+
+  // Получаем план магазина
+  const shopPlanResponse = await admin.graphql(GET_SHOP_PLAN_QUERY);
+  const shopPlanData = await shopPlanResponse.json();
+  const shopPlan = shopPlanData?.data?.shop?.plan;
+  const isPlus =
+    shopPlan?.displayName === "Shopify Plus" ||
+    shopPlan?.partnerDevelopment === true;
 
   // Получаем все продукты
   const products = await getAllProducts(request);
 
   // Получаем все виджеты для текущего магазина
+  const { session } = await authenticate.admin(request);
   const widgets = await getWidgetsByShop(session.shop);
 
-  return { products, widgets };
+  // Проверяем и активируем Cart Transform Function, если нужно
+  let cartTransformActive = false;
+  let activationError = null;
+  if (isPlus) {
+    try {
+      // Проверяем, активирована ли функция
+      const checkResponse = await admin.graphql(`
+        query {
+          cartTransforms(first: 1) {
+            nodes {
+              id
+              functionId
+            }
+          }
+        }
+      `);
+      const checkData = await checkResponse.json();
+
+      if (checkData?.errors) {
+        activationError = checkData.errors
+          .map((e: any) => e.message)
+          .join(", ");
+        console.error("Error checking cart transforms:", checkData.errors);
+      } else {
+        const existingTransforms = checkData?.data?.cartTransforms?.nodes || [];
+
+        if (existingTransforms.length === 0) {
+          // Сначала получаем functionId через query
+          const functionsQueryResponse = await admin.graphql(
+            GET_CART_TRANSFORM_FUNCTIONS_QUERY,
+          );
+          const functionsQueryData = await functionsQueryResponse.json();
+
+          if (functionsQueryData?.errors) {
+            activationError = functionsQueryData.errors
+              .map((e: any) => e.message)
+              .join(", ");
+            console.error(
+              "Error querying cart transform functions:",
+              functionsQueryData.errors,
+            );
+          } else {
+            const functions =
+              functionsQueryData?.data?.shopifyFunctions?.nodes || [];
+
+            if (functions.length === 0) {
+              activationError =
+                "No cart transform functions found. Please ensure the function is deployed.";
+              console.error("No cart transform functions found");
+            } else {
+              // Берем первую функцию (обычно у приложения одна Cart Transform функция)
+              const targetFunction = functions[0];
+
+              // Активируем функцию используя functionId
+              const activateResponse = await admin.graphql(
+                ACTIVATE_CART_TRANSFORM_MUTATION,
+                {
+                  variables: {
+                    functionId: targetFunction.id,
+                  },
+                },
+              );
+              const activateData = await activateResponse.json();
+
+              if (activateData?.errors) {
+                activationError = activateData.errors
+                  .map((e: any) => e.message)
+                  .join(", ");
+                console.error(
+                  "GraphQL errors activating cart transform:",
+                  activateData.errors,
+                );
+              } else if (
+                activateData?.data?.cartTransformCreate?.userErrors?.length > 0
+              ) {
+                activationError =
+                  activateData.data.cartTransformCreate.userErrors
+                    .map((e: any) => e.message)
+                    .join(", ");
+                console.error(
+                  "Failed to activate cart transform:",
+                  activateData.data.cartTransformCreate.userErrors,
+                );
+              } else if (
+                activateData?.data?.cartTransformCreate?.cartTransform
+              ) {
+                cartTransformActive = true;
+              }
+            }
+          }
+        } else {
+          cartTransformActive = true;
+        }
+      }
+    } catch (error) {
+      activationError =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error("Error checking/activating cart transform:", error);
+    }
+  }
+
+  return {
+    products,
+    widgets,
+    shopPlan: shopPlan?.displayName || "Unknown",
+    isPlus,
+    cartTransformActive,
+    activationError,
+  };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -181,9 +310,47 @@ export default function Index() {
           <Layout.Section>
             {!currentWidgets && (
               <BlockStack gap="400">
-                <Text as="h1" variant="headingLg">
-                  Widgets
-                </Text>
+                <InlineStack align="space-between" blockAlign="center">
+                  <Text as="h1" variant="headingLg">
+                    Widgets
+                  </Text>
+                  <Text as="p" variant="bodyMd">
+                    Plan: {loaderData?.shopPlan}{" "}
+                    {loaderData?.isPlus ? "✓" : "⚠"}
+                  </Text>
+                </InlineStack>
+
+                {!loaderData?.isPlus && (
+                  <Banner tone="warning" title="Shopify Plus Required">
+                    <p>
+                      Cart Transform Functions require Shopify Plus. Your
+                      current plan: <strong>{loaderData?.shopPlan}</strong>.
+                      Cart discounts will not be applied automatically.
+                    </p>
+                  </Banner>
+                )}
+
+                {loaderData?.isPlus && (
+                  <Banner
+                    tone={
+                      loaderData?.cartTransformActive ? "success" : "warning"
+                    }
+                    title={
+                      loaderData?.cartTransformActive
+                        ? "Cart Transform Function Active"
+                        : "Cart Transform Function Not Active"
+                    }
+                  >
+                    {}
+                    <p>
+                      {loaderData?.cartTransformActive
+                        ? "Your store is on Shopify Plus and Cart Transform Function is active. Discounts will be applied automatically."
+                        : loaderData?.activationError
+                          ? `Error activating Cart Transform Function: ${loaderData.activationError}. Please check that the function is deployed and you have the required scopes (read_cart_transforms, write_cart_transforms).`
+                          : "Your store is on Shopify Plus, but Cart Transform Function is not active. Please refresh the page to activate it."}
+                    </p>
+                  </Banner>
+                )}
 
                 <WidgetCards
                   widgetCards={widgetCards}

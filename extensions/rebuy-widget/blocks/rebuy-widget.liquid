@@ -267,38 +267,6 @@
 
   // console.log('{{ market.country_code | default: "US" }}');
 
-  const buyButton = document.querySelector('.sellence-widget-add-to-cart');
-
-  if (buyButton) {
-    buyButton.addEventListener('click', () => {
-      const checkedCheckboxes = document.querySelectorAll('#items-list .sellence-widget-checkbox:checked');
-      const selectedProducts = Array.from(checkedCheckboxes).map((checkbox) => {
-        const contentEl = checkbox.closest('label')?.querySelector('.sellence-widget-item-content');
-        if (!contentEl) return null;
-        const encoded = contentEl.getAttribute('data-product');
-        if (!encoded) return null;
-        try {
-          return JSON.parse(decodeURIComponent(encoded));
-        } catch (_) {
-          return null;
-        }
-      }).filter(Boolean);
-
-      const selectedProductsIds = selectedProducts.map((product) => product.productId);
-
-      console.log('selectedProducts: ===>>>', selectedProducts);
-      console.log('selectedProductsIds: ===>>>', selectedProductsIds.join(','));
-      console.log('buyButton clicked');
-
-      // const response = await fetch(`${appUrl}/api/cart/add`, {
-      //   method: 'POST',
-      //   body: JSON.stringify({
-      //     products: selectedProductsIds,
-      //   }),
-      // });
-    });
-  }
-
   const CURRENCY_SYMBOLS = {
     'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': 'C$',
     'AUD': 'A$', 'CHF': 'CHF', 'CNY': '¥', 'SEK': 'kr', 'NOK': 'kr',
@@ -368,6 +336,117 @@
     const contentElement = document.getElementById('sellence-widget-content-{{ block.id }}');
     let howManyProductsPicked = 0;
 
+    // Функция для добавления выбранных товаров в корзину
+    async function addSelectedItemsToCart(widget) {
+      const checkedCheckboxes = document.querySelectorAll('#items-list .sellence-widget-checkbox:checked');
+      
+      if (checkedCheckboxes.length === 0) {
+        alert('Please select at least one product');
+        return;
+      }
+
+      // Собираем variantId из выбранных товаров
+      const variantIds = [];
+      checkedCheckboxes.forEach((checkbox) => {
+        const contentEl = checkbox.closest('label')?.querySelector('.sellence-widget-item-content');
+        if (!contentEl) return;
+        const encoded = contentEl.getAttribute('data-product');
+        if (!encoded) return;
+        
+        try {
+          const childProduct = JSON.parse(decodeURIComponent(encoded));
+          const variantId = childProduct.variantId || childProduct.variantDetails?.id;
+          if (variantId) {
+            variantIds.push(variantId);
+          }
+        } catch (error) {
+          console.error('Error parsing product data:', error);
+        }
+      });
+
+      if (variantIds.length === 0) {
+        alert('No valid products selected');
+        return;
+      }
+
+      try {
+        // Отправляем запрос на сервер для вычисления скидки
+        const cleanUrl = appUrl.replace(/\/$/, '');
+        const discountResponse = await fetch(`${cleanUrl}/api/cart/calculate-discount`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            variantIds: variantIds,
+            widgetId: widgetId,
+            parentProductId: currentProductId
+          })
+        });
+
+        if (!discountResponse.ok) {
+          const errorData = await discountResponse.json();
+          throw new Error(errorData.error || 'Failed to calculate discount');
+        }
+
+        const discountData = await discountResponse.json();
+        
+        if (!discountData.success) {
+          throw new Error(discountData.error || 'Failed to calculate discount');
+        }
+
+        const discount = discountData.discount;
+        
+        // Функция для извлечения числового ID из GID формата
+        function extractNumericId(gid) {
+          if (!gid) return null;
+          // Если уже числовой ID, возвращаем как есть
+          if (/^\d+$/.test(gid)) return gid;
+          // Извлекаем числовой ID из GID формата: gid://shopify/ProductVariant/43622958399581
+          const match = gid.match(/\/(\d+)$/);
+          return match ? match[1] : null;
+        }
+        
+        // Формируем товары для добавления в корзину с properties
+        const cartItems = variantIds.map((variantId) => {
+          const numericId = extractNumericId(variantId);
+          if (!numericId) {
+            throw new Error(`Invalid variant ID format: ${variantId}`);
+          }
+
+          console.log('discount to widget ===>>>>>:', discount);
+          return {
+            id: numericId,
+            quantity: 1,
+            properties: {
+              '_rebuy_discount': 'true',
+              '_rebuy_discount_percent': discount.toString(),
+              '_rebuy_widget_id': widgetId,
+              '_rebuy_applied': 'true'
+            }
+          };
+        });
+
+        // Добавляем товары в корзину через Shopify Cart API
+        const addToCartResponse = await fetch('/cart/add.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: cartItems })
+        });
+
+        if (!addToCartResponse.ok) {
+          // Получаем детали ошибки от Shopify
+          const errorData = await addToCartResponse.json().catch(() => ({ error: 'Unknown error' }));
+          console.error('Shopify Cart API error:', errorData);
+          throw new Error(`Failed to add items to cart: ${errorData.description || errorData.error || addToCartResponse.statusText}`);
+        }
+
+        // Перенаправляем на страницу корзины
+        window.location.href = '/cart';
+      } catch (error) {
+        console.error('Error adding items to cart:', error);
+        alert('Failed to add items to cart: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      }
+    }
+
     // Инициализация Splide.js слайдера
     function initSlider() {
       if (typeof Splide !== 'undefined') {
@@ -428,6 +507,19 @@
 
           // Обновляем общую цену
           updateTotalPrice(widget, currentMarketplace, finalDiscount);
+
+          // Привязываем обработчик к кнопке "Add to cart"
+          const buyButton = document.querySelector('.sellence-widget-add-to-cart');
+          if (buyButton) {
+            // Удаляем предыдущие обработчики, если есть
+            buyButton.replaceWith(buyButton.cloneNode(true));
+            const newBuyButton = document.querySelector('.sellence-widget-add-to-cart');
+            if (newBuyButton) {
+              newBuyButton.addEventListener('click', () => {
+                addSelectedItemsToCart(widget);
+              });
+            }
+          }
         }
 
         // Функция для создания слайдера с товарами

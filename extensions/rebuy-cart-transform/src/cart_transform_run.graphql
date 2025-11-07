@@ -1,0 +1,22 @@
+query RunInput {
+  cart {
+    lines {
+      id
+      quantity
+      cost {
+        amountPerQuantity {
+          amount
+          currencyCode
+        }
+      }
+      rebuyDiscount: attribute(key: "_rebuy_discount") {
+        key
+        value
+      }
+      rebuyDiscountPercent: attribute(key: "_rebuy_discount_percent") {
+        key
+        value
+      }
+    }
+  }
+}
