@@ -1,9 +1,6 @@
 {% comment %}
-  Rebuy Widget Block - Simple Start
+  Sellence Widget Block - Simple Start
 {% endcomment %}
-
-<!-- Подключаем Tailwind CSS -->
-{% comment %} <script src="https://cdn.tailwindcss.com"></script> {% endcomment %}
 
 <!-- Splide.js CSS -->
 {% comment %} theme-check-disable RemoteAsset {% endcomment %}
@@ -14,7 +11,9 @@
 <script defer src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
 
 <style>
-
+  [data-block-handle="sellence-widget"] {
+    display: none;
+  }
   .product__media-wrapper {
     max-width: 50% !important;
   }
@@ -204,6 +203,10 @@
     cursor: pointer;
     width: 50%;
     margin-bottom: 20px;
+
+    @media (max-width: 1024px) {
+      width: 100%;
+    }
   }
 
   .rebuy-product-label {
@@ -417,7 +420,6 @@
             throw new Error(`Invalid variant ID format: ${variantId}`);
           }
 
-          console.log('discount to widget ===>>>>>:', discount);
           return {
             id: numericId,
             quantity: 1,
@@ -466,10 +468,10 @@
           drag: true,
           snap: true,
           breakpoints: {
-            768: {
+            1240: {
               perPage: 2,
             },
-            480: {
+            1024: {
               perPage: 1,
             }
           }
@@ -495,11 +497,18 @@
 
         const initializeWidget = (widget) => {
           let productSelectedCount = widget.product.childProducts.length;
+
+          if (widget.product.childProducts.length > 0) {
+            document.querySelector('[data-block-handle="sellence-widget"]').style.display = 'block';
+          } else {
+            return;
+          }
+
+          console.log('Sellence widget data:', data);
+
           const sortedDiscounts = widget.settings.discounts
           let finalDiscount = getFinalDiscount(productSelectedCount, sortedDiscounts);
 
-          console.log('finalDiscount: ===>>>', finalDiscount);
-          console.log('Widget data:', widget);
           // Получаем текущий маркетплейс
           const currentMarketplace = document.getElementById('sellence-widget-{{ block.id }}').dataset.currentMarketplace || 'US';
           // console.log('Current marketplace:', currentMarketplace);
@@ -578,10 +587,10 @@
                 drag: true,
                 snap: true,
                 breakpoints: {
-                  768: {
+                  1240: {
                     perPage: Math.min(2, widget.product.childProducts.length),
                   },
-                  480: {
+                  1024: {
                     perPage: 1,
                   }
                 }
@@ -647,10 +656,10 @@
                 drag: true,
                 snap: true,
                 breakpoints: {
-                  768: {
+                  1240: {
                     perPage: Math.min(2, Math.max(1, selectedProducts.length)),
                   },
-                  480: {
+                  1024: {
                     perPage: 1,
                   }
                 }
