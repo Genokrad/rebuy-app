@@ -3,8 +3,8 @@ api_version = "2024-10"
 [[extensions]]
 uid = "2b1405b1-d5cc-b4b8-a349-7ba17eb9bdcfbd7f3773"
 type = "theme"
-name = "Rebuy Widget"
-handle = "rebuy-widget"
+name = "Sellence Widget"
+handle = "sellence-widget"
 
 [extensions.settings]
 

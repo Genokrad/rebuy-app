@@ -31,6 +31,16 @@ import {
   WidgetEditor,
 } from "../components";
 
+type GraphQLError = {
+  message: string;
+  field?: string[];
+};
+
+type GraphQLResponse<T> = {
+  data?: T;
+  errors?: GraphQLError[];
+};
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
 
@@ -65,26 +75,40 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           }
         }
       `);
-      const checkData = await checkResponse.json();
+      const checkData = (await checkResponse.json()) as GraphQLResponse<{
+        cartTransforms: {
+          nodes: Array<{
+            id: string;
+            functionId: string;
+          }>;
+        };
+      }>;
 
-      if (checkData?.errors) {
-        activationError = checkData.errors
-          .map((e: any) => e.message)
-          .join(", ");
+      if (checkData.errors?.length) {
+        activationError = checkData.errors.map((e) => e.message).join(", ");
         console.error("Error checking cart transforms:", checkData.errors);
       } else {
-        const existingTransforms = checkData?.data?.cartTransforms?.nodes || [];
+        const existingTransforms = checkData.data?.cartTransforms?.nodes || [];
 
         if (existingTransforms.length === 0) {
           // Сначала получаем functionId через query
           const functionsQueryResponse = await admin.graphql(
             GET_CART_TRANSFORM_FUNCTIONS_QUERY,
           );
-          const functionsQueryData = await functionsQueryResponse.json();
+          const functionsQueryData =
+            (await functionsQueryResponse.json()) as GraphQLResponse<{
+              shopifyFunctions: {
+                nodes: Array<{
+                  id: string;
+                  title: string;
+                  apiType: string;
+                }>;
+              };
+            }>;
 
-          if (functionsQueryData?.errors) {
+          if (functionsQueryData.errors?.length) {
             activationError = functionsQueryData.errors
-              .map((e: any) => e.message)
+              .map((e) => e.message)
               .join(", ");
             console.error(
               "Error querying cart transform functions:",
@@ -92,7 +116,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
             );
           } else {
             const functions =
-              functionsQueryData?.data?.shopifyFunctions?.nodes || [];
+              functionsQueryData.data?.shopifyFunctions?.nodes || [];
 
             if (functions.length === 0) {
               activationError =
@@ -111,30 +135,37 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
                   },
                 },
               );
-              const activateData = await activateResponse.json();
+              const activateData =
+                (await activateResponse.json()) as GraphQLResponse<{
+                  cartTransformCreate?: {
+                    cartTransform?: {
+                      id: string;
+                      functionId: string;
+                    };
+                    userErrors?: Array<{
+                      message: string;
+                    }>;
+                  };
+                }>;
 
-              if (activateData?.errors) {
+              if (activateData.errors?.length) {
                 activationError = activateData.errors
-                  .map((e: any) => e.message)
+                  .map((e) => e.message)
                   .join(", ");
                 console.error(
                   "GraphQL errors activating cart transform:",
                   activateData.errors,
                 );
-              } else if (
-                activateData?.data?.cartTransformCreate?.userErrors?.length > 0
-              ) {
-                activationError =
-                  activateData.data.cartTransformCreate.userErrors
-                    .map((e: any) => e.message)
-                    .join(", ");
-                console.error(
-                  "Failed to activate cart transform:",
-                  activateData.data.cartTransformCreate.userErrors,
-                );
-              } else if (
-                activateData?.data?.cartTransformCreate?.cartTransform
-              ) {
+              }
+
+              const creationResult = activateData.data?.cartTransformCreate;
+              const userErrors = creationResult?.userErrors;
+              const createdTransform = creationResult?.cartTransform;
+
+              if (userErrors && userErrors.length > 0) {
+                activationError = userErrors.map((e) => e.message).join(", ");
+                console.error("Failed to activate cart transform:", userErrors);
+              } else if (createdTransform) {
                 cartTransformActive = true;
               }
             }

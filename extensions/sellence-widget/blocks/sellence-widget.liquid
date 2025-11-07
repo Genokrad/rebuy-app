@@ -11,7 +11,7 @@
 
 <!-- Splide.js JavaScript -->
 {% comment %} theme-check-disable RemoteAsset {% endcomment %}
-<script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
 
 <style>
 
@@ -235,7 +235,7 @@
 
 <div class="sellence-widget" id="sellence-widget-{{ block.id }}">
   <div id="sellence-widget-content" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-    <h2 class="sellence-widget-title">Buy more at a lower price</h2>
+    <h2 class="sellence-widget-title">{{ 'sellence-widget.title' | t }}</h2>
 
     <!-- Splide.js слайдер -->
     <div class="splide sellence-products-slider" id="products-slider">
@@ -246,16 +246,14 @@
       </div>
     </div>
 
-    <p class="sellence-widget-total-price">Total Price:
+    <p class="sellence-widget-total-price">{{ 'sellence-widget.total_price' | t }}
       <span class="sellence-widget-total-price-new"></span>
       <span class="sellence-widget-total-price-old"></span>
     </p>
 
-    
+    <button class="sellence-widget-add-to-cart">{{ 'sellence-widget.add_all' | t }}</button>
 
-    <button class="sellence-widget-add-to-cart">Add all</button>
-
-    <strong class="rebuy-product-label">This item:</strong>
+    <strong class="rebuy-product-label">{{ 'sellence-widget.this_item' | t }}</strong>
 
     <ul class="sellence-widget-this-item-list" id="items-list">
       <!-- Товары будут добавлены динамически через JavaScript -->
@@ -264,9 +262,6 @@
 </div>
 
 <script>
-
-  // console.log('{{ market.country_code | default: "US" }}');
-
   const CURRENCY_SYMBOLS = {
     'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': 'C$',
     'AUD': 'A$', 'CHF': 'CHF', 'CNY': '¥', 'SEK': 'kr', 'NOK': 'kr',
@@ -297,6 +292,16 @@
     'MDL': 'L', 'UAH': '₴', 'BYN': 'Br', 'AMD': '֏', 'GEL': '₾',
     'AZN': '₼', 'KZT': '₸', 'KGS': 'с', 'TJS': 'SM', 'TMT': 'T',
     'UZS': 'лв', 'MNT': '₮'
+  };
+
+  const I18N = {
+    nowLabel: {{ 'sellence-widget.price_now' | t | json }},
+    wasLabel: {{ 'sellence-widget.price_was' | t | json }},
+    addMorePrompt: {{ 'sellence-widget.add_more_prompt' | t | json }},
+    addOnePrompt: {{ 'sellence-widget.add_one_prompt' | t | json }},
+    productPlaceholder: {{ 'sellence-widget.product_placeholder' | t | json }},
+    addToCartError: {{ 'sellence-widget.add_to_cart_error' | t | json }},
+    noImageAlt: {{ 'sellence-widget.no_image_alt' | t | json }}
   };
 
   function getCurrencySymbol(currencyCode) {
@@ -339,7 +344,7 @@
     // Функция для добавления выбранных товаров в корзину
     async function addSelectedItemsToCart(widget) {
       const checkedCheckboxes = document.querySelectorAll('#items-list .sellence-widget-checkbox:checked');
-      
+
       if (checkedCheckboxes.length === 0) {
         alert('Please select at least one product');
         return;
@@ -352,7 +357,7 @@
         if (!contentEl) return;
         const encoded = contentEl.getAttribute('data-product');
         if (!encoded) return;
-        
+
         try {
           const childProduct = JSON.parse(decodeURIComponent(encoded));
           const variantId = childProduct.variantId || childProduct.variantDetails?.id;
@@ -388,13 +393,13 @@
         }
 
         const discountData = await discountResponse.json();
-        
+
         if (!discountData.success) {
           throw new Error(discountData.error || 'Failed to calculate discount');
         }
 
         const discount = discountData.discount;
-        
+
         // Функция для извлечения числового ID из GID формата
         function extractNumericId(gid) {
           if (!gid) return null;
@@ -404,7 +409,7 @@
           const match = gid.match(/\/(\d+)$/);
           return match ? match[1] : null;
         }
-        
+
         // Формируем товары для добавления в корзину с properties
         const cartItems = variantIds.map((variantId) => {
           const numericId = extractNumericId(variantId);
@@ -436,14 +441,14 @@
           // Получаем детали ошибки от Shopify
           const errorData = await addToCartResponse.json().catch(() => ({ error: 'Unknown error' }));
           console.error('Shopify Cart API error:', errorData);
-          throw new Error(`Failed to add items to cart: ${errorData.description || errorData.error || addToCartResponse.statusText}`);
+          throw new Error(`${I18N.addToCartError}: ${errorData.description || errorData.error || addToCartResponse.statusText}`);
         }
 
         // Перенаправляем на страницу корзины
         window.location.href = '/cart';
       } catch (error) {
         console.error('Error adding items to cart:', error);
-        alert('Failed to add items to cart: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        alert(`${I18N.addToCartError}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
@@ -542,10 +547,11 @@
 
             const imageUrl = childProduct.variantDetails?.image?.url || 
                            'https://via.placeholder.com/120x120?text=No+Image';
+            const imageAlt = I18N.noImageAlt.replace('{index}', (index + 1).toString());
 
             slide.innerHTML = `
               <div class="sellence-pdp-widget-product-image">
-                <img src="${imageUrl}" alt="Product ${index + 1}" width="120" height="120">
+                <img src="${imageUrl}" alt="${imageAlt}" width="120" height="120">
               </div>
             `;
 
@@ -613,10 +619,11 @@
 
             const imageUrl = childProduct?.variantDetails?.image?.url || 
                            'https://via.placeholder.com/120x120?text=No+Image';
+            const imageAlt = I18N.noImageAlt.replace('{index}', (index + 1).toString());
 
             slide.innerHTML = `
               <div class="sellence-pdp-widget-product-image">
-                <img src="${imageUrl}" alt="Product ${index + 1}" width="120" height="120">
+                <img src="${imageUrl}" alt="${imageAlt}" width="120" height="120">
               </div>
             `;
 
@@ -727,9 +734,10 @@
             const compareAtPrice = childProduct.variantDetails?.compareAtPrice;
 
             // Получаем название товара из данных варианта
+            const fallbackName = I18N.productPlaceholder.replace('{index}', (index + 1).toString());
             const productName = childProduct.variantDetails?.title || 
                                childProduct.variantDetails?.product?.title || 
-                               `Product ${index + 1}`;
+                               fallbackName;
 
             // Форматируем цены с символами валют
             const formattedPrice = formatWidgetPrice(price, currencyCode);
@@ -743,8 +751,8 @@
                 <div class="sellence-widget-item-content" data-product="${encodeURIComponent(JSON.stringify(childProduct))}">
                   <span class="sellence-widget-item-name">${productName}</span>
                   <div class="sellence-widget-item-price">
-                    <p class="sellence-widget-price-new">Now: <span class="sellence-widget-price-new">${formattedPriceWithDiscount}</span></p>
-                    <p class="sellence-widget-price-old">Was: <span class="sellence-widget-price-old-price">${formattedPrice}</span></p>
+                    <p class="sellence-widget-price-new">${I18N.nowLabel} <span class="sellence-widget-price-new">${formattedPriceWithDiscount}</span></p>
+                    <p class="sellence-widget-price-old">${I18N.wasLabel} <span class="sellence-widget-price-old-price">${formattedPrice}</span></p>
                   </div>
                 </div>
               </label>
@@ -798,8 +806,8 @@
               totalPriceContainer.parentElement?.insertBefore(promptEl, totalPriceContainer.nextSibling);
             }
             promptEl.textContent = oneItemDiscount > 0
-              ? `Add one more product to get ${oneItemDiscount}% off`
-              : 'Add one product to unlock a discount';
+              ? I18N.addMorePrompt.replace('{discount}', oneItemDiscount.toString())
+              : I18N.addOnePrompt;
 
             return;
           } else {
@@ -869,14 +877,14 @@
 
 {% schema %}
 {
-  "name": "Rebuy Widget",
+  "name": "Sellence Widget",
   "target": "section",
   "settings": [
     {
       "type": "text",
       "id": "widget_id",
       "label": "Widget ID",
-      "info": "Enter the Widget ID from your Rebuy app admin panel"
+      "info": "Enter the Widget ID from your Sellence app admin panel"
     },
     {
       "type": "text",
