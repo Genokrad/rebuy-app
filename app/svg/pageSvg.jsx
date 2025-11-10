@@ -1,4 +1,3 @@
-import * as React from "react";
 export const PageSvg = (props) => (
   <svg
     width={105}

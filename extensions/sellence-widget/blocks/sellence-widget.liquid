@@ -11,12 +11,9 @@
 <script defer src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
 
 <style>
-[data-block-handle="sellence-widget"] {
-  display: none;
-}
-#sellence-widget-{{ block.id }} {
-  display: none;
-}
+  .sellence-widget-{{ block.settings.widget_id }} {
+    display: none;
+  }
   .product__media-wrapper {
     max-width: 50% !important;
   }
@@ -222,9 +219,10 @@
   }
 
   .sellence-widget-total-price {
+    margin-top: 16px;
     font-size: 15px;
     font-weight: 600;
-    margin-left: 16px;
+    /* margin-left: 16px; */
   }
 
   .sellence-widget-total-price-new {
@@ -239,15 +237,14 @@
   }
 </style>
 
-<div class="sellence-widget" id="sellence-widget-{{ block.id }}">
-  <div id="sellence-widget-content-{{ block.id }}" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+<div class="sellence-widget sellence-widget-{{ block.settings.widget_id }}" id="sellence-widget-{{ block.id }}">
+  <div id="sellence-widget-content" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
     <h2 class="sellence-widget-title">{{ 'sellence-widget.title' | t }}</h2>
-    <p id="sellence-status-{{ block.id }}" class="sellence-widget-status" style="display: none;"></p>
 
     <!-- Splide.js слайдер -->
-    <div class="splide sellence-products-slider" id="products-slider-{{ block.id }}">
+    <div class="splide sellence-products-slider" id="products-slider">
       <div class="splide__track">
-        <ul class="splide__list" id="products-list-{{ block.id }}">
+        <ul class="splide__list" id="products-list">
           <!-- Товары будут добавлены динамически через JavaScript -->
         </ul>
       </div>
@@ -262,7 +259,7 @@
 
     <strong class="sellence-widget-product-label">{{ 'sellence-widget.this_item' | t }}</strong>
 
-    <ul class="sellence-widget-this-item-list" id="items-list-{{ block.id }}">
+    <ul class="sellence-widget-this-item-list" id="items-list">
       <!-- Товары будут добавлены динамически через JavaScript -->
     </ul>
   </div>
@@ -344,21 +341,13 @@
     const widgetId = '{{ block.settings.widget_id }}';
     const appUrl = '{{ block.settings.app_url }}';
     const currentProductId = '{{ product.id }}';
-    const widgetRoot = document.getElementById('sellence-widget-{{ block.id }}');
-    if (!widgetRoot) {
-      console.warn('Sellence widget root not found for block {{ block.id }}');
-      return;
-    }
-    const statusElement = widgetRoot.querySelector('.sellence-widget-status');
-    const productsSliderId = 'products-slider-{{ block.id }}';
-    const productsListId = 'products-list-{{ block.id }}';
-    const itemsListId = 'items-list-{{ block.id }}';
-    const emptyPromptId = 'sellence-widget-empty-prompt-{{ block.id }}';
+    const statusElement = document.getElementById('sellence-status-{{ block.id }}');
+    const contentElement = document.getElementById('sellence-widget-content-{{ block.id }}');
     let howManyProductsPicked = 0;
 
     // Функция для добавления выбранных товаров в корзину
     async function addSelectedItemsToCart(widget) {
-      const checkedCheckboxes = widgetRoot.querySelectorAll(`#${itemsListId} .sellence-widget-checkbox:checked`);
+      const checkedCheckboxes = document.querySelectorAll('#items-list .sellence-widget-checkbox:checked');
 
       if (checkedCheckboxes.length === 0) {
         alert('Please select at least one product');
@@ -469,7 +458,7 @@
     // Инициализация Splide.js слайдера
     function initSlider() {
       if (typeof Splide !== 'undefined') {
-        new Splide(`#${productsSliderId}`, {
+        new Splide('#products-slider', {
           type: 'slide',
           perPage: 4,
           perMove: 1,
@@ -495,27 +484,29 @@
     document.addEventListener('DOMContentLoaded', initSlider);
 
     async function loadWidget() {
+      console.log('loadWidget');
       try {
+        console.log('loadWidget try');
         const cleanUrl = appUrl.replace(/\/$/, '');
         const apiUrl = cleanUrl + '/api/widget/' + widgetId + '?productId=' + encodeURIComponent(currentProductId);
 
         const response = await fetch(apiUrl);
+        console.log('response:', response);
 
         if (!response.ok) {
           throw new Error('HTTP error! status: ' + response.status);
         }
-
+        console.log('response ok');
         const data = await response.json();
-
-        console.log('Sellence widget data:', data);
+        console.log('data:', data);
 
         const initializeWidget = (widget) => {
           let productSelectedCount = widget.product.childProducts.length;
 
           if (widget.product.childProducts.length > 0) {
-            widgetRoot.style.display = 'block';
+            document.querySelector('.sellence-widget-{{ block.settings.widget_id }}').style.display = 'block';
           } else {
-            widgetRoot.style.display = 'none';
+            console.log('no child products');
             return;
           }
 
@@ -525,7 +516,7 @@
           let finalDiscount = getFinalDiscount(productSelectedCount, sortedDiscounts);
 
           // Получаем текущий маркетплейс
-          const currentMarketplace = widgetRoot.dataset.currentMarketplace || 'US';
+          const currentMarketplace = document.getElementById('sellence-widget-{{ block.id }}').dataset.currentMarketplace || 'US';
           // console.log('Current marketplace:', currentMarketplace);
 
           // Инициализируем слайдер с товарами
@@ -538,11 +529,11 @@
           updateTotalPrice(widget, currentMarketplace, finalDiscount);
 
           // Привязываем обработчик к кнопке "Add to cart"
-          const buyButton = widgetRoot.querySelector('.sellence-widget-add-to-cart');
+          const buyButton = document.querySelector('.sellence-widget-add-to-cart');
           if (buyButton) {
             // Удаляем предыдущие обработчики, если есть
             buyButton.replaceWith(buyButton.cloneNode(true));
-            const newBuyButton = widgetRoot.querySelector('.sellence-widget-add-to-cart');
+            const newBuyButton = document.querySelector('.sellence-widget-add-to-cart');
             if (newBuyButton) {
               newBuyButton.addEventListener('click', () => {
                 addSelectedItemsToCart(widget);
@@ -553,7 +544,7 @@
 
         // Функция для создания слайдера с товарами
         function initializeProductsSlider(widget, currentMarketplace) {
-          const productsList = document.getElementById(productsListId);
+          const productsList = document.getElementById('products-list');
           if (!productsList || !widget.product?.childProducts) return;
 
           // Очищаем список
@@ -584,7 +575,7 @@
 
           // Переинициализируем слайдер
           if (typeof Splide !== 'undefined') {
-            const splideElement = document.getElementById(productsSliderId);
+            const splideElement = document.querySelector('#products-slider');
             if (splideElement) {
               // Уничтожаем существующий слайдер если есть
               if (splideElement.splide) {
@@ -592,7 +583,7 @@
               }
 
               // Создаем новый слайдер
-              new Splide(`#${productsSliderId}`, {
+              new Splide('#products-slider', {
                 type: 'slide',
                 perPage: Math.min(4, widget.product.childProducts.length),
                 perMove: 1,
@@ -616,11 +607,11 @@
 
         // Перестраиваем слайдер из выбранных товаров
         function rebuildProductsSliderFromChecked(currentMarketplace) {
-          const productsList = document.getElementById(productsListId);
+          const productsList = document.getElementById('products-list');
           if (!productsList) return;
 
           // Собираем данные из отмеченных элементов списка
-          const checkedCheckboxes = widgetRoot.querySelectorAll(`#${itemsListId} .sellence-widget-checkbox:checked`);
+          const checkedCheckboxes = document.querySelectorAll('#items-list .sellence-widget-checkbox:checked');
           const selectedProducts = Array.from(checkedCheckboxes).map((checkbox) => {
             const contentEl = checkbox.closest('label')?.querySelector('.sellence-widget-item-content');
             if (!contentEl) return null;
@@ -656,12 +647,12 @@
 
           // Переинициализируем Splide
           if (typeof Splide !== 'undefined') {
-            const splideElement = document.getElementById(productsSliderId);
+            const splideElement = document.querySelector('#products-slider');
             if (splideElement) {
               if (splideElement.splide) {
                 splideElement.splide.destroy();
               }
-              new Splide(`#${productsSliderId}`, {
+              new Splide('#products-slider', {
                 type: 'slide',
                 perPage: Math.min(4, Math.max(1, selectedProducts.length)),
                 perMove: 1,
@@ -737,7 +728,7 @@
 
         // Функция для создания списка товаров
         function initializeItemsList(widget, currentMarketplace, finalDiscount) {
-          const itemsList = document.getElementById(itemsListId);
+          const itemsList = document.getElementById('items-list');
           if (!itemsList || !widget.product?.childProducts) return;
 
           // Очищаем список
@@ -793,17 +784,17 @@
 
         // Функция для обновления общей цены
         function updateTotalPrice(widget, currentMarketplace, finalDiscount) {
-          const totalPriceContainer = widgetRoot.querySelector('.sellence-widget-total-price');
-          const totalPriceNew = widgetRoot.querySelector('.sellence-widget-total-price-new');
-          const totalPriceOld = widgetRoot.querySelector('.sellence-widget-total-price-old');
+          const totalPriceContainer = document.querySelector('.sellence-widget-total-price');
+          const totalPriceNew = document.querySelector('.sellence-widget-total-price-new');
+          const totalPriceOld = document.querySelector('.sellence-widget-total-price-old');
 
-          if (!totalPriceNew || !totalPriceContainer || !totalPriceOld) return;
+          if (!totalPriceNew || !totalPriceContainer) return;
 
           let totalNew = 0;
           let totalOld = 0;
           let currencyCode = 'USD';
 
-          const checkedCheckboxes = widgetRoot.querySelectorAll(`#${itemsListId} .sellence-widget-checkbox:checked`);
+          const checkedCheckboxes = document.querySelectorAll('#items-list .sellence-widget-checkbox:checked');
           const checkedCount = checkedCheckboxes.length;
 
           if (checkedCount === 0) {
@@ -820,10 +811,10 @@
             });
 
             // Создать/показать подсказку
-            let promptEl = document.getElementById(emptyPromptId);
+            let promptEl = document.getElementById('sellence-widget-empty-prompt');
             if (!promptEl) {
               promptEl = document.createElement('p');
-              promptEl.id = emptyPromptId;
+              promptEl.id = 'sellence-widget-empty-prompt';
               promptEl.style.margin = '0';
               promptEl.style.marginBottom = '16px';
               promptEl.style.fontWeight = '600';
@@ -836,7 +827,7 @@
             return;
           } else {
             // Есть выбранные — удалить подсказку и показать Total
-            const promptEl = document.getElementById(emptyPromptId);
+            const promptEl = document.getElementById('sellence-widget-empty-prompt');
             if (promptEl && promptEl.parentElement) {
               promptEl.parentElement.removeChild(promptEl);
             }
@@ -870,19 +861,19 @@
           });
 
           // Устанавливаем значения тоталов
-            totalPriceNew.textContent = formatWidgetPrice(totalNew, currencyCode);
-            if (totalOld > 0) {
-              if (totalPriceOld) {
-                totalPriceOld.textContent = formatWidgetPrice(totalOld, currencyCode);
-                totalPriceOld.style.display = 'inline';
-              }
-            } else if (totalPriceOld) {
-              totalPriceOld.textContent = '';
-              totalPriceOld.style.display = 'none';
+          totalPriceNew.textContent = formatWidgetPrice(totalNew, currencyCode);
+          if (totalOld > 0) {
+            totalPriceOld.textContent = formatWidgetPrice(totalOld, currencyCode);
+            totalPriceOld.style.display = 'inline';
+          } else {
+            totalPriceOld.textContent = '';
+            totalPriceOld.style.display = 'none';
           }
         }
 
         const productPagePlacement = data?.widget?.settings?.placements?.includes('products');
+
+        console.log('productPagePlacement:', productPagePlacement);
 
         if (data?.widget?.product?.parentProduct && productPagePlacement) {
           initializeWidget(data.widget);
@@ -890,13 +881,11 @@
 
       } catch (error) {
         console.error('Error loading widget:', error);
-        widgetRoot.style.display = 'block';
-        if (statusElement) {
-          statusElement.innerHTML = '❌ Ошибка: ' + (error instanceof Error ? error.message : 'Unknown error');
-          statusElement.className = 'text-red-600 font-medium';
-          statusElement.style.display = 'block';
-        }
+        statusElement.innerHTML = '❌ Ошибка: ' + error.message;
+        statusElement.className = 'text-red-600 font-medium';
       }
+
+
     }
 
     loadWidget();

@@ -335,7 +335,7 @@ export default function Index() {
 
   return (
     <Page>
-      <TitleBar title="Rebuy App" />
+      <TitleBar title="Sellence App" />
       <BlockStack gap="500">
         <Layout>
           <Layout.Section>

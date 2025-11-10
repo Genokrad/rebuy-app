@@ -89,6 +89,12 @@ export function ProductSelector({
             <div
               key={product.id}
               onClick={() => handleProductSelect(product.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handleProductSelect(product.id);
+                }
+              }}
               style={{
                 padding: "12px",
                 borderRadius: "4px",
@@ -99,7 +105,10 @@ export function ProductSelector({
                 border: selectedProducts.includes(product.id)
                   ? "1px solid #007ace"
                   : "1px solid transparent",
+                color: "inherit",
               }}
+              role="button"
+              tabIndex={0}
             >
               <InlineStack gap="300" align="start">
                 {isMultiSelect && (

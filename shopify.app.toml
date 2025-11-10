@@ -1,16 +1,15 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "726c61b15bc4308e8f765fea5d898cd9"
-name = "sellence-app"
-application_url = "https://sellence-app.fly.dev"
+client_id = "e03531810897cb3c503713a2198e2dfa"
+name = "sellence-app-v1"
+application_url = "https://sellence-app-v1.fly.dev"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
-include_config_on_deploy = true
 
 [webhooks]
-api_version = "2025-10"
+api_version = "2025-01"
 
   [[webhooks.subscriptions]]
   topics = [ "app/uninstalled" ]
@@ -25,4 +24,8 @@ api_version = "2025-10"
 scopes = "write_products,read_markets,write_markets,read_inventory,read_locations,read_cart_transforms,write_cart_transforms"
 
 [auth]
-redirect_urls = [ "https://sellence-app.fly.dev/api/auth" ]
+redirect_urls = [
+  "https://sellence-app-v1.fly.dev/auth/callback",
+  "https://sellence-app-v1.fly.dev/auth/shopify/callback",
+  "https://sellence-app-v1.fly.dev/api/auth/callback"
+]

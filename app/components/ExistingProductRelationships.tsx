@@ -1,8 +1,4 @@
-import {
-  BlockStack,
-  Text,
-  Card,
-} from "@shopify/polaris";
+import { BlockStack, Text, Card } from "@shopify/polaris";
 import React from "react";
 
 interface Product {
@@ -48,10 +44,14 @@ export function ExistingProductRelationships({
                 (p) => p.id === rel.parentProduct,
               );
               return (
-                <div
+                <button
+                  type="button"
                   key={index}
                   onClick={() => onParentProductChange(rel.parentProduct)}
                   style={{
+                    display: "block",
+                    width: "100%",
+                    textAlign: "left",
                     padding: "12px",
                     borderRadius: "8px",
                     cursor: "pointer",
@@ -63,6 +63,8 @@ export function ExistingProductRelationships({
                       currentParentProduct === rel.parentProduct
                         ? "2px solid #007ace"
                         : "1px solid #e1e3e5",
+                    color: "inherit",
+                    outline: "none",
                     transition: "all 0.2s ease",
                   }}
                   onMouseEnter={(e) => {
@@ -84,7 +86,7 @@ export function ExistingProductRelationships({
                       Children: {rel.childProducts.length} products
                     </Text>
                   </BlockStack>
-                </div>
+                </button>
               );
             })}
           </BlockStack>
