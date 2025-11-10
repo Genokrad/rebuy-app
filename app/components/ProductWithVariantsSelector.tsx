@@ -147,7 +147,7 @@ export function ProductWithVariantsSelector({
             `❌ Permission error for ${variantId}: ${data.error}\n` +
               `🔧 Please update app permissions in Shopify Admin:\n` +
               `   1. Go to Apps → App and sales channel settings\n` +
-              `   2. Find "rebuy-app" → Manage private app\n` +
+              `   2. Find "sellence-app" → Manage private app\n` +
               `   3. Add scopes: read_inventory, read_locations\n` +
               `   4. Save and restart the app`,
           );

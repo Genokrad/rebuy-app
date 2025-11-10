@@ -9,11 +9,11 @@ query RunInput {
           currencyCode
         }
       }
-      rebuyDiscount: attribute(key: "_rebuy_discount") {
+      sellenceDiscount: attribute(key: "_sellence_discount") {
         key
         value
       }
-      rebuyDiscountPercent: attribute(key: "_rebuy_discount_percent") {
+      sellenceDiscountPercent: attribute(key: "_sellence_discount_percent") {
         key
         value
       }

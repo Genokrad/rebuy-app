@@ -27,7 +27,7 @@ npm run dev
 #### Вариант A: Через Shopify Admin (рекомендуется)
 
 1. Откройте **Shopify Admin** → **Apps** → **App and sales channel settings**
-2. Найдите ваше приложение **rebuy-app**
+2. Найдите ваше приложение **sellence-app**
 3. Нажмите **Manage private app**
 4. В разделе **Admin API access scopes** добавьте:
    - ✅ `read_inventory`
@@ -37,7 +37,7 @@ npm run dev
 #### Вариант B: Переустановка приложения
 
 1. В Shopify Admin → **Apps** → **App and sales channel settings**
-2. Найдите **rebuy-app** и нажмите **Uninstall**
+2. Найдите **sellence-app** и нажмите **Uninstall**
 3. Вернитесь в ваше приложение и установите заново
 4. При установке будут запрошены новые разрешения
 

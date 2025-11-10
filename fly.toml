@@ -1,0 +1,42 @@
+# fly.toml app configuration file generated for sellence-app on 2025-11-07T14:38:53+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'sellence-app'
+primary_region = 'fra'
+
+[env]
+  PORT = '3000'
+  SHOPIFY_API_KEY = '1f062c703933d031a0c6a570c6b7ae4e'
+  SHOPIFY_API_SECRET = 'ea810de2c0991365105230aebd88dcee'
+  SHOPIFY_APP_URL = 'https://sellence-app.fly.dev'
+  SHOPIFY_SCOPES = 'read_cart_transforms,read_inventory,read_locations,read_markets,write_cart_transforms,write_markets,write_products'
+  SHOPIFY_APP_NAME = 'sellence-app'
+  SHOPIFY_APP_HANDLE = 'sellence-app'
+  SHOPIFY_APP_VERSION = '1.0.0'
+
+[build]
+
+[processes]
+  app = 'node ./dbsetup.js npm run docker-start'
+
+[[mounts]]
+  source = 'data'
+  destination = '/data'
+  auto_extend_size_threshold = 80
+  auto_extend_size_increment = '1GB'
+  auto_extend_size_limit = '10GB'
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1

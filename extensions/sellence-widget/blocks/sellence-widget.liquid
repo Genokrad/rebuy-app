@@ -209,7 +209,7 @@
     }
   }
 
-  .rebuy-product-label {
+  .sellence-widget-product-label {
     font-size: 16px;
     font-weight: 500;
     color: #000;
@@ -256,7 +256,7 @@
 
     <button class="sellence-widget-add-to-cart">{{ 'sellence-widget.add_all' | t }}</button>
 
-    <strong class="rebuy-product-label">{{ 'sellence-widget.this_item' | t }}</strong>
+    <strong class="sellence-widget-product-label">{{ 'sellence-widget.this_item' | t }}</strong>
 
     <ul class="sellence-widget-this-item-list" id="items-list">
       <!-- Товары будут добавлены динамически через JavaScript -->
@@ -424,10 +424,10 @@
             id: numericId,
             quantity: 1,
             properties: {
-              '_rebuy_discount': 'true',
-              '_rebuy_discount_percent': discount.toString(),
-              '_rebuy_widget_id': widgetId,
-              '_rebuy_applied': 'true'
+              '_sellence_discount': 'true',
+              '_sellence_discount_percent': discount.toString(),
+              '_sellence_widget_id': widgetId,
+              '_sellence_applied': 'true'
             }
           };
         });

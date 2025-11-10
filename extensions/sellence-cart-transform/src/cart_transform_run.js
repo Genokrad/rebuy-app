@@ -14,10 +14,10 @@ const NO_CHANGES = {
 };
 
 /**
- * Cart Transform Function для применения скидки Rebuy
+ * Cart Transform Function для применения скидки Sellence
  * 
  * Проверяет каждую линию корзины и применяет скидку,
- * если у товара есть attribute '_rebuy_discount' со значением 'true'
+ * если у товара есть attribute '_sellence_discount' со значением 'true'
  * 
  * @param {RunInput} input
  * @returns {CartTransformRunResult}
@@ -30,12 +30,12 @@ export function cartTransformRun(input) {
   // Проходим по всем линиям корзины
   for (const line of input.cart.lines) {
     // Получаем attributes через алиасы из GraphQL query
-    const rebuyDiscountAttr = line.rebuyDiscount;
-    const rebuyDiscountPercentAttr = line.rebuyDiscountPercent;
+    const sellenceDiscountAttr = line.sellenceDiscount;
+    const sellenceDiscountPercentAttr = line.sellenceDiscountPercent;
 
     // Проверяем, что скидка должна быть применена
-    if (rebuyDiscountAttr?.value === "true" && rebuyDiscountPercentAttr?.value) {
-      const discountPercent = parseFloat(rebuyDiscountPercentAttr.value);
+    if (sellenceDiscountAttr?.value === "true" && sellenceDiscountPercentAttr?.value) {
+      const discountPercent = parseFloat(sellenceDiscountPercentAttr.value);
 
       // Проверяем, что процент скидки валидный
       if (!isNaN(discountPercent) && discountPercent > 0 && discountPercent <= 100) {

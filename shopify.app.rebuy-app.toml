@@ -2,7 +2,7 @@
 
 client_id = "1f062c703933d031a0c6a570c6b7ae4e"
 name = "sellence-app"
-application_url = "https://example.com"
+application_url = "https://sellence-app.fly.dev"
 embedded = true
 
 [build]
@@ -16,4 +16,4 @@ api_version = "2025-10"
 scopes = "write_products,read_markets,write_markets,read_inventory,read_locations,read_cart_transforms,write_cart_transforms"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [ "https://sellence-app.fly.dev/api/auth" ]

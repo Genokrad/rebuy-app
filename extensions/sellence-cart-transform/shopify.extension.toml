@@ -1,8 +1,8 @@
 api_version = "2025-07"
 
 [[extensions]]
-name = "t:name"
-handle = "rebuy-cart-transform"
+name = "Sellence Cart Transform"
+handle = "sellence-cart-transform"
 type = "function"
 uid = "6c6a19dc-7a54-85aa-84c5-2f327a014a734b69b802"
 description = "t:description"
