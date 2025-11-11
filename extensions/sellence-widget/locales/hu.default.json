@@ -1,0 +1,16 @@
+{
+    "sellence-widget": {
+        "title": "Vásároljon többet alacsonyabb áron",
+        "total_price": "Teljes ár:",
+        "add_all": "Összes hozzáadása",
+        "this_item": "Ez a termék:",
+        "price_now": "Most:",
+        "price_was": "Korábban:",
+        "add_more_prompt": "Adjon hozzá még egy terméket, hogy {discount}% kedvezményt kapjon",
+        "add_one_prompt": "Adjon hozzá egy terméket a kedvezmény feloldásához",
+        "add_to_cart_error": "A tételek kosárhoz adása nem sikerült",
+        "product_placeholder": "Termék {index}",
+        "no_image_alt": "Termékkép {index}"
+    }
+}
+

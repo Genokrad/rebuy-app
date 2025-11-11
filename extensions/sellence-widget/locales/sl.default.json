@@ -1,0 +1,16 @@
+{
+    "sellence-widget": {
+        "title": "Kupite več po nižji ceni",
+        "total_price": "Skupna cena:",
+        "add_all": "Dodaj vse",
+        "this_item": "Ta izdelek:",
+        "price_now": "Zdaj:",
+        "price_was": "Prej:",
+        "add_more_prompt": "Dodajte še en izdelek, da prejmete {discount}% popusta",
+        "add_one_prompt": "Dodajte en izdelek, da odklenete popust",
+        "add_to_cart_error": "Predmetov ni bilo mogoče dodati v košarico",
+        "product_placeholder": "Izdelek {index}",
+        "no_image_alt": "Slika izdelka {index}"
+    }
+}
+

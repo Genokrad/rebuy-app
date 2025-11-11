@@ -237,7 +237,7 @@
   }
 </style>
 
-<div class="sellence-widget sellence-widget-{{ block.settings.widget_id }}" id="sellence-widget-{{ block.id }}">
+<div class="sellence-widget d sellence-widget-{{ block.settings.widget_id }}" id="sellence-widget-{{ block.id }}" data-current-marketplace="{{ localization.country.iso_code }}">
   <div id="sellence-widget-content" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
     <h2 class="sellence-widget-title">{{ 'sellence-widget.title' | t }}</h2>
 
@@ -517,7 +517,7 @@
 
           // Получаем текущий маркетплейс
           const currentMarketplace = document.getElementById('sellence-widget-{{ block.id }}').dataset.currentMarketplace || 'US';
-          // console.log('Current marketplace:', currentMarketplace);
+          console.log('Current marketplace:', currentMarketplace);
 
           // Инициализируем слайдер с товарами
           initializeProductsSlider(widget, currentMarketplace);

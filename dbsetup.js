@@ -7,10 +7,54 @@ import fs from 'node:fs'
 const env = { ...process.env }
 
 // place Sqlite3 database on volume
-const source = path.resolve('/dev.sqlite')
-const target = '/data/' + path.basename(source)
-if (!fs.existsSync(source) && fs.existsSync('/data')) fs.symlinkSync(target, source)
-const newDb = !fs.existsSync(target)
+const prismaDir = path.resolve('prisma')
+const source = path.join(prismaDir, 'dev.sqlite')
+const targetDir = '/data'
+const target = path.join(targetDir, 'dev.sqlite')
+
+if (!fs.existsSync(prismaDir)) {
+  fs.mkdirSync(prismaDir, { recursive: true })
+}
+
+if (!fs.existsSync(targetDir)) {
+  fs.mkdirSync(targetDir, { recursive: true })
+}
+
+const sourceIsSymlink =
+  fs.existsSync(source) && fs.lstatSync(source).isSymbolicLink()
+
+let targetExists = fs.existsSync(target)
+const targetWasPresent = targetExists
+
+if (!sourceIsSymlink) {
+  if (fs.existsSync(source) && !targetExists) {
+    // move existing DB shipped with the image onto the volume
+    try {
+      fs.renameSync(source, target)
+    } catch (error) {
+      if (error.code === 'EXDEV') {
+        fs.copyFileSync(source, target)
+        fs.rmSync(source)
+      } else {
+        throw error
+      }
+    }
+    targetExists = true
+  }
+
+  if (!targetExists) {
+    fs.writeFileSync(target, '')
+    targetExists = true
+  }
+
+  if (fs.existsSync(source)) {
+    fs.rmSync(source)
+  }
+
+  fs.symlinkSync(target, source)
+}
+
+const newDb = !targetWasPresent
 if (newDb && process.env.BUCKET_NAME) {
   await exec(`npx litestream restore -config litestream.yml -if-replica-exists ${target}`)
 }

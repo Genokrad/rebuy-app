@@ -1,0 +1,16 @@
+{
+    "sellence-widget": {
+        "title": "Osta enemmän halvemmalla",
+        "total_price": "Kokonaishinta:",
+        "add_all": "Lisää kaikki",
+        "this_item": "Tämä tuote:",
+        "price_now": "Nyt:",
+        "price_was": "Ennen:",
+        "add_more_prompt": "Lisää vielä yksi tuote saadaksesi {discount} % alennuksen",
+        "add_one_prompt": "Lisää yksi tuote avataksesi alennuksen",
+        "add_to_cart_error": "Tuotteiden lisääminen ostoskoriin epäonnistui",
+        "product_placeholder": "Tuote {index}",
+        "no_image_alt": "Tuotekuva {index}"
+    }
+}
+

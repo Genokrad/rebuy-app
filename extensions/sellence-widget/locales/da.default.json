@@ -1,0 +1,16 @@
+{
+    "sellence-widget": {
+        "title": "Køb mere til en lavere pris",
+        "total_price": "Samlet pris:",
+        "add_all": "Tilføj alle",
+        "this_item": "Denne vare:",
+        "price_now": "Nu:",
+        "price_was": "Før:",
+        "add_more_prompt": "Tilføj endnu et produkt for at få {discount}% rabat",
+        "add_one_prompt": "Tilføj ét produkt for at låse op for rabat",
+        "add_to_cart_error": "Kunne ikke tilføje varer til kurven",
+        "product_placeholder": "Produkt {index}",
+        "no_image_alt": "Produktbillede {index}"
+    }
+}
+

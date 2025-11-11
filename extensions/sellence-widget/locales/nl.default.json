@@ -1,0 +1,16 @@
+{
+    "sellence-widget": {
+        "title": "Koop meer voor een lagere prijs",
+        "total_price": "Totale prijs:",
+        "add_all": "Alles toevoegen",
+        "this_item": "Dit artikel:",
+        "price_now": "Nu:",
+        "price_was": "Voorheen:",
+        "add_more_prompt": "Voeg nog een product toe om {discount}% korting te krijgen",
+        "add_one_prompt": "Voeg één product toe om korting te ontgrendelen",
+        "add_to_cart_error": "Items toevoegen aan winkelwagen is mislukt",
+        "product_placeholder": "Product {index}",
+        "no_image_alt": "Productafbeelding {index}"
+    }
+}
+

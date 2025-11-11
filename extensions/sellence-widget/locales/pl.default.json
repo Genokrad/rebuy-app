@@ -1,0 +1,16 @@
+{
+    "sellence-widget": {
+        "title": "Kup więcej za niższą cenę",
+        "total_price": "Cena całkowita:",
+        "add_all": "Dodaj wszystkie",
+        "this_item": "Ten produkt:",
+        "price_now": "Teraz:",
+        "price_was": "Wcześniej:",
+        "add_more_prompt": "Dodaj jeszcze jeden produkt, aby otrzymać {discount}% rabatu",
+        "add_one_prompt": "Dodaj jeden produkt, aby odblokować rabat",
+        "add_to_cart_error": "Nie udało się dodać produktów do koszyka",
+        "product_placeholder": "Produkt {index}",
+        "no_image_alt": "Zdjęcie produktu {index}"
+    }
+}
+

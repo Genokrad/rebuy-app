@@ -1,0 +1,16 @@
+{
+    "sellence-widget": {
+        "title": "Cumpără mai mult la un preț mai mic",
+        "total_price": "Preț total:",
+        "add_all": "Adaugă toate",
+        "this_item": "Acest produs:",
+        "price_now": "Acum:",
+        "price_was": "Anterior:",
+        "add_more_prompt": "Adaugă încă un produs pentru a primi {discount}% reducere",
+        "add_one_prompt": "Adaugă un produs pentru a activa o reducere",
+        "add_to_cart_error": "Nu s-au putut adăuga produsele în coș",
+        "product_placeholder": "Produs {index}",
+        "no_image_alt": "Imagine produs {index}"
+    }
+}
+

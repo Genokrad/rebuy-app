@@ -1,0 +1,16 @@
+{
+    "sellence-widget": {
+        "title": "Köp mer till ett lägre pris",
+        "total_price": "Totalt pris:",
+        "add_all": "Lägg till alla",
+        "this_item": "Denna produkt:",
+        "price_now": "Nu:",
+        "price_was": "Tidigare:",
+        "add_more_prompt": "Lägg till ytterligare en produkt för att få {discount}% rabatt",
+        "add_one_prompt": "Lägg till en produkt för att låsa upp rabatt",
+        "add_to_cart_error": "Det gick inte att lägga till varor i kundvagnen",
+        "product_placeholder": "Produkt {index}",
+        "no_image_alt": "Produktbild {index}"
+    }
+}
+

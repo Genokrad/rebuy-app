@@ -1,0 +1,16 @@
+{
+    "sellence-widget": {
+        "title": "اشتر المزيد بسعر أقل",
+        "total_price": "السعر الإجمالي:",
+        "add_all": "أضف الكل",
+        "this_item": "هذا المنتج:",
+        "price_now": "الآن:",
+        "price_was": "السابق:",
+        "add_more_prompt": "أضف منتجًا آخر لتحصل على خصم {discount}%",
+        "add_one_prompt": "أضف منتجًا واحدًا لتفعيل الخصم",
+        "add_to_cart_error": "تعذّر إضافة العناصر إلى السلة",
+        "product_placeholder": "المنتج {index}",
+        "no_image_alt": "صورة المنتج {index}"
+    }
+}
+

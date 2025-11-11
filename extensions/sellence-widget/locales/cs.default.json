@@ -1,0 +1,16 @@
+{
+    "sellence-widget": {
+        "title": "Kupte více za nižší cenu",
+        "total_price": "Celková cena:",
+        "add_all": "Přidat vše",
+        "this_item": "Tento produkt:",
+        "price_now": "Nyní:",
+        "price_was": "Dříve:",
+        "add_more_prompt": "Přidejte ještě jeden produkt a získejte slevu {discount} %",
+        "add_one_prompt": "Přidejte jeden produkt pro získání slevy",
+        "add_to_cart_error": "Nepodařilo se přidat položky do košíku",
+        "product_placeholder": "Produkt {index}",
+        "no_image_alt": "Obrázek produktu {index}"
+    }
+}
+

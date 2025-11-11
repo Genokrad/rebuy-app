@@ -1,0 +1,16 @@
+{
+    "sellence-widget": {
+        "title": "Kúpte viac za nižšiu cenu",
+        "total_price": "Celková cena:",
+        "add_all": "Pridať všetko",
+        "this_item": "Tento produkt:",
+        "price_now": "Teraz:",
+        "price_was": "Predtým:",
+        "add_more_prompt": "Pridajte ešte jeden produkt a získate zľavu {discount}%",
+        "add_one_prompt": "Pridajte jeden produkt a odomknite zľavu",
+        "add_to_cart_error": "Položky sa nepodarilo pridať do košíka",
+        "product_placeholder": "Produkt {index}",
+        "no_image_alt": "Obrázok produktu {index}"
+    }
+}
+
