@@ -21,30 +21,6 @@ export const GET_VARIANT_DETAILS_QUERY = `
           url
         }
       }
-      inventoryItem {
-        inventoryLevels(first: 10) {
-          edges {
-            node {
-              location {
-                id
-                name
-                address {
-                  country
-                  countryCode
-                }
-                shipsInventory
-                inventoryLevels(first: 10) {
-                  nodes {
-                    quantities(names: "available") {
-                      quantity
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
     }
   }
 `;
