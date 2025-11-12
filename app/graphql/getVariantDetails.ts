@@ -21,6 +21,23 @@ export const GET_VARIANT_DETAILS_QUERY = `
           url
         }
       }
+      inventoryItem {
+        inventoryLevels(first: 10) {
+          edges {
+            node {
+              location {
+                id
+                name
+                address {
+                  country
+                  countryCode
+                }
+                shipsInventory
+              }
+            }
+          }
+        }
+      }
     }
   }
 `;
@@ -59,11 +76,6 @@ export interface VariantLocation {
     countryCode: string;
   };
   shipsInventory: boolean;
-  inventoryLevels: {
-    nodes: Array<{
-      quantities: VariantInventoryLevel[];
-    }>;
-  };
 }
 
 export interface VariantInventoryItem {

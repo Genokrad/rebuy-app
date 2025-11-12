@@ -26,11 +26,6 @@ export interface VariantLocation {
     countryCode: string;
   };
   shipsInventory: boolean;
-  inventoryLevels: {
-    nodes: Array<{
-      quantities: VariantInventoryLevel[];
-    }>;
-  };
 }
 
 export interface VariantInventoryItem {

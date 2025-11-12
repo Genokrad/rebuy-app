@@ -13,7 +13,7 @@ export async function getVariantDetails(
 ): Promise<VariantDetails | null> {
   const { admin } = await authenticate.admin(request);
 
-  // console.log(`Fetching variant details for ${variantId}...`);
+  console.log(`Fetching variant details for ${variantId}...`);
 
   try {
     const response = await admin.graphql(GET_VARIANT_DETAILS_QUERY, {
@@ -59,6 +59,7 @@ export async function getVariantDetails(
     const contextualPricing: { [key: string]: any } = {};
 
     for (const countryCode of countryCodes) {
+      console.log("Getting pricing for:", countryCode);
       try {
         const pricingResponse = await admin.graphql(
           GET_CONTEXTUAL_PRICING_QUERY,
@@ -72,6 +73,8 @@ export async function getVariantDetails(
         );
 
         const pricingJson: any = await pricingResponse.json();
+
+        console.log("Pricing response:", pricingJson);
         if (pricingJson?.data?.productVariant?.contextualPricing) {
           contextualPricing[countryCode] =
             pricingJson.data.productVariant.contextualPricing;
@@ -92,10 +95,9 @@ export async function getVariantDetails(
         const location = edge.node.location;
         const countryCode = location.address.countryCode;
 
-        // Получаем общее количество для локации
-        const totalQuantity = location.inventoryLevels.nodes
-          .map((node: any) => node.quantities[0]?.quantity || 0)
-          .reduce((sum: number, qty: number) => sum + qty, 0);
+        // Используем общее количество из варианта, так как детальная информация по локациям недоступна
+        // Это более надежный источник данных
+        const totalQuantity = variant.inventoryQuantity || 0;
 
         // Определяем цену и валюту
         let price = variant.price;
