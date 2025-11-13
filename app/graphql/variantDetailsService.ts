@@ -29,6 +29,16 @@ export async function getVariantDetails(
     //   JSON.stringify(responseJson, null, 2),
     // );
 
+    const edges =
+      responseJson.data.productVariant.inventoryItem.inventoryLevels.edges;
+    console.log("Edges:", edges);
+    edges.forEach((edge: any) => {
+      console.log("Edge:", edge.node.location);
+      console.log("Quantities:", edge.node.quantities);
+    });
+
+    console.log("Variant details response:", edges.length);
+
     if (responseJson?.errors?.length) {
       const firstMessage =
         responseJson.errors[0]?.message || "Unknown GraphQL error";
@@ -74,7 +84,10 @@ export async function getVariantDetails(
 
         const pricingJson: any = await pricingResponse.json();
 
-        console.log("Pricing response:", pricingJson);
+        console.log(
+          "Pricing response:",
+          pricingJson.data.productVariant.contextualPricing,
+        );
         if (pricingJson?.data?.productVariant?.contextualPricing) {
           contextualPricing[countryCode] =
             pricingJson.data.productVariant.contextualPricing;
@@ -95,9 +108,13 @@ export async function getVariantDetails(
         const location = edge.node.location;
         const countryCode = location.address.countryCode;
 
-        // Используем общее количество из варианта, так как детальная информация по локациям недоступна
-        // Это более надежный источник данных
-        const totalQuantity = variant.inventoryQuantity || 0;
+        // Извлекаем количество из quantities массива
+        // quantities - это массив объектов вида [{ quantity: 21 }]
+        const quantities = edge.node.quantities || [];
+        const totalQuantity =
+          quantities.length > 0 && quantities[0]?.quantity
+            ? quantities[0].quantity
+            : 0;
 
         // Определяем цену и валюту
         let price = variant.price;

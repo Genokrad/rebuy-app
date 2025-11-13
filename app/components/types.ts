@@ -32,6 +32,9 @@ export interface VariantInventoryItem {
   inventoryLevels: {
     edges: Array<{
       node: {
+        quantities: Array<{
+          quantity: number;
+        }>;
         location: VariantLocation;
       };
     }>;

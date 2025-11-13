@@ -25,6 +25,7 @@ export const GET_VARIANT_DETAILS_QUERY = `
         inventoryLevels(first: 10) {
           edges {
             node {
+              quantities(names: "available") { quantity }
               location {
                 id
                 name
@@ -82,6 +83,9 @@ export interface VariantInventoryItem {
   inventoryLevels: {
     edges: Array<{
       node: {
+        quantities: Array<{
+          quantity: number;
+        }>;
         location: VariantLocation;
       };
     }>;
