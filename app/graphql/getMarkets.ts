@@ -7,18 +7,11 @@ export const GET_MARKETS_QUERY = `
           name
           enabled
           primary
-          conditions {
-            conditionTypes
-            regionsCondition {
-              regions(first: 10) {
-                nodes {
-                  __typename
-                  ... on MarketRegionCountry {
-                    id
-                    name
-                    code
-                  }
-                }
+          regions(first: 10) {
+            nodes {
+              name
+              ... on MarketRegionCountry {
+                code
               }
             }
           }
@@ -44,18 +37,9 @@ export const GET_MARKETS_QUERY_BASE = `
   }
 `;
 
-export interface MarketConditions {
-  conditionTypes: string[];
-  regionsCondition: {
-    regions: {
-      nodes: Array<{
-        __typename: string;
-        id: string;
-        name: string;
-        code: string;
-      }>;
-    };
-  };
+export interface MarketRegion {
+  name: string;
+  code?: string; // Only for MarketRegionCountry
 }
 
 export interface Market {
@@ -63,7 +47,9 @@ export interface Market {
   name: string;
   enabled: boolean;
   primary: boolean;
-  conditions?: MarketConditions; // Optional for stores that don't support it
+  regions?: {
+    nodes: MarketRegion[];
+  };
 }
 
 export interface MarketsResponse {
@@ -74,7 +60,9 @@ export interface MarketsResponse {
         name: string;
         enabled: boolean;
         primary: boolean;
-        conditions?: MarketConditions; // Optional for stores that don't support it
+        regions?: {
+          nodes: MarketRegion[];
+        };
       };
     }>;
   };

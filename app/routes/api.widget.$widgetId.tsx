@@ -1,6 +1,8 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { getWidgetById } from "../services/widgetService";
+import { getVariantDetails } from "../graphql/variantDetailsService";
+import type { ChildProduct } from "../components/types";
 
 // Публичный API endpoint для получения данных виджета
 // Доступен из темы магазина без аутентификации
@@ -22,9 +24,51 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     }
 
     const currentproductObject = widget.products?.find((product) =>
-      product.parentProduct.includes(currentProductId),
+      product.parentProduct.includes(currentProductId || ""),
     );
-    // console.log("Current product object:", currentproductObject);
+
+    // Загружаем variantDetails с marketsPrice для всех childProducts
+    if (
+      currentproductObject?.childProducts &&
+      currentproductObject.childProducts.length > 0
+    ) {
+      const childProductsWithDetails: ChildProduct[] = await Promise.all(
+        currentproductObject.childProducts.map(
+          async (childProduct: ChildProduct) => {
+            // Если variantDetails уже есть, но нет marketsPrice, перезагружаем
+            // Или если variantDetails нет вообще, загружаем
+            if (
+              !childProduct.variantDetails ||
+              !childProduct.variantDetails.marketsPrice
+            ) {
+              try {
+                const variantDetails = await getVariantDetails(
+                  request,
+                  childProduct.variantId,
+                );
+                return {
+                  ...childProduct,
+                  variantDetails:
+                    variantDetails || childProduct.variantDetails || undefined,
+                };
+              } catch (error) {
+                console.error(
+                  `Error loading variant details for ${childProduct.variantId}:`,
+                  error,
+                );
+                // В случае ошибки возвращаем childProduct как есть
+                return childProduct;
+              }
+            }
+            // Если variantDetails уже есть с marketsPrice, оставляем как есть
+            return childProduct;
+          },
+        ),
+      );
+
+      // Обновляем currentproductObject с загруженными variantDetails
+      currentproductObject.childProducts = childProductsWithDetails;
+    }
 
     // Возвращаем все данные виджета
     return json(
@@ -56,7 +100,14 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
         error: "Internal server error",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 },
+      {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      },
     );
   }
 }

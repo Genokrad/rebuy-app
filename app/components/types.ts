@@ -41,6 +41,14 @@ export interface VariantInventoryItem {
   };
 }
 
+export interface MarketPrice {
+  marketId: string; // ID маркета
+  marketName: string; // название маркета
+  countryCode: string; // код страны (например, "SK", "US", "AU")
+  price: string; // цена
+  currencyCode: string; // код валюты (например, "EUR", "USD", "AUD")
+}
+
 export interface VariantDetails {
   inventoryQuantity: number;
   availableForSale: boolean;
@@ -61,6 +69,7 @@ export interface VariantDetails {
   };
   inventoryItem: VariantInventoryItem;
   inventoryLevels: SimplifiedInventoryLevel[];
+  marketsPrice?: MarketPrice[]; // массив цен для всех маркетов
 }
 
 export interface ChildProduct {

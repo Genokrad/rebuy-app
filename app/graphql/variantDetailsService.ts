@@ -5,7 +5,9 @@ import {
   GET_CONTEXTUAL_PRICING_QUERY,
   type VariantDetails,
   type SimplifiedInventoryLevel,
+  type MarketPrice,
 } from "./getVariantDetails";
+import { getAllMarkets, getMarketCountryCode } from "./marketsService";
 
 export async function getVariantDetails(
   request: Request,
@@ -13,7 +15,7 @@ export async function getVariantDetails(
 ): Promise<VariantDetails | null> {
   const { admin } = await authenticate.admin(request);
 
-  console.log(`Fetching variant details for ${variantId}...`);
+  // console.log(`Fetching variant details for ${variantId}...`);
 
   try {
     const response = await admin.graphql(GET_VARIANT_DETAILS_QUERY, {
@@ -31,13 +33,13 @@ export async function getVariantDetails(
 
     const edges =
       responseJson.data.productVariant.inventoryItem.inventoryLevels.edges;
-    console.log("Edges:", edges);
-    edges.forEach((edge: any) => {
-      console.log("Edge:", edge.node.location);
-      console.log("Quantities:", edge.node.quantities);
-    });
+    // console.log("Edges:", edges);
+    // edges.forEach((edge: any) => {
+    //   console.log("Edge:", edge.node.location);
+    //   console.log("Quantities:", edge.node.quantities);
+    // });
 
-    console.log("Variant details response:", edges.length);
+    // console.log("Variant details response:", edges.length);
 
     if (responseJson?.errors?.length) {
       const firstMessage =
@@ -69,7 +71,7 @@ export async function getVariantDetails(
     const contextualPricing: { [key: string]: any } = {};
 
     for (const countryCode of countryCodes) {
-      console.log("Getting pricing for:", countryCode);
+      // console.log("Getting pricing for:", countryCode);
       try {
         const pricingResponse = await admin.graphql(
           GET_CONTEXTUAL_PRICING_QUERY,
@@ -84,10 +86,10 @@ export async function getVariantDetails(
 
         const pricingJson: any = await pricingResponse.json();
 
-        console.log(
-          "Pricing response:",
-          pricingJson.data.productVariant.contextualPricing,
-        );
+        // console.log(
+        //   "Pricing response:",
+        //   pricingJson.data.productVariant.contextualPricing,
+        // );
         if (pricingJson?.data?.productVariant?.contextualPricing) {
           contextualPricing[countryCode] =
             pricingJson.data.productVariant.contextualPricing;
@@ -144,11 +146,73 @@ export async function getVariantDetails(
     // Определяем изображение: сначала вариант, потом продукт
     const finalImage = variant.image || variant.product?.featuredImage;
 
-    // Возвращаем обновленную структуру
+    // Получаем все маркеты для создания marketsPrice
+    const markets = await getAllMarkets(request);
+    // console.log("Markets====>>>>>>:", JSON.stringify(markets, null, 2));
+    const marketsPrice: MarketPrice[] = [];
+
+    // Для каждого маркета получаем цену
+    for (const market of markets) {
+      // Логируем структуру маркета для отладки
+      // console.log(`Market ${market.name}:`, {
+      //   hasRegions: !!market.regions,
+      //   regions: market.regions?.nodes,
+      // });
+
+      const marketCountryCode = getMarketCountryCode(market);
+
+      // Если у маркета нет countryCode, пропускаем
+      if (!marketCountryCode) {
+        console.warn(
+          `Market ${market.name} (${market.id}) has no countryCode, skipping. Regions:`,
+          JSON.stringify(market.regions, null, 2),
+        );
+        continue;
+      }
+
+      try {
+        const pricingResponse = await admin.graphql(
+          GET_CONTEXTUAL_PRICING_QUERY,
+          {
+            variables: {
+              id: variantId,
+              country: marketCountryCode,
+            },
+            apiVersion: ApiVersion.January25,
+          },
+        );
+
+        const pricingJson: any = await pricingResponse.json();
+
+        console.log(
+          "Pricing response====>>>>>>:",
+          pricingJson.data.productVariant.contextualPricing,
+        );
+
+        if (pricingJson?.data?.productVariant?.contextualPricing) {
+          const pricing = pricingJson.data.productVariant.contextualPricing;
+          marketsPrice.push({
+            marketId: market.id,
+            marketName: market.name,
+            countryCode: marketCountryCode,
+            price: pricing.price.amount,
+            currencyCode: pricing.price.currencyCode,
+          });
+        }
+      } catch (error) {
+        console.warn(
+          `Failed to get pricing for market ${market.name} (${marketCountryCode}):`,
+          error,
+        );
+      }
+    }
+
+    // Возвращаем обновленную структуру с marketsPrice
     return {
       ...variant,
       image: finalImage,
       inventoryLevels: simplifiedInventoryLevels,
+      marketsPrice: marketsPrice,
     };
   } catch (error) {
     console.error(`Error fetching variant details for ${variantId}:`, error);
