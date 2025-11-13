@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useFetcher } from "@remix-run/react";
+import { useLoaderData, useFetcher, Link } from "@remix-run/react";
 import {
   Page,
   Layout,
@@ -8,6 +8,7 @@ import {
   BlockStack,
   Banner,
   InlineStack,
+  Button,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
@@ -402,6 +403,13 @@ export default function Index() {
                     handleEditeWidgets={handleEditeWidgets}
                   />
                 )}
+
+                {/* Ссылка на страницу маркетов */}
+                <BlockStack gap="200">
+                  <Link to="/app/markets" style={{ textDecoration: "none" }}>
+                    <Button>Просмотреть все маркеты (Markets)</Button>
+                  </Link>
+                </BlockStack>
               </BlockStack>
             )}
 

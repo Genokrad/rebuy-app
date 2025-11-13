@@ -18,7 +18,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
 
-    console.log(`API: Fetching variant details for ${variantId}...`);
+    // console.log(`API: Fetching variant details for ${variantId}...`);
 
     const variantDetails = await getVariantDetails(request, variantId);
 
