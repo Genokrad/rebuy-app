@@ -32,12 +32,115 @@ model Session {
 }
 
 model Widget {
-  id          String   @id @default(cuid())
+  id          String         @id @default(cuid())
   name        String
-  type        String   // "products-page", "cart", "checkout"
-  shop        String   // shop domain
-  products    String?  // JSON string with product relationships
-  settings    String?  // JSON string with widget settings (discounts, slideCount, etc.)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  type        String         // "products-page", "cart", "checkout"
+  shop        String         // shop domain
+  products    String?        // JSON string with product relationships (deprecated, kept for migration)
+  settings    String?        // JSON string with widget settings (discounts, slideCount, etc.)
+  widgetProducts WidgetProduct[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([shop])
+}
+
+model WidgetProduct {
+  id              String              @id @default(cuid())
+  widgetId        String
+  parentProductId String              // Shopify product ID
+  order           Int?                // порядок отображения
+  widget          Widget              @relation(fields: [widgetId], references: [id], onDelete: Cascade)
+  childProducts   WidgetChildProduct[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([widgetId])
+  @@index([parentProductId])
+}
+
+model WidgetChildProduct {
+  id              String        @id @default(cuid())
+  widgetProductId String
+  childProductId  String
+  order           Int?          // порядок отображения в виджете
+  widgetProduct   WidgetProduct @relation(fields: [widgetProductId], references: [id], onDelete: Cascade)
+  childProduct    ChildProduct  @relation(fields: [childProductId], references: [id], onDelete: Cascade)
+
+  @@unique([widgetProductId, childProductId])
+  @@index([childProductId])
+  @@index([widgetProductId])
+}
+
+model ChildProduct {
+  id            String              @id @default(cuid())
+  variantId     String              // Shopify variant ID (уникальный)
+  productId     String              // Shopify product ID
+  variantDetails VariantDetails?
+  widgetLinks   WidgetChildProduct[]
+
+  @@unique([variantId])
+  @@index([productId])
+}
+
+model VariantDetails {
+  id              String          @id @default(cuid())
+  childProductId  String          @unique
+  childProduct    ChildProduct    @relation(fields: [childProductId], references: [id], onDelete: Cascade)
+  inventoryQuantity Int
+  availableForSale Boolean
+  inventoryPolicy  String
+  variantId        String
+  title            String
+  price            String
+  compareAtPrice   String?
+  imageUrl         String?
+  productId        String
+  productTitle     String
+  inventoryLevels  InventoryLevel[]
+  marketPrices     MarketPrice[]
+  updatedAt        DateTime       @updatedAt
+
+  @@index([variantId])
+  @@index([childProductId])
+}
+
+model InventoryLevel {
+  id              String        @id @default(cuid())
+  variantDetailsId String
+  variantDetails  VariantDetails @relation(fields: [variantDetailsId], references: [id], onDelete: Cascade)
+  locationId      String
+  locationName    String
+  countryCode     String
+  quantity        Int
+  shipsInventory  Boolean
+  price           String
+  compareAtPrice  String?
+  currencyCode    String
+  marketId        String?
+  marketName      String?
+  locale          String?
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([variantDetailsId, locationId])
+  @@index([countryCode])
+  @@index([marketId])
+  @@index([variantDetailsId])
+}
+
+model MarketPrice {
+  id              String        @id @default(cuid())
+  variantDetailsId String
+  variantDetails  VariantDetails @relation(fields: [variantDetailsId], references: [id], onDelete: Cascade)
+  marketId        String
+  marketName      String
+  countryCode     String
+  price           String
+  currencyCode    String
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([variantDetailsId, marketId])
+  @@index([marketId])
+  @@index([countryCode])
+  @@index([variantDetailsId])
 }

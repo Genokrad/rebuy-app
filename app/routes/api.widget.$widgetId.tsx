@@ -1,6 +1,9 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { getWidgetById } from "../services/widgetService";
+import {
+  getWidgetById,
+  updateChildProductVariantDetails,
+} from "../services/widgetService";
 import { getVariantDetails } from "../graphql/variantDetailsService";
 import type { ChildProduct } from "../components/types";
 
@@ -46,6 +49,21 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
                   request,
                   childProduct.variantId,
                 );
+                if (variantDetails) {
+                  // Сохраняем variantDetails в БД для будущих запросов
+                  try {
+                    await updateChildProductVariantDetails(
+                      childProduct.variantId,
+                      variantDetails,
+                    );
+                  } catch (saveError) {
+                    console.error(
+                      `Error saving variant details for ${childProduct.variantId}:`,
+                      saveError,
+                    );
+                    // Продолжаем даже если не удалось сохранить
+                  }
+                }
                 return {
                   ...childProduct,
                   variantDetails:
