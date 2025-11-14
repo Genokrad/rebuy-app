@@ -1,4 +1,4 @@
-import { BlockStack, Text, Button, Layout } from "@shopify/polaris";
+import { BlockStack, Text, Button, Layout, TextField } from "@shopify/polaris";
 import React, { useState, useEffect, useMemo } from "react";
 import { ProductRelationshipSelector } from "./ProductRelationshipSelector";
 import { ExistingProductRelationships } from "./ExistingProductRelationships";
@@ -46,6 +46,9 @@ export function WidgetEditor({
       discounts: [],
       placements: [],
     },
+  );
+  const [slideCount, setSlideCount] = useState<number | undefined>(
+    (initialSettings as any)?.slideCount || undefined,
   );
 
   // Состояние для работы с множественными родительскими продуктами
@@ -167,8 +170,12 @@ export function WidgetEditor({
       });
     }
 
-    // Отправляем все связи вместе с настройками (включая placements)
-    const finalSettings = { ...(settings || {}), placements };
+    // Отправляем все связи вместе с настройками (включая placements и slideCount)
+    const finalSettings = {
+      ...(settings || {}),
+      placements,
+      slideCount: slideCount || undefined,
+    };
     onSave(name, value, null, allRelations, widgetId, finalSettings);
   };
 
@@ -182,6 +189,19 @@ export function WidgetEditor({
             </Text>
 
             <WidgetPlacements selected={placements} onChange={setPlacements} />
+
+            {/* Slide Count field */}
+            <TextField
+              label="Количество активных слайдов"
+              type="number"
+              value={slideCount?.toString() || ""}
+              onChange={(value) => {
+                const numValue = parseInt(value, 10);
+                setSlideCount(isNaN(numValue) ? undefined : numValue);
+              }}
+              helpText="Укажите количество слайдов, которые будут отображаться одновременно"
+              autoComplete="off"
+            />
 
             {/* Show all existing relationships */}
             <ExistingProductRelationships

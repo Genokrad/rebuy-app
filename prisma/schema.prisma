@@ -37,7 +37,7 @@ model Widget {
   type        String   // "products-page", "cart", "checkout"
   shop        String   // shop domain
   products    String?  // JSON string with product relationships
-  settings    String?  // JSON string with widget settings (discounts, etc.)
+  settings    String?  // JSON string with widget settings (discounts, slideCount, etc.)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

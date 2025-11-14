@@ -29,7 +29,7 @@ export interface Widget {
   type: string;
   shop: string;
   products?: any[];
-  settings?: any;
+  settings?: any; // slideCount хранится внутри settings
   createdAt: string;
   updatedAt: string;
 }

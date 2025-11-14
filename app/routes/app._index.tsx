@@ -299,7 +299,7 @@ export default function Index() {
       name,
       type,
       products: widget?.products,
-      // прокидываем сохраненные настройки
+      // прокидываем сохраненные настройки (включая slideCount в settings)
       settings: (widget as any)?.settings,
     });
   };

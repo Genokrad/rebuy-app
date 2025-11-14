@@ -13,6 +13,8 @@
 <style>
   .sellence-widget-{{ block.settings.widget_id }} {
     display: none;
+    margin-top: 16px;
+    margin-bottom: 16px;
   }
   .product__media-wrapper {
     max-width: 50% !important;
@@ -345,6 +347,34 @@
     return finalDiscount;
   }
 
+
+  function priceFromMarket(marketsPrice, currentMarketplace) {
+    const currentMarket = marketsPrice?.find(market => market.countryCode === currentMarketplace);
+    const price = currentMarket?.price;
+    const currencyCode = currentMarket?.currencyCode;
+    return { price, currencyCode };
+  }
+
+  function isAvailableForSale(childProduct) {
+    if (childProduct.variantDetails?.availableForSale === false) {
+      return false;
+    }
+
+    let maxQuantity = 0;
+
+    childProduct.variantDetails?.inventoryLevels?.forEach(level => {
+      if (level.quantity > maxQuantity) {
+        maxQuantity = level.quantity;
+      }
+    });
+
+    if (childProduct.variantDetails?.inventoryPolicy === 'deny' && maxQuantity <= 0) {
+      return false;
+    }
+
+    return true;
+  }
+
   (function() {
     const widgetId = '{{ block.settings.widget_id }}';
     const appUrl = '{{ block.settings.app_url }}';
@@ -558,8 +588,16 @@
           // Очищаем список
           productsList.innerHTML = '';
 
+          let indexOfAvailableProducts = 0;
+
           // Добавляем товары в слайдер
           widget.product.childProducts.forEach((childProduct, index) => {
+            if (!isAvailableForSale(childProduct) || indexOfAvailableProducts >= widget.settings.slideCount) {
+              return null;
+            }
+
+            indexOfAvailableProducts++;
+
             const slide = document.createElement('li');
             slide.className = 'splide__slide';
 
@@ -708,8 +746,9 @@
               const inventoryLevel = childProduct.variantDetails?.inventoryLevels?.find(
                 level => level.countryCode === currentMarketplace
               ) || childProduct.variantDetails?.inventoryLevels?.[0];
-              const price = parseFloat(inventoryLevel?.price || childProduct?.variantDetails?.price || '0');
-              const currencyCode = inventoryLevel?.currencyCode || 'USD';
+
+              const price = parseFloat(priceFromMarket(childProduct.variantDetails?.marketsPrice, currentMarketplace)?.price || inventoryLevel?.price || childProduct?.variantDetails?.price || '0');
+              const currencyCode = priceFromMarket(childProduct.variantDetails?.marketsPrice, currentMarketplace)?.currencyCode || inventoryLevel?.currencyCode || 'USD';
               const formattedPrice = formatWidgetPrice(price, currencyCode);
               const formattedPriceWithDiscount = formatWidgetPrice(price * (1 - finalDiscount / 100), currencyCode);
 
@@ -742,8 +781,17 @@
           // Очищаем список
           itemsList.innerHTML = '';
 
+          let indexOfAvailableProducts = 0;
+
           // Добавляем товары в список
           widget.product.childProducts.forEach((childProduct, index) => {
+
+            if (!isAvailableForSale(childProduct) || indexOfAvailableProducts >= widget.settings.slideCount) {
+              return null;
+            }
+
+            indexOfAvailableProducts++;
+
             const item = document.createElement('li');
             item.className = 'sellence-widget-item';
 
@@ -752,9 +800,9 @@
               level => level.countryCode === currentMarketplace
             ) || childProduct.variantDetails?.inventoryLevels?.[0];
 
-            const price = inventoryLevel?.price || childProduct.variantDetails?.price || '0';
-            const currencyCode = inventoryLevel?.currencyCode || 'USD';
-            const compareAtPrice = childProduct.variantDetails?.compareAtPrice;
+            const price = priceFromMarket(childProduct.variantDetails?.marketsPrice, currentMarketplace)?.price || inventoryLevel?.price || childProduct.variantDetails?.price || '0';
+            const currencyCode = priceFromMarket(childProduct.variantDetails?.marketsPrice, currentMarketplace)?.currencyCode || inventoryLevel?.currencyCode || 'USD';
+            // const compareAtPrice = childProduct.variantDetails?.compareAtPrice;
 
             // Получаем название товара из данных варианта
             const fallbackName = I18N.productPlaceholder.replace('{index}', (index + 1).toString());
@@ -763,7 +811,7 @@
             // Форматируем цены с символами валют
             const formattedPrice = formatWidgetPrice(price, currencyCode);
             const formattedPriceWithDiscount = formatWidgetPrice(price * (1 - finalDiscount / 100), currencyCode);
-            const formattedComparePrice = compareAtPrice ? formatWidgetPrice(compareAtPrice, currencyCode) : '';
+            // const formattedComparePrice = compareAtPrice ? formatWidgetPrice(compareAtPrice, currencyCode) : '';
 
             item.innerHTML = `
               <label class="sellence-widget-item-label">
@@ -856,10 +904,10 @@
               (level) => level.countryCode === currentMarketplace
             ) || childProduct?.variantDetails?.inventoryLevels?.[0];
 
-            const price = parseFloat(inventoryLevel?.price || childProduct?.variantDetails?.price || '0');
+            const price = priceFromMarket(childProduct.variantDetails?.marketsPrice, currentMarketplace)?.price || parseFloat(inventoryLevel?.price || childProduct?.variantDetails?.price || '0');
 
-            if (idx === 0 && inventoryLevel?.currencyCode) {
-              currencyCode = inventoryLevel.currencyCode;
+            if (idx === 0 && (priceFromMarket(childProduct.variantDetails?.marketsPrice, currentMarketplace)?.currencyCode || inventoryLevel?.currencyCode)) {
+              currencyCode = priceFromMarket(childProduct.variantDetails?.marketsPrice, currentMarketplace)?.currencyCode || inventoryLevel?.currencyCode || 'USD';
             }
 
             totalOld += price; // сумма без скидки только по выбранным
