@@ -7,14 +7,16 @@ import {
   type SimplifiedInventoryLevel,
   type MarketPrice,
 } from "./getVariantDetails";
-import { getAllMarkets, getMarketCountryCode } from "./marketsService";
+import { getAllMarketsWithAdmin, getMarketCountryCode } from "./marketsService";
 
-export async function getVariantDetails(
-  request: Request,
+/**
+ * Внутренняя функция для получения деталей варианта
+ */
+async function getVariantDetailsInternal(
+  admin: { graphql: (query: string, options?: any) => Promise<any> },
+  shop: string,
   variantId: string,
 ): Promise<VariantDetails | null> {
-  const { admin } = await authenticate.admin(request);
-
   // console.log(`Fetching variant details for ${variantId}...`);
 
   try {
@@ -25,14 +27,18 @@ export async function getVariantDetails(
       apiVersion: ApiVersion.January25,
     });
 
-    const responseJson: any = await response.json();
+    // Обрабатываем ответ: может быть Response или уже распарсенный объект
+    const responseJson: any =
+      typeof response.json === "function"
+        ? await response.json()
+        : (response as any).body || response;
     // console.log(
     //   "Variant details response:",
     //   JSON.stringify(responseJson, null, 2),
     // );
 
-    const edges =
-      responseJson.data.productVariant.inventoryItem.inventoryLevels.edges;
+    // const edges =
+    //   responseJson.data.productVariant.inventoryItem.inventoryLevels.edges;
     // console.log("Edges:", edges);
     // edges.forEach((edge: any) => {
     //   console.log("Edge:", edge.node.location);
@@ -84,7 +90,11 @@ export async function getVariantDetails(
           },
         );
 
-        const pricingJson: any = await pricingResponse.json();
+        // Обрабатываем ответ: может быть Response или уже распарсенный объект
+        const pricingJson: any =
+          typeof pricingResponse.json === "function"
+            ? await pricingResponse.json()
+            : (pricingResponse as any).body || pricingResponse;
 
         // console.log(
         //   "Pricing response:",
@@ -147,7 +157,8 @@ export async function getVariantDetails(
     const finalImage = variant.image || variant.product?.featuredImage;
 
     // Получаем все маркеты для создания marketsPrice
-    const markets = await getAllMarkets(request);
+    // Используем admin клиент напрямую (работает и для обычных запросов, и для webhook'ов)
+    const markets = await getAllMarketsWithAdmin(admin);
     // console.log("Markets====>>>>>>:", JSON.stringify(markets, null, 2));
     const marketsPrice: MarketPrice[] = [];
 
@@ -182,7 +193,11 @@ export async function getVariantDetails(
           },
         );
 
-        const pricingJson: any = await pricingResponse.json();
+        // Обрабатываем ответ: может быть Response или уже распарсенный объект
+        const pricingJson: any =
+          typeof pricingResponse.json === "function"
+            ? await pricingResponse.json()
+            : (pricingResponse as any).body || pricingResponse;
 
         console.log(
           "Pricing response====>>>>>>:",
@@ -218,4 +233,26 @@ export async function getVariantDetails(
     console.error(`Error fetching variant details for ${variantId}:`, error);
     throw error;
   }
+}
+
+/**
+ * Получает детали варианта используя Request (для обычных запросов)
+ */
+export async function getVariantDetails(
+  request: Request,
+  variantId: string,
+): Promise<VariantDetails | null> {
+  const { admin, session } = await authenticate.admin(request);
+  return getVariantDetailsInternal(admin, session.shop, variantId);
+}
+
+/**
+ * Получает детали варианта используя admin клиент напрямую (для webhook'ов)
+ */
+export async function getVariantDetailsWithAdmin(
+  admin: { graphql: (query: string, options?: any) => Promise<any> },
+  shop: string,
+  variantId: string,
+): Promise<VariantDetails | null> {
+  return getVariantDetailsInternal(admin, shop, variantId);
 }

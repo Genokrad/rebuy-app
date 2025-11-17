@@ -7,9 +7,12 @@ import {
   type MarketsResponse,
 } from "./getMarkets";
 
-export async function getAllMarkets(request: Request): Promise<Market[]> {
-  const { admin } = await authenticate.admin(request);
-
+/**
+ * Внутренняя функция для получения всех маркетов
+ */
+async function getAllMarketsInternal(admin: {
+  graphql: (query: string, options?: any) => Promise<any>;
+}): Promise<Market[]> {
   // Сначала попробуем полный запрос с regions
   let responseJson: any;
   let useBaseQuery = false;
@@ -19,7 +22,12 @@ export async function getAllMarkets(request: Request): Promise<Market[]> {
       variables: { first: 250 },
       apiVersion: ApiVersion.January25,
     });
-    responseJson = await response.json();
+
+    // Обрабатываем ответ: может быть Response или уже распарсенный объект
+    responseJson =
+      typeof response.json === "function"
+        ? await response.json()
+        : (response as any).body || response;
 
     // Если есть ошибки, связанные с regions, используем базовый запрос
     if (responseJson?.errors?.length) {
@@ -49,7 +57,12 @@ export async function getAllMarkets(request: Request): Promise<Market[]> {
         variables: { first: 250 },
         apiVersion: ApiVersion.January25,
       });
-      responseJson = await response.json();
+
+      // Обрабатываем ответ: может быть Response или уже распарсенный объект
+      responseJson =
+        typeof response.json === "function"
+          ? await response.json()
+          : (response as any).body || response;
     } catch (error) {
       console.error("Error in base GraphQL request:", error);
       throw error;
@@ -79,6 +92,23 @@ export async function getAllMarkets(request: Request): Promise<Market[]> {
   // );
 
   return markets;
+}
+
+/**
+ * Получает все маркеты используя Request (для обычных запросов)
+ */
+export async function getAllMarkets(request: Request): Promise<Market[]> {
+  const { admin } = await authenticate.admin(request);
+  return getAllMarketsInternal(admin);
+}
+
+/**
+ * Получает все маркеты используя admin клиент напрямую (для webhook'ов)
+ */
+export async function getAllMarketsWithAdmin(admin: {
+  graphql: (query: string, options?: any) => Promise<any>;
+}): Promise<Market[]> {
+  return getAllMarketsInternal(admin);
 }
 
 /**
