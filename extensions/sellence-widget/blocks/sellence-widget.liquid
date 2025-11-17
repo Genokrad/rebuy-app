@@ -356,22 +356,33 @@
   }
 
   function isAvailableForSale(childProduct) {
+    // Если availableForSale явно false, товар недоступен
     if (childProduct.variantDetails?.availableForSale === false) {
       return false;
     }
 
-    let maxQuantity = 0;
-
-    childProduct.variantDetails?.inventoryLevels?.forEach(level => {
-      if (level.quantity > maxQuantity) {
-        maxQuantity = level.quantity;
-      }
-    });
-
-    if (childProduct.variantDetails?.inventoryPolicy === 'deny' && maxQuantity <= 0) {
-      return false;
+    // Если inventoryPolicy === "CONTINUE", товар доступен для продажи даже при нулевом количестве
+    const inventoryPolicy = childProduct.variantDetails?.inventoryPolicy?.toUpperCase();
+    if (inventoryPolicy === 'CONTINUE') {
+      return true;
     }
 
+    // Для "DENY" проверяем наличие товара
+    if (inventoryPolicy === 'DENY') {
+      let maxQuantity = 0;
+      childProduct.variantDetails?.inventoryLevels?.forEach(level => {
+        if (level.quantity > maxQuantity) {
+          maxQuantity = level.quantity;
+        }
+      });
+      
+      // Если количество <= 0 и политика DENY, товар недоступен
+      if (maxQuantity <= 0) {
+        return false;
+      }
+    }
+
+    // По умолчанию считаем товар доступным, если availableForSale !== false
     return true;
   }
 
@@ -453,23 +464,73 @@
         }
 
         // Формируем товары для добавления в корзину с properties
-        const cartItems = variantIds.map((variantId) => {
+        // Проверяем доступность товаров перед добавлением
+        const cartItems = [];
+        for (const variantId of variantIds) {
           const numericId = extractNumericId(variantId);
           if (!numericId) {
-            throw new Error(`Invalid variant ID format: ${variantId}`);
+            console.warn(`Invalid variant ID format: ${variantId}`);
+            continue;
           }
 
-          return {
-            id: numericId,
-            quantity: 1,
-            properties: {
-              '_sellence_discount': 'true',
-              '_sellence_discount_percent': discount.toString(),
-              '_sellence_widget_id': widgetId,
-              '_sellence_applied': 'true'
+          // Находим информацию о товаре для проверки inventoryPolicy
+          let canAdd = true;
+          checkedCheckboxes.forEach((checkbox) => {
+            const contentEl = checkbox.closest('label')?.querySelector('.sellence-widget-item-content');
+            if (!contentEl) return;
+            const encoded = contentEl.getAttribute('data-product');
+            if (!encoded) return;
+
+            try {
+              const childProduct = JSON.parse(decodeURIComponent(encoded));
+              const currentVariantId = childProduct.variantId || childProduct.variantDetails?.id;
+              if (currentVariantId === variantId) {
+                // Проверяем, можно ли добавить товар
+                const inventoryPolicy = childProduct.variantDetails?.inventoryPolicy?.toUpperCase();
+                const availableForSale = childProduct.variantDetails?.availableForSale;
+                
+                // Если inventoryPolicy === "CONTINUE", товар можно добавить даже при нулевом количестве
+                if (inventoryPolicy === 'CONTINUE' && availableForSale !== false) {
+                  canAdd = true;
+                } else if (inventoryPolicy === 'DENY') {
+                  // Для DENY проверяем количество
+                  let maxQuantity = 0;
+                  childProduct.variantDetails?.inventoryLevels?.forEach(level => {
+                    if (level.quantity > maxQuantity) {
+                      maxQuantity = level.quantity;
+                    }
+                  });
+                  if (maxQuantity <= 0 || availableForSale === false) {
+                    canAdd = false;
+                  }
+                } else if (availableForSale === false) {
+                  canAdd = false;
+                }
+              }
+            } catch (error) {
+              console.error('Error parsing product data:', error);
             }
-          };
-        });
+          });
+
+          if (canAdd) {
+            cartItems.push({
+              id: numericId,
+              quantity: 1,
+              properties: {
+                '_sellence_discount': 'true',
+                '_sellence_discount_percent': discount.toString(),
+                '_sellence_widget_id': widgetId,
+                '_sellence_applied': 'true'
+              }
+            });
+          } else {
+            console.warn(`Skipping variant ${variantId} - not available for sale`);
+          }
+        }
+
+        if (cartItems.length === 0) {
+          throw new Error('No available products to add to cart');
+        }
 
         // Добавляем товары в корзину через Shopify Cart API
         const addToCartResponse = await fetch('/cart/add.js', {
@@ -482,7 +543,15 @@
           // Получаем детали ошибки от Shopify
           const errorData = await addToCartResponse.json().catch(() => ({ error: 'Unknown error' }));
           console.error('Shopify Cart API error:', errorData);
-          throw new Error(`${I18N.addToCartError}: ${errorData.description || errorData.error || addToCartResponse.statusText}`);
+          
+          // Если ошибка связана с "sold out", но inventoryPolicy === "CONTINUE", 
+          // это может быть проблема с данными на стороне Shopify
+          const errorMessage = errorData.description || errorData.error || addToCartResponse.statusText;
+          if (errorMessage.includes('sold out') || errorMessage.includes('already sold out')) {
+            throw new Error(`${I18N.addToCartError}: Product may be temporarily unavailable. Please try again or contact support.`);
+          }
+          
+          throw new Error(`${I18N.addToCartError}: ${errorMessage}`);
         }
 
         // Перенаправляем на страницу корзины
@@ -961,8 +1030,9 @@
       "type": "text",
       "id": "app_url",
       "label": "App URL",
-      "info": "Your app URL from terminal (e.g., https://abc123.cloudflare-tunnel.com)",
-      "placeholder": "https://your-tunnel-url.com"
+      "info": "Your app URL from terminal (e.g., https://sellence-app-v1.fly.dev)",
+      "default": "https://sellence-app-v1.fly.dev",
+      "placeholder": "https://sellence-app-v1.fly.dev"
     }
   ]
 }
