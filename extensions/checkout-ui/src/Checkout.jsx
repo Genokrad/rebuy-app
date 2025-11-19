@@ -14,6 +14,18 @@ function Extension() {
   const [widgetData, setWidgetData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [addingProducts, setAddingProducts] = useState(new Set());
+  const [cartLinesVariantIds, setCartLinesVariantIds] = useState([]);
+  const [slideCount, setSlideCount] = useState(0);
+
+  useEffect(() => {
+    const variantIds = cartLines.map((line) => line.merchandise.id);
+    setCartLinesVariantIds(variantIds);
+  }, [cartLines]);
+
+  console.log("cartLines", cartLines);
+
+  console.log("cartLinesVariantIds", cartLinesVariantIds);
 
   // Получаем настройки из extension
   const widgetId =
@@ -114,6 +126,7 @@ function Extension() {
                 data,
               );
               setWidgetData(data);
+              setSlideCount(data?.widget?.settings?.slideCount || 0);
               setLoading(false);
               return; // Останавливаем перебор, так как нашли товар с childProducts
             } else {
@@ -184,35 +197,147 @@ function Extension() {
     return null;
   }
 
-  // 3. Render a UI
-  return (
-    <s-banner heading="checkout-ui">
-      <s-stack gap="base">
-        <s-text>
-          {shopify.i18n.translate("welcome", {
-            target: <s-text type="emphasis">{shopify.extension.target}</s-text>,
-          })}
-        </s-text>
-        {widgetData && widgetData.widget && (
-          <s-text>
-            Widget: {widgetData.widget.name} - Products found:{" "}
-            {widgetData.widget.product?.childProducts?.length || 0}
-          </s-text>
-        )}
-        <s-button onClick={handleClick}>
-          {shopify.i18n.translate("addAFreeGiftToMyOrder")}
-        </s-button>
-      </s-stack>
-    </s-banner>
-  );
+  // Функция для добавления товара в корзину
+  async function handleAddToCart(variantId) {
+    if (addingProducts.has(variantId)) {
+      return; // Уже добавляем этот товар
+    }
 
-  async function handleClick() {
-    // 4. Call the API to modify checkout
-    const result = await shopify.applyAttributeChange({
-      key: "requestedFreeGift",
-      type: "updateAttribute",
-      value: "yes",
-    });
-    console.log("applyAttributeChange result", result);
+    setAddingProducts((prev) => new Set(prev).add(variantId));
+
+    try {
+      const result = await shopify.applyCartLinesChange({
+        type: "addCartLine",
+        merchandiseId: variantId,
+        quantity: 1,
+      });
+
+      if (result.type === "error") {
+        console.error("Error adding product to cart:", result.message);
+        // Можно показать ошибку пользователю
+      } else {
+        console.log("Product added to cart successfully");
+      }
+    } catch (err) {
+      console.error("Error adding product to cart:", err);
+    } finally {
+      setAddingProducts((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(variantId);
+        return newSet;
+      });
+    }
   }
+
+  // Получаем дочерние товары
+  const childProducts = widgetData?.widget?.product?.childProducts || [];
+
+  let count = 0;
+  let productsForRender = [];
+
+  childProducts.forEach((childProduct) => {
+    if (cartLinesVariantIds.includes(childProduct.variantId)) {
+      return null;
+    }
+
+    count++;
+
+    if (count > slideCount) {
+      return;
+    }
+
+    productsForRender.push(childProduct);
+  });
+
+  console.log("productsForRender", productsForRender);
+
+  // 3. Render a UI
+  if (childProducts.length === 0) {
+    return null;
+  }
+
+  return (
+    <s-stack gap="base">
+      <s-heading>Complete your purchase</s-heading>
+      <s-grid
+        gridTemplateColumns="repeat(auto-fill, minmax(300px, 1fr))"
+        gap="base"
+      >
+        {productsForRender.map((childProduct, index) => {
+          if (cartLinesVariantIds.includes(childProduct.variantId)) {
+            return null;
+          }
+
+          const variantDetails = childProduct.variantDetails;
+          const imageUrl =
+            variantDetails?.image?.url ||
+            variantDetails?.product?.featuredImage?.url ||
+            "";
+          const productTitle =
+            variantDetails?.product?.title ||
+            variantDetails?.title ||
+            "Product";
+          const variantTitle = variantDetails?.title || "";
+          const price = variantDetails?.price || "N/A";
+          const compareAtPrice = variantDetails?.compareAtPrice;
+          const variantId = childProduct.variantId;
+          const isAdding = addingProducts.has(variantId);
+
+          return (
+            <s-grid-item gridColumn="auto" key={variantId || index}>
+              <s-grid
+                padding="base"
+                background="subdued"
+                border="base"
+                borderRadius="base"
+                gridTemplateColumns="auto 1fr auto"
+                gap="base"
+                alignItems="center"
+              >
+                <s-grid-item gridColumn="auto">
+                  <s-product-thumbnail
+                    src={imageUrl}
+                    alt={productTitle}
+                  ></s-product-thumbnail>
+                </s-grid-item>
+                <s-grid-item gridColumn="auto">
+                  <s-stack gap="small">
+                    <s-text>{productTitle}</s-text>
+                    <s-stack gap="small" direction="inline">
+                      <s-text>
+                        {shopify.i18n.formatCurrency(parseFloat(price) || 0, {
+                          currency: shopify.cost.totalAmount.value.currencyCode,
+                        })}
+                      </s-text>
+                      {compareAtPrice && (
+                        <s-text tone="critical">
+                          {shopify.i18n.formatCurrency(
+                            parseFloat(compareAtPrice) || 0,
+                            {
+                              currency:
+                                shopify.cost.totalAmount.value.currencyCode,
+                            },
+                          )}
+                        </s-text>
+                      )}
+                    </s-stack>
+                  </s-stack>
+                </s-grid-item>
+                <s-grid-item gridColumn="auto">
+                  <s-button
+                    variant="primary"
+                    onClick={() => handleAddToCart(variantId)}
+                    loading={isAdding}
+                    disabled={isAdding}
+                  >
+                    Add
+                  </s-button>
+                </s-grid-item>
+              </s-grid>
+            </s-grid-item>
+          );
+        })}
+      </s-grid>
+    </s-stack>
+  );
 }
