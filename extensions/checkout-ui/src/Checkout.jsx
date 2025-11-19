@@ -25,6 +25,9 @@ function Extension() {
 
   console.log("cartLines", cartLines);
 
+  console.log("shopify current market", shopify.localization.market.value);
+  console.log("shopify current country", shopify.localization.country.value);
+
   console.log("cartLinesVariantIds", cartLinesVariantIds);
 
   // Получаем настройки из extension
@@ -51,6 +54,42 @@ function Extension() {
     // Извлекаем числовой ID из GID формата: gid://shopify/Product/43622958399581
     const match = gid.match(/\/(\d+)$/);
     return match ? match[1] : null;
+  }
+
+  // Функция для получения цены из marketsPrice на основе текущего маркета
+  function getMarketPrice(variantDetails) {
+    const currentCountry = shopify.localization.country.value?.isoCode;
+
+    if (!currentCountry || !variantDetails?.marketsPrice) {
+      // Fallback на дефолтные значения, если маркет не найден
+      return {
+        price: variantDetails?.price || "0",
+        compareAtPrice: variantDetails?.compareAtPrice || null,
+        currencyCode: shopify.cost.totalAmount.value.currencyCode,
+      };
+    }
+
+    // Ищем маркет по countryCode
+    const marketPrice = variantDetails.marketsPrice.find(
+      (mp) => mp.countryCode === currentCountry,
+    );
+
+    if (marketPrice) {
+      return {
+        price: marketPrice.price || "0",
+        compareAtPrice: marketPrice.compareAtPrice || null,
+        currencyCode:
+          marketPrice.currencyCode ||
+          shopify.cost.totalAmount.value.currencyCode,
+      };
+    }
+
+    // Если маркет не найден, используем дефолтные значения
+    return {
+      price: variantDetails?.price || "0",
+      compareAtPrice: variantDetails?.compareAtPrice || null,
+      currencyCode: shopify.cost.totalAmount.value.currencyCode,
+    };
   }
 
   // Загружаем данные виджета
@@ -287,8 +326,13 @@ function Extension() {
             variantDetails?.title ||
             "Product";
           const variantTitle = variantDetails?.title || "";
-          const price = variantDetails?.price || "N/A";
-          const compareAtPrice = variantDetails?.compareAtPrice;
+
+          // Получаем цену из marketsPrice на основе текущего маркета
+          const marketPriceData = getMarketPrice(variantDetails);
+          const price = marketPriceData.price;
+          const compareAtPrice = marketPriceData.compareAtPrice;
+          const currencyCode = marketPriceData.currencyCode;
+
           const variantId = childProduct.variantId;
           const isAdding = addingProducts.has(variantId);
 
@@ -318,11 +362,9 @@ function Extension() {
                         const compareAtPriceNum = compareAtPrice
                           ? parseFloat(compareAtPrice) || 0
                           : null;
-                        const currencyCode =
-                          shopify.cost.totalAmount.value.currencyCode;
 
                         // Если обе цены нужно показать
-                        if (true && compareAtPriceNum) {
+                        if (showBothPrices && compareAtPriceNum) {
                           // Определяем какая цена больше
                           if (compareAtPriceNum > priceNum) {
                             // Старая цена больше - показываем обе, старую перечеркнутой
