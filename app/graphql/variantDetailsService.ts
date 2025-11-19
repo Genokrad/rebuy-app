@@ -211,6 +211,7 @@ async function getVariantDetailsInternal(
             marketName: market.name,
             countryCode: marketCountryCode,
             price: pricing.price.amount,
+            compareAtPrice: pricing.compareAtPrice?.amount ?? null,
             currencyCode: pricing.price.currencyCode,
           });
         }

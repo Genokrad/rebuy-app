@@ -56,3 +56,10 @@ key = "app_url"
 type = "single_line_text_field"
 name = "App URL"
 description = "Enter your app URL (e.g., https://your-app.fly.dev)"
+
+[[extensions.settings.fields]]
+key = "show_both_prices"
+type = "boolean"
+name = "Show both prices"
+description = "If enabled, displays both original and sale prices. If disabled, shows only the lower price."
+default = true

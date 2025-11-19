@@ -136,6 +136,7 @@ model MarketPrice {
   marketName      String
   countryCode     String
   price           String
+  compareAtPrice  String?
   currencyCode    String
   updatedAt       DateTime      @updatedAt
 

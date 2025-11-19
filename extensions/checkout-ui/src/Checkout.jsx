@@ -32,7 +32,16 @@ function Extension() {
     shopify.settings.value.widget_id || "cmi31w59t0000uoi7tcj01tsl";
   const appUrl =
     shopify.settings.value.app_url ||
-    "https://injuries-candles-enquiry-formula.trycloudflare.com";
+    "https://recommended-identified-campbell-schools.trycloudflare.com";
+  const showBothPrices = shopify.settings.value.show_both_prices === true;
+
+  // Функция для добавления перечеркивания через Unicode символы
+  function strikethrough(text) {
+    return String(text)
+      .split("")
+      .map((char) => char + "\u0336")
+      .join("");
+  }
 
   // Функция для извлечения productId из GID формата
   function extractProductId(gid) {
@@ -304,22 +313,66 @@ function Extension() {
                   <s-stack gap="small">
                     <s-text>{productTitle}</s-text>
                     <s-stack gap="small" direction="inline">
-                      <s-text>
-                        {shopify.i18n.formatCurrency(parseFloat(price) || 0, {
-                          currency: shopify.cost.totalAmount.value.currencyCode,
-                        })}
-                      </s-text>
-                      {compareAtPrice && (
-                        <s-text tone="critical">
-                          {shopify.i18n.formatCurrency(
-                            parseFloat(compareAtPrice) || 0,
-                            {
-                              currency:
-                                shopify.cost.totalAmount.value.currencyCode,
-                            },
-                          )}
-                        </s-text>
-                      )}
+                      {(() => {
+                        const priceNum = parseFloat(price) || 0;
+                        const compareAtPriceNum = compareAtPrice
+                          ? parseFloat(compareAtPrice) || 0
+                          : null;
+                        const currencyCode =
+                          shopify.cost.totalAmount.value.currencyCode;
+
+                        // Если обе цены нужно показать
+                        if (true && compareAtPriceNum) {
+                          // Определяем какая цена больше
+                          if (compareAtPriceNum > priceNum) {
+                            // Старая цена больше - показываем обе, старую перечеркнутой
+                            return (
+                              <>
+                                <s-text>
+                                  {shopify.i18n.formatCurrency(priceNum, {
+                                    currency: currencyCode,
+                                  })}
+                                </s-text>
+                                <s-text tone="neutral">
+                                  {strikethrough(
+                                    shopify.i18n.formatCurrency(
+                                      compareAtPriceNum,
+                                      {
+                                        currency: currencyCode,
+                                      },
+                                    ),
+                                  )}
+                                </s-text>
+                              </>
+                            );
+                          } else {
+                            // Новая цена больше (редкий случай) - показываем обе
+                            return (
+                              <>
+                                <s-text>
+                                  {shopify.i18n.formatCurrency(priceNum, {
+                                    currency: currencyCode,
+                                  })}
+                                </s-text>
+                              </>
+                            );
+                          }
+                        } else {
+                          // Показываем только меньшую цену (по умолчанию)
+                          const displayPrice =
+                            compareAtPriceNum && compareAtPriceNum < priceNum
+                              ? compareAtPriceNum
+                              : priceNum;
+
+                          return (
+                            <s-text>
+                              {shopify.i18n.formatCurrency(displayPrice, {
+                                currency: currencyCode,
+                              })}
+                            </s-text>
+                          );
+                        }
+                      })()}
                     </s-stack>
                   </s-stack>
                 </s-grid-item>
