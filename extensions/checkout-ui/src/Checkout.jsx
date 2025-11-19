@@ -23,13 +23,6 @@ function Extension() {
     setCartLinesVariantIds(variantIds);
   }, [cartLines]);
 
-  console.log("cartLines", cartLines);
-
-  console.log("shopify current market", shopify.localization.market.value);
-  console.log("shopify current country", shopify.localization.country.value);
-
-  console.log("cartLinesVariantIds", cartLinesVariantIds);
-
   // Получаем настройки из extension
   const widgetId =
     shopify.settings.value.widget_id || "cmi31w59t0000uoi7tcj01tsl";
@@ -139,9 +132,9 @@ function Extension() {
           // Формируем URL запроса
           const apiUrl = `${cleanUrl}/api/widget/${widgetId}?productId=${encodeURIComponent(productId)}`;
 
-          console.log(
-            `Checking product ${i + 1}/${cartLines.length} (ID: ${productId})...`,
-          );
+          // console.log(
+          //   `Checking product ${i + 1}/${cartLines.length} (ID: ${productId})...`,
+          // );
 
           // Делаем запрос к API
           const response = await fetch(apiUrl);
@@ -169,10 +162,10 @@ function Extension() {
               Array.isArray(childProducts) &&
               childProducts.length > 0
             ) {
-              console.log(
-                `Found product with ${childProducts.length} child products!`,
-                data,
-              );
+              // console.log(
+              //   `Found product with ${childProducts.length} child products!`,
+              //   data,
+              // );
               setWidgetData(data);
               setSlideCount(data?.widget?.settings?.slideCount || 0);
               setLoading(false);
@@ -297,7 +290,7 @@ function Extension() {
     productsForRender.push(childProduct);
   });
 
-  console.log("productsForRender", productsForRender);
+  // console.log("productsForRender", productsForRender);
 
   // 3. Render a UI
   if (childProducts.length === 0) {
