@@ -58,6 +58,7 @@ function Extension() {
         });
 
         try {
+          // Сохраняем промокод в атрибут корзины
           const result = await shopify.applyAttributeChange({
             type: "updateAttribute",
             key: "_sellence_has_discount_code",
@@ -69,6 +70,58 @@ function Extension() {
               currentCodes,
             );
             lastSavedDiscountCodesRef.current = currentCodes;
+
+            // Удаляем атрибуты скидки Sellence из всех товаров в корзине
+            // чтобы Cart Transform не путался при множественных перерендерах
+            if (cartLines && cartLines.length > 0) {
+              console.log(
+                "🗑️ Removing Sellence discount attributes from cart lines due to promo code",
+              );
+              for (const line of cartLines) {
+                // Проверяем наличие атрибутов Sellence скидки
+                const hasSellenceDiscount = line.attributes?.some(
+                  (attr) =>
+                    attr.key === "_sellence_discount" ||
+                    attr.key === "_sellence_discount_percent",
+                );
+
+                if (hasSellenceDiscount) {
+                  // Фильтруем атрибуты, оставляем только те, которые НЕ связаны со скидкой Sellence
+                  const filteredAttributes =
+                    line.attributes?.filter(
+                      (attr) =>
+                        attr.key !== "_sellence_discount" &&
+                        attr.key !== "_sellence_discount_percent",
+                    ) || [];
+
+                  try {
+                    // Обновляем товар, удаляя атрибуты скидки
+                    const updateResult = await shopify.applyCartLinesChange({
+                      type: "updateCartLine",
+                      id: line.id,
+                      quantity: line.quantity,
+                      attributes: filteredAttributes,
+                    });
+
+                    if (updateResult.type === "success") {
+                      console.log(
+                        `✅ Removed Sellence discount attributes from line ${line.id}`,
+                      );
+                    } else {
+                      console.error(
+                        `Error removing Sellence discount attributes from line ${line.id}:`,
+                        updateResult.message,
+                      );
+                    }
+                  } catch (updateError) {
+                    console.error(
+                      `Error updating cart line ${line.id}:`,
+                      updateError,
+                    );
+                  }
+                }
+              }
+            }
           } else {
             console.error(
               "Error saving discount code to cart attribute:",
@@ -157,7 +210,7 @@ function Extension() {
     shopify.settings.value.widget_id || "cmi31w59t0000uoi7tcj01tsl";
   const appUrl =
     shopify.settings.value.app_url ||
-    "https://delegation-exit-dramatically-ways.trycloudflare.com";
+    "ttps://circuit-tri-layers-networking.trycloudflare.com";
   const showBothPrices = shopify.settings.value.show_both_prices === true;
 
   // Функция для добавления перечеркивания через Unicode символы

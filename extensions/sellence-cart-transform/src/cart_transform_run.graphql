@@ -20,6 +20,10 @@ query RunInput {
         key
         value
       }
+      sellenceOriginalPrice: attribute(key: "_sellence_original_price") {
+        key
+        value
+      }
     }
   }
 }
