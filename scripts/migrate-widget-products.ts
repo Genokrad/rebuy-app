@@ -5,10 +5,7 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import type {
-  ProductRelationship,
-  ChildProduct,
-} from "../app/components/types";
+import type { ProductRelationship } from "../app/components/types";
 
 const prisma = new PrismaClient();
 
@@ -193,8 +190,9 @@ async function migrateWidgetProducts() {
                           marketName: marketPrice.marketName || "",
                           countryCode: marketPrice.countryCode || "",
                           price: marketPrice.price || "0",
+                          compareAtPrice: marketPrice.compareAtPrice || null,
                           currencyCode: marketPrice.currencyCode || "USD",
-                        },
+                        } as any,
                       });
                     }
                   }
