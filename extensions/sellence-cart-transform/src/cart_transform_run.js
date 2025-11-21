@@ -25,7 +25,21 @@ const NO_CHANGES = {
 export function cartTransformRun(input) {
   const operations = [];
 
-  console.log('input ===>>>>>:', input);
+  // Проверяем наличие промокода через атрибут корзины
+  // Атрибут устанавливается в Checkout UI Extension при применении промокода
+  const hasDiscountCodeAttr = input.cart?.hasDiscountCode;
+  const hasDiscountCode = hasDiscountCodeAttr?.value && hasDiscountCodeAttr.value.trim() !== '';
+
+  console.log('=== CART TRANSFORM INPUT ===');
+  console.log('Has discount code attribute:', hasDiscountCodeAttr);
+  console.log('Has discount code:', hasDiscountCode);
+
+  // Если есть промокод — не применяем скидку Sellence
+  if (hasDiscountCode) {
+    console.log('🎯 DISCOUNT CODE FOUND IN CART - Skipping Sellence discount');
+    console.log('Discount code value:', hasDiscountCodeAttr.value);
+    return NO_CHANGES;
+  }
 
   // Проходим по всем линиям корзины
   for (const line of input.cart.lines) {
@@ -39,12 +53,16 @@ export function cartTransformRun(input) {
 
       // Проверяем, что процент скидки валидный
       if (!isNaN(discountPercent) && discountPercent > 0 && discountPercent <= 100) {
-        // Получаем оригинальную цену
+        // Получаем оригинальную цену и валюту
         const originalPrice = parseFloat(line.cost?.amountPerQuantity?.amount || "0");
+        const currencyCode = line.cost?.amountPerQuantity?.currencyCode || "USD";
 
         if (!isNaN(originalPrice) && originalPrice > 0) {
           // Вычисляем цену со скидкой
           const discountedPrice = originalPrice * (1 - discountPercent / 100);
+
+          // Вычисляем сумму скидки (разница между оригинальной и скидочной ценой)
+          const discountAmount = originalPrice - discountedPrice;
 
           // Создаем операцию для обновления цены
           // Для JavaScript amount может быть числом или строкой
@@ -58,8 +76,18 @@ export function cartTransformRun(input) {
                   },
                 },
               },
+              // Добавляем информацию о скидке в title через суффикс
+              // Формат: "Original Title | Sellence discount: -$5.00"
+              // Но это не очень хорошее решение, так как изменяет название товара
+              // Вместо этого, информацию о скидке мы будем хранить в атрибутах,
+              // которые уже установлены при добавлении товара
             },
           });
+
+          console.log(`Applied Sellence discount to line ${line.id}:`);
+          console.log(`  Original price: ${originalPrice} ${currencyCode}`);
+          console.log(`  Discounted price: ${discountedPrice} ${currencyCode}`);
+          console.log(`  Discount amount: ${discountAmount} ${currencyCode}`);
         }
       }
     }

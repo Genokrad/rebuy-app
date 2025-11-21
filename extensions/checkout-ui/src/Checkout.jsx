@@ -1,7 +1,10 @@
 import "@shopify/ui-extensions/preact";
 import { render } from "preact";
-import { useCartLines } from "@shopify/ui-extensions/checkout/preact";
-import { useEffect, useState } from "preact/hooks";
+import {
+  useCartLines,
+  useDiscountCodes,
+} from "@shopify/ui-extensions/checkout/preact";
+import { useEffect, useState, useRef } from "preact/hooks";
 
 // 1. Export the extension
 export default async () => {
@@ -11,24 +14,150 @@ export default async () => {
 function Extension() {
   // Хуки должны вызываться до любых ранних return'ов
   const cartLines = useCartLines();
+  const discountCodes = useDiscountCodes();
   const [widgetData, setWidgetData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [addingProducts, setAddingProducts] = useState(new Set());
   const [cartLinesVariantIds, setCartLinesVariantIds] = useState([]);
   const [slideCount, setSlideCount] = useState(0);
+  // Используем useRef для отслеживания последнего сохраненного значения без триггера перерендера
+  const lastSavedDiscountCodesRef = useRef(null);
 
   useEffect(() => {
     const variantIds = cartLines.map((line) => line.merchandise.id);
     setCartLinesVariantIds(variantIds);
   }, [cartLines]);
 
+  // Сохраняем discount codes в атрибут корзины для Cart Transform Function
+  useEffect(() => {
+    const updateCartAttribute = async () => {
+      // Извлекаем коды из объектов: discountCodes - это массив объектов вида [{code: 'test-sellence'}]
+      const currentCodes =
+        discountCodes && discountCodes.length > 0
+          ? discountCodes
+              .map((dc) => (typeof dc === "string" ? dc : dc.code))
+              .filter(Boolean)
+              .sort()
+              .join(",")
+          : null;
+
+      // Проверяем, изменились ли коды с последнего сохранения
+      if (currentCodes === lastSavedDiscountCodesRef.current) {
+        return; // Не обновляем, если значения одинаковые
+      }
+
+      console.log("=== DISCOUNT CODES ===");
+      console.log("Discount codes:", discountCodes);
+
+      if (currentCodes) {
+        console.log("🎯 DISCOUNT CODES APPLIED:", discountCodes);
+        discountCodes.forEach((code, index) => {
+          const codeValue = typeof code === "string" ? code : code.code;
+          console.log(`  [${index + 1}] Code:`, codeValue);
+        });
+
+        try {
+          const result = await shopify.applyAttributeChange({
+            type: "updateAttribute",
+            key: "_sellence_has_discount_code",
+            value: currentCodes,
+          });
+          if (result.type === "success") {
+            console.log(
+              "✅ Discount code saved to cart attribute:",
+              currentCodes,
+            );
+            lastSavedDiscountCodesRef.current = currentCodes;
+          } else {
+            console.error(
+              "Error saving discount code to cart attribute:",
+              result.message,
+            );
+          }
+        } catch (error) {
+          console.error("Error saving discount code to cart attribute:", error);
+        }
+      } else {
+        // Проверяем, нужно ли удалять (если ранее было сохранено значение)
+        if (lastSavedDiscountCodesRef.current !== null) {
+          console.log("No discount codes applied");
+
+          try {
+            const result = await shopify.applyAttributeChange({
+              type: "removeAttribute",
+              key: "_sellence_has_discount_code",
+            });
+            if (result.type === "success") {
+              console.log("✅ Discount code attribute removed from cart");
+              lastSavedDiscountCodesRef.current = null;
+            } else {
+              console.error(
+                "Error removing discount code attribute:",
+                result.message,
+              );
+            }
+          } catch (error) {
+            console.error("Error removing discount code attribute:", error);
+          }
+        }
+      }
+    };
+
+    updateCartAttribute();
+  }, [discountCodes]); // Убрали lastSavedDiscountCodes из зависимостей, используем useRef
+
+  // Отслеживаем изменения стоимости корзины (может изменяться при применении промокода)
+  // Используем useMemo или убираем логирование, чтобы не вызывать бесконечные циклы
+  // Закомментировано для предотвращения циклов - можно включить для отладки
+  /*
+  useEffect(() => {
+    try {
+      const totalAmount = shopify.cost?.totalAmount?.value?.amount;
+      const subtotalAmount = shopify.cost?.subtotalAmount?.value?.amount;
+
+      console.log("=== CHECKOUT COST INFO ===");
+      console.log("Total Amount:", totalAmount);
+      console.log("Subtotal Amount:", subtotalAmount);
+      console.log("Full cost object:", shopify.cost);
+
+      // Логируем все свойства cost для поиска discount info
+      if (shopify.cost) {
+        console.log("Cost object keys:", Object.keys(shopify.cost));
+        // Проверяем возможные поля для discount
+        // @ts-ignore - totalDiscountAmount может существовать в runtime
+        const totalDiscount = shopify.cost.totalDiscountAmount;
+        if (totalDiscount) {
+          console.log("🎯 DISCOUNT AMOUNT FOUND:", totalDiscount);
+        }
+        // @ts-ignore - discountAmount может существовать в runtime
+        const discount = shopify.cost.discountAmount;
+        if (discount) {
+          console.log("🎯 DISCOUNT AMOUNT FOUND:", discount);
+        }
+      }
+
+      // Вычисляем скидку по разнице
+      if (totalAmount && subtotalAmount) {
+        const calculatedDiscount =
+          parseFloat(String(subtotalAmount)) - parseFloat(String(totalAmount));
+        if (calculatedDiscount > 0) {
+          console.log("🎯 DISCOUNT CALCULATED! Amount:", calculatedDiscount);
+        }
+      }
+    } catch (error) {
+      console.error("Error reading cost info:", error);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartLines]); // Отслеживаем изменения через cartLines
+  */
+
   // Получаем настройки из extension
   const widgetId =
     shopify.settings.value.widget_id || "cmi31w59t0000uoi7tcj01tsl";
   const appUrl =
     shopify.settings.value.app_url ||
-    "https://recommended-identified-campbell-schools.trycloudflare.com";
+    "https://delegation-exit-dramatically-ways.trycloudflare.com";
   const showBothPrices = shopify.settings.value.show_both_prices === true;
 
   // Функция для добавления перечеркивания через Unicode символы
@@ -273,6 +402,74 @@ function Extension() {
   // Получаем дочерние товары
   const childProducts = widgetData?.widget?.product?.childProducts || [];
 
+  // Функция для получения товаров с Sellence скидкой из корзины
+  const getCartLinesWithSellenceDiscount = () => {
+    if (!cartLines || cartLines.length === 0) {
+      return [];
+    }
+
+    return cartLines
+      .map((line) => {
+        // Проверяем наличие атрибута _sellence_discount
+        const sellenceDiscountAttr = line.attributes?.find(
+          (attr) => attr.key === "_sellence_discount",
+        );
+        const sellenceDiscountPercentAttr = line.attributes?.find(
+          (attr) => attr.key === "_sellence_discount_percent",
+        );
+
+        if (
+          sellenceDiscountAttr?.value === "true" &&
+          sellenceDiscountPercentAttr?.value
+        ) {
+          const discountPercent = parseFloat(sellenceDiscountPercentAttr.value);
+
+          // Получаем цену из структуры cost
+          // В Checkout UI Extension структура cost может отличаться
+          const cost = line.cost;
+          // @ts-ignore - cost структура может отличаться в разных версиях API
+          const totalAmount =
+            cost?.totalAmount?.amount ||
+            // @ts-ignore
+            cost?.amount?.amount ||
+            // @ts-ignore
+            cost?.amount ||
+            "0";
+          // @ts-ignore - currencyCode структура может отличаться
+          const currencyCode =
+            cost?.totalAmount?.currencyCode ||
+            // @ts-ignore
+            cost?.amount?.currencyCode ||
+            // @ts-ignore
+            cost?.currencyCode ||
+            "USD";
+
+          // Текущая цена (уже со скидкой от Cart Transform)
+          const currentPrice =
+            parseFloat(String(totalAmount)) / (line.quantity || 1);
+
+          // Восстанавливаем оригинальную цену до скидки
+          const originalPrice = currentPrice / (1 - discountPercent / 100);
+
+          // Вычисляем сумму скидки
+          const discountAmount = originalPrice - currentPrice;
+
+          return {
+            line,
+            discountPercent,
+            discountAmount,
+            originalPrice,
+            currentPrice,
+            currencyCode,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  };
+
+  const cartLinesWithDiscount = getCartLinesWithSellenceDiscount();
+
   let count = 0;
   let productsForRender = [];
 
@@ -299,133 +496,137 @@ function Extension() {
 
   return (
     <s-stack gap="base">
-      <s-heading>Complete your purchase</s-heading>
-      <s-grid
-        gridTemplateColumns="repeat(auto-fill, minmax(300px, 1fr))"
-        gap="base"
-      >
-        {productsForRender.map((childProduct, index) => {
-          if (cartLinesVariantIds.includes(childProduct.variantId)) {
-            return null;
-          }
+      {childProducts.length > 0 && (
+        <>
+          <s-heading>Complete your purchase</s-heading>
+          <s-grid
+            gridTemplateColumns="repeat(auto-fill, minmax(300px, 1fr))"
+            gap="base"
+          >
+            {productsForRender.map((childProduct, index) => {
+              if (cartLinesVariantIds.includes(childProduct.variantId)) {
+                return null;
+              }
 
-          const variantDetails = childProduct.variantDetails;
-          const imageUrl =
-            variantDetails?.image?.url ||
-            variantDetails?.product?.featuredImage?.url ||
-            "";
-          const productTitle =
-            variantDetails?.product?.title ||
-            variantDetails?.title ||
-            "Product";
-          const variantTitle = variantDetails?.title || "";
+              const variantDetails = childProduct.variantDetails;
+              const imageUrl =
+                variantDetails?.image?.url ||
+                variantDetails?.product?.featuredImage?.url ||
+                "";
+              const productTitle =
+                variantDetails?.product?.title ||
+                variantDetails?.title ||
+                "Product";
 
-          // Получаем цену из marketsPrice на основе текущего маркета
-          const marketPriceData = getMarketPrice(variantDetails);
-          const price = marketPriceData.price;
-          const compareAtPrice = marketPriceData.compareAtPrice;
-          const currencyCode = marketPriceData.currencyCode;
+              // Получаем цену из marketsPrice на основе текущего маркета
+              const marketPriceData = getMarketPrice(variantDetails);
+              const price = marketPriceData.price;
+              const compareAtPrice = marketPriceData.compareAtPrice;
+              const currencyCode = marketPriceData.currencyCode;
 
-          const variantId = childProduct.variantId;
-          const isAdding = addingProducts.has(variantId);
+              const variantId = childProduct.variantId;
+              const isAdding = addingProducts.has(variantId);
 
-          return (
-            <s-grid-item gridColumn="auto" key={variantId || index}>
-              <s-grid
-                padding="base"
-                background="subdued"
-                border="base"
-                borderRadius="base"
-                gridTemplateColumns="auto 1fr auto"
-                gap="base"
-                alignItems="center"
-              >
-                <s-grid-item gridColumn="auto">
-                  <s-product-thumbnail
-                    src={imageUrl}
-                    alt={productTitle}
-                  ></s-product-thumbnail>
-                </s-grid-item>
-                <s-grid-item gridColumn="auto">
-                  <s-stack gap="small">
-                    <s-text>{productTitle}</s-text>
-                    <s-stack gap="small" direction="inline">
-                      {(() => {
-                        const priceNum = parseFloat(price) || 0;
-                        const compareAtPriceNum = compareAtPrice
-                          ? parseFloat(compareAtPrice) || 0
-                          : null;
-
-                        // Если обе цены нужно показать
-                        if (showBothPrices && compareAtPriceNum) {
-                          // Определяем какая цена больше
-                          if (compareAtPriceNum > priceNum) {
-                            // Старая цена больше - показываем обе, старую перечеркнутой
-                            return (
-                              <>
-                                <s-text>
-                                  {shopify.i18n.formatCurrency(priceNum, {
-                                    currency: currencyCode,
-                                  })}
-                                </s-text>
-                                <s-text tone="neutral">
-                                  {strikethrough(
-                                    shopify.i18n.formatCurrency(
-                                      compareAtPriceNum,
-                                      {
-                                        currency: currencyCode,
-                                      },
-                                    ),
-                                  )}
-                                </s-text>
-                              </>
-                            );
-                          } else {
-                            // Новая цена больше (редкий случай) - показываем обе
-                            return (
-                              <>
-                                <s-text>
-                                  {shopify.i18n.formatCurrency(priceNum, {
-                                    currency: currencyCode,
-                                  })}
-                                </s-text>
-                              </>
-                            );
-                          }
-                        } else {
-                          // Показываем только меньшую цену (по умолчанию)
-                          const displayPrice =
-                            compareAtPriceNum && compareAtPriceNum < priceNum
-                              ? compareAtPriceNum
-                              : priceNum;
-
-                          return (
-                            <s-text>
-                              {shopify.i18n.formatCurrency(displayPrice, {
-                                currency: currencyCode,
-                              })}
-                            </s-text>
-                          );
-                        }
-                      })()}
-                    </s-stack>
-                  </s-stack>
-                </s-grid-item>
-                <s-grid-item gridColumn="auto">
-                  <s-button
-                    variant="primary"
-                    onClick={() => handleAddToCart(variantId)}
-                    loading={isAdding}
-                    disabled={isAdding}
+              return (
+                <s-grid-item gridColumn="auto" key={variantId || index}>
+                  <s-grid
+                    padding="base"
+                    background="subdued"
+                    border="base"
+                    borderRadius="base"
+                    gridTemplateColumns="auto 1fr auto"
+                    gap="base"
+                    alignItems="center"
                   >
-                    Add
-                  </s-button>
+                    <s-grid-item gridColumn="auto">
+                      <s-product-thumbnail
+                        src={imageUrl}
+                        alt={productTitle}
+                      ></s-product-thumbnail>
+                    </s-grid-item>
+                    <s-grid-item gridColumn="auto">
+                      <s-stack gap="small">
+                        <s-text>{productTitle}</s-text>
+                        <s-stack gap="small" direction="inline">
+                          {(() => {
+                            const priceNum = parseFloat(price) || 0;
+                            const compareAtPriceNum = compareAtPrice
+                              ? parseFloat(compareAtPrice) || 0
+                              : null;
+
+                            // Если обе цены нужно показать
+                            if (showBothPrices && compareAtPriceNum) {
+                              // Определяем какая цена больше
+                              if (compareAtPriceNum > priceNum) {
+                                // Старая цена больше - показываем обе, старую перечеркнутой
+                                return (
+                                  <>
+                                    <s-text>
+                                      {shopify.i18n.formatCurrency(priceNum, {
+                                        currency: currencyCode,
+                                      })}
+                                    </s-text>
+                                    <s-text tone="neutral">
+                                      {strikethrough(
+                                        shopify.i18n.formatCurrency(
+                                          compareAtPriceNum,
+                                          {
+                                            currency: currencyCode,
+                                          },
+                                        ),
+                                      )}
+                                    </s-text>
+                                  </>
+                                );
+                              } else {
+                                // Новая цена больше (редкий случай) - показываем обе
+                                return (
+                                  <>
+                                    <s-text>
+                                      {shopify.i18n.formatCurrency(priceNum, {
+                                        currency: currencyCode,
+                                      })}
+                                    </s-text>
+                                  </>
+                                );
+                              }
+                            } else {
+                              // Показываем только меньшую цену (по умолчанию)
+                              const displayPrice =
+                                compareAtPriceNum &&
+                                compareAtPriceNum < priceNum
+                                  ? compareAtPriceNum
+                                  : priceNum;
+
+                              return (
+                                <s-text>
+                                  {shopify.i18n.formatCurrency(displayPrice, {
+                                    currency: currencyCode,
+                                  })}
+                                </s-text>
+                              );
+                            }
+                          })()}
+                        </s-stack>
+                      </s-stack>
+                    </s-grid-item>
+                    <s-grid-item gridColumn="auto">
+                      <s-button
+                        variant="primary"
+                        onClick={() => handleAddToCart(variantId)}
+                        loading={isAdding}
+                        disabled={isAdding}
+                      >
+                        Add
+                      </s-button>
+                    </s-grid-item>
+                  </s-grid>
                 </s-grid-item>
-              </s-grid>
-            </s-grid-item>
-          );
-        })}
-      </s-grid>
+              );
+            })}
+          </s-grid>
+        </>
+      )}
     </s-stack>
   );
 }

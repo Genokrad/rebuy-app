@@ -513,16 +513,70 @@
           });
 
           if (canAdd) {
-            cartItems.push({
-              id: numericId,
-              quantity: 1,
-              properties: {
-                '_sellence_discount': 'true',
-                '_sellence_discount_percent': discount.toString(),
-                '_sellence_widget_id': widgetId,
-                '_sellence_applied': 'true'
+            // Получаем оригинальную цену из marketsPrice по текущему маркету
+            const currentMarketplace = document.getElementById('sellence-widget-{{ block.id }}')?.dataset?.currentMarketplace || 'US';
+            let originalPrice = null;
+            let foundChildProduct = null;
+            
+            // Ищем товар в виджете для получения цены
+            // Сначала проверяем в checkedCheckboxes (быстрее)
+            checkedCheckboxes.forEach((checkbox) => {
+              const contentEl = checkbox.closest('label')?.querySelector('.sellence-widget-item-content');
+              if (!contentEl || foundChildProduct) return;
+              const encoded = contentEl.getAttribute('data-product');
+              if (!encoded) return;
+
+              try {
+                const childProduct = JSON.parse(decodeURIComponent(encoded));
+                const currentVariantId = childProduct.variantId || childProduct.variantDetails?.id;
+                if (currentVariantId === variantId) {
+                  foundChildProduct = childProduct;
+                }
+              } catch (error) {
+                console.error('Error parsing product data:', error);
               }
             });
+
+            // Если не нашли в checkedCheckboxes, ищем в widget.product.childProducts
+            if (!foundChildProduct && widget.product?.childProducts) {
+              widget.product.childProducts.forEach((childProduct) => {
+                if (foundChildProduct) return;
+                const currentVariantId = childProduct.variantId || childProduct.variantDetails?.id;
+                if (currentVariantId === variantId) {
+                  foundChildProduct = childProduct;
+                }
+              });
+            }
+
+            // Получаем оригинальную цену из marketsPrice по маркету
+            if (foundChildProduct) {
+              const marketPrice = priceFromMarket(foundChildProduct.variantDetails?.marketsPrice, currentMarketplace);
+              if (marketPrice?.price) {
+                originalPrice = marketPrice.price;
+              } else {
+                // Fallback на обычную цену если нет marketsPrice
+                const inventoryLevel = foundChildProduct.variantDetails?.inventoryLevels?.find(
+                  level => level.countryCode === currentMarketplace
+                ) || foundChildProduct.variantDetails?.inventoryLevels?.[0];
+                originalPrice = inventoryLevel?.price || foundChildProduct.variantDetails?.price || '0';
+              }
+            }
+
+            if (originalPrice) {
+              cartItems.push({
+                id: numericId,
+                quantity: 1,
+                properties: {
+                  '_sellence_discount': 'true',
+                  '_sellence_discount_percent': discount.toString(),
+                  '_sellence_original_price': originalPrice.toString(),
+                  '_sellence_widget_id': widgetId,
+                  '_sellence_applied': 'true'
+                }
+              });
+            } else {
+              console.warn(`Skipping variant ${variantId} - original price not found`);
+            }
           } else {
             console.warn(`Skipping variant ${variantId} - not available for sale`);
           }
