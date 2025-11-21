@@ -210,7 +210,7 @@ function Extension() {
     shopify.settings.value.widget_id || "cmi31w59t0000uoi7tcj01tsl";
   const appUrl =
     shopify.settings.value.app_url ||
-    "ttps://circuit-tri-layers-networking.trycloudflare.com";
+    "https://inclusion-bikini-andrea-closed.trycloudflare.com";
   const showBothPrices = shopify.settings.value.show_both_prices === true;
 
   // Функция для добавления перечеркивания через Unicode символы
