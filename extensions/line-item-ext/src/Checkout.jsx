@@ -91,7 +91,10 @@ function CartLineItemExtension() {
   });
 
   // Отображаем информацию о скидке под товаром (как в примере Rebuy: "REBUY PRODUCT DISCOUNT (-$X.XX)")
+  // Используем color="subdued" для светло-серого цвета текста, который читабелен на белом фоне
   return (
-    <s-text tone="neutral">Sellence discount ({formattedDiscount})</s-text>
+    <s-text tone="neutral" color="subdued">
+      Sellence discount ({formattedDiscount})
+    </s-text>
   );
 }
