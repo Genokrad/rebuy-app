@@ -46,6 +46,7 @@ export interface MarketPrice {
   marketName: string; // название маркета
   countryCode: string; // код страны (например, "SK", "US", "AU")
   price: string; // цена
+  compareAtPrice?: string | null; // старая цена (compare at price)
   currencyCode: string; // код валюты (например, "EUR", "USD", "AUD")
 }
 

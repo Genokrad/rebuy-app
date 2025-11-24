@@ -394,6 +394,27 @@
     const contentElement = document.getElementById('sellence-widget-content-{{ block.id }}');
     let howManyProductsPicked = 0;
 
+    // Функция для проверки наличия промокода в корзине
+    async function hasPromoCodeInCart() {
+      try {
+        const cartResponse = await fetch('/cart.js');
+        if (!cartResponse.ok) {
+          console.warn('Failed to fetch cart, assuming no promo code');
+          return false;
+        }
+        const cart = await cartResponse.json();
+        // Проверяем наличие атрибута _sellence_has_discount_code в корзине
+        const hasDiscountCode = cart.attributes && cart.attributes._sellence_has_discount_code;
+        if (hasDiscountCode) {
+          console.log('🎯 Promo code detected in cart:', hasDiscountCode);
+        }
+        return !!hasDiscountCode;
+      } catch (error) {
+        console.error('Error checking cart for promo code:', error);
+        return false; // В случае ошибки предполагаем, что промокода нет
+      }
+    }
+
     // Функция для добавления выбранных товаров в корзину
     async function addSelectedItemsToCart(widget) {
       const checkedCheckboxes = document.querySelectorAll('#items-list .sellence-widget-checkbox:checked');
@@ -402,6 +423,9 @@
         alert('Please select at least one product');
         return;
       }
+
+      // Проверяем наличие промокода в корзине перед добавлением товара
+      const hasPromoCode = await hasPromoCodeInCart();
 
       // Собираем variantId из выбранных товаров
       const variantIds = [];
@@ -513,16 +537,80 @@
           });
 
           if (canAdd) {
-            cartItems.push({
-              id: numericId,
-              quantity: 1,
-              properties: {
-                '_sellence_discount': 'true',
-                '_sellence_discount_percent': discount.toString(),
-                '_sellence_widget_id': widgetId,
-                '_sellence_applied': 'true'
+            // Получаем оригинальную цену из marketsPrice по текущему маркету
+            const currentMarketplace = document.getElementById('sellence-widget-{{ block.id }}')?.dataset?.currentMarketplace || 'US';
+            let originalPrice = null;
+            let foundChildProduct = null;
+            
+            // Ищем товар в виджете для получения цены
+            // Сначала проверяем в checkedCheckboxes (быстрее)
+            checkedCheckboxes.forEach((checkbox) => {
+              const contentEl = checkbox.closest('label')?.querySelector('.sellence-widget-item-content');
+              if (!contentEl || foundChildProduct) return;
+              const encoded = contentEl.getAttribute('data-product');
+              if (!encoded) return;
+
+              try {
+                const childProduct = JSON.parse(decodeURIComponent(encoded));
+                const currentVariantId = childProduct.variantId || childProduct.variantDetails?.id;
+                if (currentVariantId === variantId) {
+                  foundChildProduct = childProduct;
+                }
+              } catch (error) {
+                console.error('Error parsing product data:', error);
               }
             });
+
+            // Если не нашли в checkedCheckboxes, ищем в widget.product.childProducts
+            if (!foundChildProduct && widget.product?.childProducts) {
+              widget.product.childProducts.forEach((childProduct) => {
+                if (foundChildProduct) return;
+                const currentVariantId = childProduct.variantId || childProduct.variantDetails?.id;
+                if (currentVariantId === variantId) {
+                  foundChildProduct = childProduct;
+                }
+              });
+            }
+
+            // Получаем оригинальную цену из marketsPrice по маркету
+            if (foundChildProduct) {
+              const marketPrice = priceFromMarket(foundChildProduct.variantDetails?.marketsPrice, currentMarketplace);
+              if (marketPrice?.price) {
+                originalPrice = marketPrice.price;
+              } else {
+                // Fallback на обычную цену если нет marketsPrice
+                const inventoryLevel = foundChildProduct.variantDetails?.inventoryLevels?.find(
+                  level => level.countryCode === currentMarketplace
+                ) || foundChildProduct.variantDetails?.inventoryLevels?.[0];
+                originalPrice = inventoryLevel?.price || foundChildProduct.variantDetails?.price || '0';
+              }
+            }
+
+            if (originalPrice) {
+              // Если в корзине есть промокод, не добавляем атрибуты скидки Sellence
+              // Только добавляем оригинальную цену и другие необходимые атрибуты
+              const itemProperties = {
+                '_sellence_original_price': originalPrice.toString(),
+                '_sellence_widget_id': widgetId,
+                '_sellence_applied': 'true'
+              };
+
+              // Добавляем атрибуты скидки только если нет промокода в корзине
+              if (!hasPromoCode) {
+                itemProperties['_sellence_discount'] = 'true';
+                itemProperties['_sellence_discount_percent'] = discount.toString();
+              } else {
+                console.log(`⏭️ Skipping Sellence discount attributes for variant ${variantId} - promo code is active`);
+              }
+
+              cartItems.push({
+                id: numericId,
+                quantity: 1,
+                properties: itemProperties
+              });
+            } else {
+              console.warn(`Skipping variant ${variantId} - original price not found`);
+            }
           } else {
             console.warn(`Skipping variant ${variantId} - not available for sale`);
           }

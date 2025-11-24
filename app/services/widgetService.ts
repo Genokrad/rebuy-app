@@ -93,6 +93,7 @@ async function buildProductRelationships(
               marketName: mp.marketName,
               countryCode: mp.countryCode,
               price: mp.price,
+              compareAtPrice: mp.compareAtPrice || undefined,
               currencyCode: mp.currencyCode,
             })),
           }
@@ -301,6 +302,7 @@ async function saveVariantDetails(
           marketName: marketPrice.marketName || "",
           countryCode: marketPrice.countryCode || "",
           price: marketPrice.price || "0",
+          compareAtPrice: marketPrice.compareAtPrice || null,
           currencyCode: marketPrice.currencyCode || "USD",
         },
       });

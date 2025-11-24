@@ -1,5 +1,8 @@
 query RunInput {
   cart {
+    hasDiscountCode: attribute(key: "_sellence_has_discount_code") {
+      value
+    }
     lines {
       id
       quantity
@@ -14,6 +17,10 @@ query RunInput {
         value
       }
       sellenceDiscountPercent: attribute(key: "_sellence_discount_percent") {
+        key
+        value
+      }
+      sellenceOriginalPrice: attribute(key: "_sellence_original_price") {
         key
         value
       }
