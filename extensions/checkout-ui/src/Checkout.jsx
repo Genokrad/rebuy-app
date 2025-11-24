@@ -160,51 +160,6 @@ function Extension() {
     updateCartAttribute();
   }, [discountCodes]); // Убрали lastSavedDiscountCodes из зависимостей, используем useRef
 
-  // Отслеживаем изменения стоимости корзины (может изменяться при применении промокода)
-  // Используем useMemo или убираем логирование, чтобы не вызывать бесконечные циклы
-  // Закомментировано для предотвращения циклов - можно включить для отладки
-  /*
-  useEffect(() => {
-    try {
-      const totalAmount = shopify.cost?.totalAmount?.value?.amount;
-      const subtotalAmount = shopify.cost?.subtotalAmount?.value?.amount;
-
-      console.log("=== CHECKOUT COST INFO ===");
-      console.log("Total Amount:", totalAmount);
-      console.log("Subtotal Amount:", subtotalAmount);
-      console.log("Full cost object:", shopify.cost);
-
-      // Логируем все свойства cost для поиска discount info
-      if (shopify.cost) {
-        console.log("Cost object keys:", Object.keys(shopify.cost));
-        // Проверяем возможные поля для discount
-        // @ts-ignore - totalDiscountAmount может существовать в runtime
-        const totalDiscount = shopify.cost.totalDiscountAmount;
-        if (totalDiscount) {
-          console.log("🎯 DISCOUNT AMOUNT FOUND:", totalDiscount);
-        }
-        // @ts-ignore - discountAmount может существовать в runtime
-        const discount = shopify.cost.discountAmount;
-        if (discount) {
-          console.log("🎯 DISCOUNT AMOUNT FOUND:", discount);
-        }
-      }
-
-      // Вычисляем скидку по разнице
-      if (totalAmount && subtotalAmount) {
-        const calculatedDiscount =
-          parseFloat(String(subtotalAmount)) - parseFloat(String(totalAmount));
-        if (calculatedDiscount > 0) {
-          console.log("🎯 DISCOUNT CALCULATED! Amount:", calculatedDiscount);
-        }
-      }
-    } catch (error) {
-      console.error("Error reading cost info:", error);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cartLines]); // Отслеживаем изменения через cartLines
-  */
-
   // Получаем настройки из extension
   const widgetId =
     shopify.settings.value.widget_id || "cmi31w59t0000uoi7tcj01tsl";
