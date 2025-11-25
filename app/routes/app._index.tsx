@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useFetcher, Link } from "@remix-run/react";
 import {
@@ -274,6 +274,7 @@ export default function Index() {
     products?: any[];
     settings?: any;
   } | null>(null);
+  const [isSavingWidget, setIsSavingWidget] = useState(false);
 
   const handleWidgetClick = (widgetName: string, widgetType: string) => {
     setClickedWidget(widgetName);
@@ -330,9 +331,29 @@ export default function Index() {
       formData.append("settings", JSON.stringify(settings));
     }
 
+    setIsSavingWidget(true);
     fetcher.submit(formData, { method: "POST" });
-    setCurrentWidgets(null);
   };
+
+  useEffect(() => {
+    if (!isSavingWidget) {
+      return;
+    }
+
+    if (fetcher.state === "idle") {
+      setIsSavingWidget(false);
+      const updatedWidget = (fetcher.data as any)?.widget;
+      if (updatedWidget) {
+        setCurrentWidgets({
+          id: updatedWidget.id,
+          name: updatedWidget.name,
+          type: updatedWidget.type,
+          products: updatedWidget.products,
+          settings: (updatedWidget as any)?.settings,
+        });
+      }
+    }
+  }, [fetcher.state, fetcher.data, isSavingWidget]);
 
   return (
     <Page>
@@ -422,6 +443,7 @@ export default function Index() {
                 existingProducts={currentWidgets.products}
                 // прокидываем сохраненные настройки
                 settings={(currentWidgets as any)?.settings}
+                isSaving={isSavingWidget}
                 onBack={handleBackToWidgets}
                 onSave={handleSaveWidget}
               />

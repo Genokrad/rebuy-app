@@ -1,4 +1,11 @@
-import { BlockStack, Text, Button, Layout, TextField } from "@shopify/polaris";
+import {
+  BlockStack,
+  Text,
+  Button,
+  Layout,
+  TextField,
+  Spinner,
+} from "@shopify/polaris";
 import React, { useState, useEffect, useMemo } from "react";
 import { ProductRelationshipSelector } from "./ProductRelationshipSelector";
 import { ExistingProductRelationships } from "./ExistingProductRelationships";
@@ -15,6 +22,7 @@ interface WidgetEditorProps {
   products: any[];
   existingProducts?: any[];
   settings?: any;
+  isSaving?: boolean;
   onBack: () => void;
   onSave: (
     name: string,
@@ -33,6 +41,7 @@ export function WidgetEditor({
   products,
   existingProducts = [],
   settings: initialSettings,
+  isSaving = false,
   onBack,
   onSave,
 }: WidgetEditorProps) {
@@ -50,6 +59,22 @@ export function WidgetEditor({
   const [slideCount, setSlideCount] = useState<number | undefined>(
     (initialSettings as any)?.slideCount || undefined,
   );
+  useEffect(() => {
+    setName(widgetName);
+  }, [widgetName]);
+
+  useEffect(() => {
+    setPlacements(
+      (initialSettings?.placements as PlacementKey[] | undefined) || [],
+    );
+    setSettings(
+      initialSettings || {
+        discounts: [],
+        placements: [],
+      },
+    );
+    setSlideCount((initialSettings as any)?.slideCount || undefined);
+  }, [initialSettings]);
 
   // Состояние для работы с множественными родительскими продуктами
   const [currentParentProduct, setCurrentParentProduct] = useState<string>("");
@@ -180,79 +205,109 @@ export function WidgetEditor({
   };
 
   return (
-    <BlockStack gap="500">
-      <Layout>
-        <Layout.Section>
-          <BlockStack gap="400">
-            <Text as="h1" variant="headingLg">
-              Edit Widget {widgetName}: id {widgetId}
-            </Text>
+    <div style={{ position: "relative" }}>
+      {isSaving && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundColor: "rgba(255,255,255,0.7)",
+            zIndex: 10,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "12px",
+          }}
+        >
+          <Spinner size="large" />
+          <Text as="p" variant="bodyMd">
+            Saving widget…
+          </Text>
+        </div>
+      )}
+      <BlockStack gap="500">
+        <Layout>
+          <Layout.Section>
+            <BlockStack gap="400">
+              <Text as="h1" variant="headingLg">
+                Edit Widget {widgetName}: id {widgetId}
+              </Text>
 
-            <WidgetPlacements selected={placements} onChange={setPlacements} />
+              <WidgetPlacements
+                selected={placements}
+                onChange={setPlacements}
+              />
 
-            {/* Slide Count field */}
-            <TextField
-              label="Количество активных слайдов"
-              type="number"
-              value={slideCount?.toString() || ""}
-              onChange={(value) => {
-                const numValue = parseInt(value, 10);
-                setSlideCount(isNaN(numValue) ? undefined : numValue);
-              }}
-              helpText="Укажите количество слайдов, которые будут отображаться одновременно"
-              autoComplete="off"
-            />
+              {/* Slide Count field */}
+              <TextField
+                label="Количество активных слайдов"
+                type="number"
+                value={slideCount?.toString() || ""}
+                onChange={(value) => {
+                  const numValue = parseInt(value, 10);
+                  setSlideCount(isNaN(numValue) ? undefined : numValue);
+                }}
+                helpText="Укажите количество слайдов, которые будут отображаться одновременно"
+                autoComplete="off"
+              />
 
-            {/* Show all existing relationships */}
-            <ExistingProductRelationships
-              existingProducts={existingProducts}
-              transformedProducts={transformedProducts}
-              currentParentProduct={currentParentProduct}
-              onParentProductChange={handleParentProductChange}
-            />
+              {/* Show all existing relationships */}
+              <ExistingProductRelationships
+                existingProducts={existingProducts}
+                transformedProducts={transformedProducts}
+                currentParentProduct={currentParentProduct}
+                onParentProductChange={handleParentProductChange}
+              />
 
-            {/* Name and Value fields */}
-            <WidgetForm
-              name={name}
-              value={value}
-              onNameChange={setName}
-              onValueChange={setValue}
-            />
+              {/* Name and Value fields */}
+              <WidgetForm
+                name={name}
+                value={value}
+                onNameChange={setName}
+                onValueChange={setValue}
+              />
 
-            {/* How it works link */}
-            <HowItWorks />
+              {/* How it works link */}
+              <HowItWorks />
 
-            {/* Product Selection */}
-            <ProductRelationshipSelector
-              transformedProducts={transformedProducts}
-              currentParentProduct={currentParentProduct}
-              selectedChildProducts={selectedChildProducts}
-              existingProducts={existingProducts}
-              onParentProductChange={handleParentProductChange}
-              onChildProductsChange={handleChildProductsChange}
-            />
+              {/* Product Selection */}
+              <ProductRelationshipSelector
+                transformedProducts={transformedProducts}
+                currentParentProduct={currentParentProduct}
+                selectedChildProducts={selectedChildProducts}
+                existingProducts={existingProducts}
+                onParentProductChange={handleParentProductChange}
+                onChildProductsChange={handleChildProductsChange}
+              />
 
-            <WidgetSettings
-              settings={settings}
-              onSettingsChange={(newSettings) => {
-                setSettings((prev: any) => ({ ...prev, ...newSettings }));
-              }}
-            />
+              <WidgetSettings
+                settings={settings}
+                onSettingsChange={(newSettings) => {
+                  setSettings((prev: any) => ({ ...prev, ...newSettings }));
+                }}
+              />
 
-            {/* Action buttons */}
-            <Layout>
-              <Layout.Section>
-                <BlockStack gap="200">
-                  <Button onClick={handleSave} variant="primary">
-                    Save Widget
-                  </Button>
-                  <Button onClick={onBack}>Back to Widgets</Button>
-                </BlockStack>
-              </Layout.Section>
-            </Layout>
-          </BlockStack>
-        </Layout.Section>
-      </Layout>
-    </BlockStack>
+              {/* Action buttons */}
+              <Layout>
+                <Layout.Section>
+                  <BlockStack gap="200">
+                    <Button
+                      onClick={handleSave}
+                      variant="primary"
+                      loading={isSaving}
+                      disabled={isSaving}
+                    >
+                      Save Widget
+                    </Button>
+                    <Button onClick={onBack}>Back to Widgets</Button>
+                  </BlockStack>
+                </Layout.Section>
+              </Layout>
+            </BlockStack>
+          </Layout.Section>
+        </Layout>
+      </BlockStack>
+    </div>
   );
 }

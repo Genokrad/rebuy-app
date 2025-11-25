@@ -165,7 +165,7 @@ function Extension() {
     shopify.settings.value.widget_id || "cmi31w59t0000uoi7tcj01tsl";
   const appUrl =
     shopify.settings.value.app_url ||
-    "https://inclusion-bikini-andrea-closed.trycloudflare.com";
+    "https://montreal-traveler-chairs-mail.trycloudflare.com";
   const showBothPrices = shopify.settings.value.show_both_prices === true;
 
   // Функция для добавления перечеркивания через Unicode символы
@@ -384,17 +384,39 @@ function Extension() {
     setAddingProducts((prev) => new Set(prev).add(variantId));
 
     try {
+      // Получаем тип виджета из widgetData
+      const widgetType = widgetData?.widget?.type || "checkout";
+
+      // Формируем атрибуты для товара
+      const attributes = [
+        {
+          key: "_sellence_widget_id",
+          value: widgetId,
+        },
+        {
+          key: "_sellence_widget_type",
+          value: widgetType,
+        },
+        {
+          key: "_sellence_applied",
+          value: "true",
+        },
+      ];
+
       const result = await shopify.applyCartLinesChange({
         type: "addCartLine",
         merchandiseId: variantId,
         quantity: 1,
+        attributes: attributes,
       });
 
       if (result.type === "error") {
         console.error("Error adding product to cart:", result.message);
         // Можно показать ошибку пользователю
       } else {
-        console.log("Product added to cart successfully");
+        console.log(
+          "Product added to cart successfully with widget attributes",
+        );
       }
     } catch (err) {
       console.error("Error adding product to cart:", err);
