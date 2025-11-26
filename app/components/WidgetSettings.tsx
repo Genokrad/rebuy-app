@@ -33,15 +33,14 @@ export const WidgetSettings = ({
       discount4: "",
       discount5: "",
     };
-    
+
     discounts.forEach((discount: any, index: number) => {
-      const key = Object.keys(discount)[0];
       const value = Object.values(discount)[0];
       if (index < 5) {
         result[`discount${index + 1}` as keyof typeof result] = String(value);
       }
     });
-    
+
     return result;
   };
 
@@ -51,7 +50,8 @@ export const WidgetSettings = ({
     [1, 2, 3, 4, 5].forEach((q) => {
       const key = `discount${q}` as keyof typeof oldDiscounts;
       const v = (oldDiscounts[key] || "").trim();
-      if (v !== "" && Number(v) > 0) {
+      // Allow zero and positive numbers; skip only truly empty / non-numeric
+      if (v !== "" && !Number.isNaN(Number(v))) {
         discounts.push({ [q]: Number(v) });
       }
     });
@@ -59,7 +59,9 @@ export const WidgetSettings = ({
   };
 
   // Internal state keeps all 5 fields (for UI), we render a dynamic count from 1..maxFields
-  const [discounts, setDiscounts] = useState(() => convertFromNewFormat(settings));
+  const [discounts, setDiscounts] = useState(() =>
+    convertFromNewFormat(settings),
+  );
 
   // Determine initial visible fields: if there are prefilled settings, show up to the highest non-empty key; otherwise 1
   const initialCount = (() => {
@@ -82,7 +84,7 @@ export const WidgetSettings = ({
     return normalized;
   };
 
-  const emitNonZeroOnly = (all: typeof discounts) => {
+  const emitDiscounts = (all: typeof discounts) => {
     const discountsArray = convertToNewFormat(all);
     onSettingsChange?.({ discounts: discountsArray });
   };
@@ -111,7 +113,7 @@ export const WidgetSettings = ({
     };
     setDiscounts(next);
     setVisibleCount(newVisible);
-    emitNonZeroOnly(next);
+    emitDiscounts(next);
   };
 
   const handleDiscountChange = (
@@ -121,7 +123,7 @@ export const WidgetSettings = ({
     const safe = sanitizeToPercent(value);
     const next = { ...discounts, [field]: safe };
     setDiscounts(next);
-    emitNonZeroOnly(next);
+    emitDiscounts(next);
   };
 
   return (
