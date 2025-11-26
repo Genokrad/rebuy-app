@@ -3,3 +3,4 @@ export { OrdersTable, type AnalyticsOrder } from "./OrdersTable";
 export { LoadMoreButton } from "./LoadMoreButton";
 export { EmptyState } from "./EmptyState";
 export { OrdersSummary } from "./OrdersSummary";
+export { OrdersStats } from "./OrdersStats";

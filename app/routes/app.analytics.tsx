@@ -10,6 +10,7 @@ import {
   LoadMoreButton,
   EmptyState,
   OrdersSummary,
+  OrdersStats,
   type AnalyticsOrder,
 } from "../components/analytics";
 import { useState, useCallback, useEffect } from "react";
@@ -236,6 +237,13 @@ export default function Analytics() {
               onApplyFilter={handleApplyDateFilter}
               isLoading={fetcher.state === "loading"}
             />
+
+            {allOrders.length > 0 && (
+              <OrdersStats
+                orders={allOrders}
+                filterSellenceOnly={filterSellenceOnly}
+              />
+            )}
 
             <OrdersSummary
               totalOrders={allOrders.length}
