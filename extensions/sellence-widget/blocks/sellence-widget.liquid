@@ -976,10 +976,33 @@
 
               const priceContainer = itemContent.querySelector('.sellence-widget-item-price');
               if (priceContainer) {
+                const newPriceWrapper = priceContainer.querySelector('p.sellence-widget-price-new');
                 const newPriceSpan = priceContainer.querySelector('p.sellence-widget-price-new > span.sellence-widget-price-new');
+                const oldPriceWrapper = priceContainer.querySelector('p.sellence-widget-price-old');
                 const oldPriceSpan = priceContainer.querySelector('.sellence-widget-price-old-price');
-                if (newPriceSpan) newPriceSpan.textContent = formattedPriceWithDiscount;
-                if (oldPriceSpan) oldPriceSpan.textContent = formattedPrice;
+
+                if (newPriceSpan) {
+                  if (finalDiscount > 0) {
+                    newPriceSpan.textContent = formattedPriceWithDiscount;
+                    if (newPriceWrapper && newPriceWrapper.firstChild) {
+                      newPriceWrapper.firstChild.textContent = `${I18N.nowLabel} `;
+                    }
+                  } else {
+                    newPriceSpan.textContent = formattedPrice;
+                    if (newPriceWrapper && newPriceWrapper.firstChild) {
+                      newPriceWrapper.firstChild.textContent = '';
+                    }
+                  }
+                }
+
+                if (oldPriceWrapper) {
+                  if (finalDiscount > 0 && oldPriceSpan) {
+                    oldPriceWrapper.style.display = '';
+                    oldPriceSpan.textContent = formattedPrice;
+                  } else {
+                    oldPriceWrapper.style.display = 'none';
+                  }
+                }
               }
             });
 
@@ -1035,6 +1058,7 @@
             const formattedPriceWithDiscount = formatWidgetPrice(price * (1 - finalDiscount / 100), currencyCode);
             // const formattedComparePrice = compareAtPrice ? formatWidgetPrice(compareAtPrice, currencyCode) : '';
 
+            const hasDiscount = finalDiscount > 0;
             item.innerHTML = `
               <label class="sellence-widget-item-label">
                 <input type="checkbox" class="sellence-widget-checkbox" checked>
@@ -1042,8 +1066,15 @@
                 <div class="sellence-widget-item-content" data-product="${encodeURIComponent(JSON.stringify(childProduct))}">
                   <span class="sellence-widget-item-name">${productName}</span>
                   <div class="sellence-widget-item-price">
-                    <p class="sellence-widget-price-new">${I18N.nowLabel} <span class="sellence-widget-price-new">${formattedPriceWithDiscount}</span></p>
-                    <p class="sellence-widget-price-old">${I18N.wasLabel} <span class="sellence-widget-price-old-price">${formattedPrice}</span></p>
+                    <p class="sellence-widget-price-new">
+                      ${hasDiscount ? `${I18N.nowLabel} ` : ''}
+                      <span class="sellence-widget-price-new">${hasDiscount ? formattedPriceWithDiscount : formattedPrice}</span>
+                    </p>
+                    ${
+                      hasDiscount
+                        ? `<p class="sellence-widget-price-old">${I18N.wasLabel} <span class="sellence-widget-price-old-price">${formattedPrice}</span></p>`
+                        : ''
+                    }
                   </div>
                 </div>
               </label>
@@ -1138,7 +1169,7 @@
 
           // Устанавливаем значения тоталов
           totalPriceNew.textContent = formatWidgetPrice(totalNew, currencyCode);
-          if (totalOld > 0) {
+          if (finalDiscount > 0 && totalOld > totalNew) {
             totalPriceOld.textContent = formatWidgetPrice(totalOld, currencyCode);
             totalPriceOld.style.display = 'inline';
           } else {
