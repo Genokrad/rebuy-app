@@ -275,7 +275,9 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+  import { EVENTS, publish } from "@archetype-themes/utils/pubsub";
+
   const CURRENCY_SYMBOLS = {
     'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': 'C$',
     'AUD': 'A$', 'CHF': 'CHF', 'CNY': '¥', 'SEK': 'kr', 'NOK': 'kr',
@@ -415,6 +417,62 @@
       }
     }
 
+    function setAddButtonState(state, message) {
+      const button = document.querySelector('.sellence-widget-add-to-cart');
+      if (!button) return;
+
+      const label = button.textContent;
+
+      switch (state) {
+        case 'loading':
+          button.dataset.originalText = label;
+          button.textContent = message || 'Adding...';
+          button.setAttribute('disabled', 'disabled');
+          button.classList.add('btn--loading');
+          break;
+        case 'success':
+          button.textContent = message || 'Added to cart!';
+          setTimeout(() => {
+            button.textContent = button.dataset.originalText || 'Add all';
+          }, 2000);
+          button.removeAttribute('disabled');
+          button.classList.remove('btn--loading');
+          break;
+        case 'error':
+          button.textContent = message || 'Error';
+          setTimeout(() => {
+            button.textContent = button.dataset.originalText || 'Add all';
+          }, 3000);
+          button.removeAttribute('disabled');
+          button.classList.remove('btn--loading');
+          break;
+        default:
+          button.textContent = button.dataset.originalText || 'Add all';
+          button.removeAttribute('disabled');
+          button.classList.remove('btn--loading');
+      }
+    }
+
+    function publishAjaxProductAdded(responseJson) {
+      try {
+        publish(EVENTS.ajaxProductAdded, {
+          detail: {
+            product: responseJson,
+            addToCartBtn: document.querySelector('.sellence-widget-add-to-cart'),
+          },
+        });
+      } catch (error) {
+        document.dispatchEvent(
+          new CustomEvent('ajaxProductAdded', {
+            detail: {
+              product: responseJson,
+              addToCartBtn: document.querySelector('.sellence-widget-add-to-cart'),
+            },
+          }),
+        );
+      }
+    }
+
     // Функция для добавления выбранных товаров в корзину
     async function addSelectedItemsToCart(widget) {
       const checkedCheckboxes = document.querySelectorAll('#items-list .sellence-widget-checkbox:checked');
@@ -453,6 +511,7 @@
 
       try {
         // Отправляем запрос на сервер для вычисления скидки
+        setAddButtonState('loading');
         const cleanUrl = appUrl.replace(/\/$/, '');
         const discountResponse = await fetch(`${cleanUrl}/api/cart/calculate-discount`, {
           method: 'POST',
@@ -618,6 +677,7 @@
         }
 
         if (cartItems.length === 0) {
+          setAddButtonState('error', 'No products available');
           throw new Error('No available products to add to cart');
         }
 
@@ -628,7 +688,10 @@
           body: JSON.stringify({ items: cartItems })
         });
 
-        if (!addToCartResponse.ok) {
+        const addResult = await addToCartResponse.clone().json().catch(() => null);
+
+        if (!addToCartResponse.ok || !addResult) {
+          setAddButtonState('error', 'Error adding to cart');
           // Получаем детали ошибки от Shopify
           const errorData = await addToCartResponse.json().catch(() => ({ error: 'Unknown error' }));
           console.error('Shopify Cart API error:', errorData);
@@ -643,10 +706,11 @@
           throw new Error(`${I18N.addToCartError}: ${errorMessage}`);
         }
 
-        // Перенаправляем на страницу корзины
-        window.location.href = '/cart';
+        publishAjaxProductAdded(addResult);
+        setAddButtonState('success');
       } catch (error) {
         console.error('Error adding items to cart:', error);
+        setAddButtonState('error');
         alert(`${I18N.addToCartError}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
