@@ -23,6 +23,7 @@ import {
   deleteWidget,
   updateWidget,
   getWidgetsByShop,
+  cloneWidget,
 } from "../services/widgetService";
 import { widgetCards } from "../data/default-data";
 import {
@@ -209,6 +210,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   }
 
+  // Проверяем, это запрос на клонирование виджета
+  const cloneWidgetId = formData.get("cloneWidgetId") as string | null;
+  if (cloneWidgetId) {
+    try {
+      const widget = await cloneWidget(cloneWidgetId);
+      return { success: true, cloned: true, widget, error: null };
+    } catch (error) {
+      console.error("Error cloning widget:", error);
+      return { error: "Failed to clone widget", success: false, widget: null };
+    }
+  }
+
   // Проверяем, это обновление существующего виджета
   const updateWidgetId = formData.get("updateWidgetId") as string;
   if (updateWidgetId) {
@@ -289,6 +302,12 @@ export default function Index() {
   const handleDeleteWidget = (widgetId: string) => {
     const formData = new FormData();
     formData.append("widgetId", widgetId);
+    fetcher.submit(formData, { method: "POST" });
+  };
+
+  const handleCloneWidget = (widgetId: string) => {
+    const formData = new FormData();
+    formData.append("cloneWidgetId", widgetId);
     fetcher.submit(formData, { method: "POST" });
   };
 
@@ -422,6 +441,7 @@ export default function Index() {
                     widgets={loaderData.widgets}
                     deleteWidget={handleDeleteWidget}
                     handleEditeWidgets={handleEditeWidgets}
+                    onCloneWidget={handleCloneWidget}
                   />
                 )}
 

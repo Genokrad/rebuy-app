@@ -492,6 +492,27 @@ export async function updateWidget(
   };
 }
 
+export async function cloneWidget(id: string): Promise<Widget> {
+  // Загружаем исходный виджет в "старом" формате
+  const original = await getWidgetById(id);
+  if (!original) {
+    throw new Error(`Widget with id ${id} not found`);
+  }
+
+  // Создаем новый виджет с теми же полями, но новым ID
+  const clonedName = original.name;
+
+  const newWidget = await createWidget(
+    clonedName,
+    original.type,
+    original.shop,
+    original.products,
+    (original as any).settings,
+  );
+
+  return newWidget;
+}
+
 export async function getWidgetsByShop(shop: string): Promise<Widget[]> {
   const widgets = await prisma.widget.findMany({
     where: {
