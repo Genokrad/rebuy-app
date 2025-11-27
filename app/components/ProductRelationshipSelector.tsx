@@ -1,9 +1,4 @@
-import {
-  BlockStack,
-  Text,
-  Layout,
-  Card,
-} from "@shopify/polaris";
+import { BlockStack, Text, Layout, Card } from "@shopify/polaris";
 import React, { useState, useCallback } from "react";
 import { ProductSelector } from "./ProductSelector";
 import { ProductWithVariantsSelector } from "./ProductWithVariantsSelector";
@@ -123,6 +118,7 @@ export function ProductRelationshipSelector({
                 <SelectedChildProducts
                   selectedChildProducts={selectedChildProducts}
                   transformedProducts={transformedProducts}
+                  onReorder={onChildProductsChange}
                 />
 
                 {/* Filter checkbox */}
@@ -137,14 +133,11 @@ export function ProductRelationshipSelector({
                   <input
                     type="checkbox"
                     checked={showOnlySelected}
-                    onChange={(e) =>
-                      setShowOnlySelected(e.target.checked)
-                    }
+                    onChange={(e) => setShowOnlySelected(e.target.checked)}
                     style={{ cursor: "pointer" }}
                   />
                   <Text as="span" variant="bodyMd">
-                    Show only selected products (
-                    {selectedChildProducts.length})
+                    Show only selected products ({selectedChildProducts.length})
                   </Text>
                 </label>
 

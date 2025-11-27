@@ -3,6 +3,7 @@ import { render } from "preact";
 import {
   useCartLines,
   useDiscountCodes,
+  useShop,
 } from "@shopify/ui-extensions/checkout/preact";
 import { useEffect, useState, useRef } from "preact/hooks";
 
@@ -21,6 +22,7 @@ function Extension() {
   const [addingProducts, setAddingProducts] = useState(new Set());
   const [cartLinesVariantIds, setCartLinesVariantIds] = useState([]);
   const [slideCount, setSlideCount] = useState(0);
+  const shopInfo = useShop();
   // Используем useRef для отслеживания последнего сохраненного значения без триггера перерендера
   const lastSavedDiscountCodesRef = useRef(null);
 
@@ -165,8 +167,36 @@ function Extension() {
     shopify.settings.value.widget_id || "cmi31w59t0000uoi7tcj01tsl";
   const appUrl =
     shopify.settings.value.app_url ||
-    "https://montreal-traveler-chairs-mail.trycloudflare.com";
+    "https://relationship-isolation-guy-classified.trycloudflare.com";
   const showBothPrices = shopify.settings.value.show_both_prices === true;
+  const normalizedAppUrl =
+    typeof appUrl === "string"
+      ? appUrl.replace(/\/$/, "")
+      : String(appUrl || "").replace(/\/$/, "");
+
+  const shopDomainFromContext =
+    shopInfo?.myshopifyDomain ||
+    shopInfo?.storefrontUrl ||
+    shopInfo?.id ||
+    "unknown-shop";
+
+  async function trackWidgetClick(widgetIdToTrack, widgetType) {
+    if (!normalizedAppUrl) return;
+
+    try {
+      await fetch(`${normalizedAppUrl}/api/analytics/widget-click`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          widgetId: widgetIdToTrack,
+          widgetType,
+          shop: shopDomainFromContext,
+        }),
+      });
+    } catch (error) {
+      console.warn("Failed to track Sellence widget click", error);
+    }
+  }
 
   // Функция для добавления перечеркивания через Unicode символы
   function strikethrough(text) {
@@ -386,6 +416,7 @@ function Extension() {
     try {
       // Получаем тип виджета из widgetData
       const widgetType = widgetData?.widget?.type || "checkout";
+      trackWidgetClick(widgetId, widgetType);
 
       // Формируем атрибуты для товара
       const attributes = [

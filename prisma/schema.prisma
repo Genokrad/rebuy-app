@@ -194,3 +194,15 @@ model ShopOrderLineItem {
   @@index([orderMetricId])
   @@index([sellenceDiscount])
 }
+
+model WidgetClickEvent {
+  id         String   @id @default(cuid())
+  shop       String
+  widgetId   String
+  widgetType String
+  createdAt  DateTime @default(now())
+
+  @@index([shop])
+  @@index([widgetId])
+  @@index([widgetType])
+}

@@ -108,34 +108,34 @@ export async function getOrders(
   // Фильтруем заказы только если включен фильтр Sellence
   const filteredOrders = filterSellenceOnly
     ? allOrders.filter((order) => {
-        // Проверяем каждый line item на наличие атрибутов Sellence
-        for (const lineItem of order.lineItems) {
-          const attributes = lineItem.customAttributes || [];
-          for (const attr of attributes) {
-            const key = attr.key;
-            const value = attr.value;
+    // Проверяем каждый line item на наличие атрибутов Sellence
+    for (const lineItem of order.lineItems) {
+      const attributes = lineItem.customAttributes || [];
+      for (const attr of attributes) {
+        const key = attr.key;
+        const value = attr.value;
 
-            if (
-              key === SELLENCE_DISCOUNT_KEY ||
-              key === SELLENCE_WIDGET_ID_KEY ||
-              key === SELLENCE_WIDGET_TYPE_KEY ||
-              key === SELLENCE_APPLIED_KEY
-            ) {
+        if (
+          key === SELLENCE_DISCOUNT_KEY ||
+          key === SELLENCE_WIDGET_ID_KEY ||
+          key === SELLENCE_WIDGET_TYPE_KEY ||
+          key === SELLENCE_APPLIED_KEY
+        ) {
               if (
                 key === SELLENCE_DISCOUNT_KEY ||
                 key === SELLENCE_APPLIED_KEY
               ) {
-                if (value?.toLowerCase() === "true") {
-                  return true;
-                }
-              } else if (value) {
-                // Для widget_id и widget_type достаточно наличия значения
-                return true;
-              }
+            if (value?.toLowerCase() === "true") {
+              return true;
             }
+          } else if (value) {
+            // Для widget_id и widget_type достаточно наличия значения
+            return true;
           }
         }
-        return false;
+      }
+    }
+    return false;
       })
     : allOrders; // Если фильтр не включен, возвращаем все заказы
 

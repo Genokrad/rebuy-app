@@ -417,6 +417,27 @@
       }
     }
 
+    async function trackWidgetClick(apiBaseUrl, widgetId, widgetType) {
+      const shopDomain =
+        (window?.Shopify && window.Shopify.shop) ||
+        (window?.ShopifyAnalytics && window.ShopifyAnalytics.meta && window.ShopifyAnalytics.meta.shopId) ||
+        window.location.hostname;
+
+      try {
+        await fetch(`${apiBaseUrl}/api/analytics/widget-click`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            widgetId,
+            widgetType,
+            shop: shopDomain,
+          }),
+        });
+      } catch (error) {
+        console.warn('Failed to track Sellence widget click', error);
+      }
+    }
+
     function setAddButtonState(state, message) {
       const button = document.querySelector('.sellence-widget-add-to-cart');
       if (!button) return;
@@ -513,6 +534,7 @@
         // Отправляем запрос на сервер для вычисления скидки
         setAddButtonState('loading');
         const cleanUrl = appUrl.replace(/\/$/, '');
+        trackWidgetClick(cleanUrl, widgetId, 'products-page');
         const discountResponse = await fetch(`${cleanUrl}/api/cart/calculate-discount`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

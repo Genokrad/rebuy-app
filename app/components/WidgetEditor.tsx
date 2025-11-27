@@ -7,6 +7,7 @@ import {
   Spinner,
 } from "@shopify/polaris";
 import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "@remix-run/react";
 import { ProductRelationshipSelector } from "./ProductRelationshipSelector";
 import { ExistingProductRelationships } from "./ExistingProductRelationships";
 import { WidgetForm } from "./WidgetForm";
@@ -82,6 +83,8 @@ export function WidgetEditor({
     ChildProduct[]
   >([]);
   const [hasLoadedData, setHasLoadedData] = useState<boolean>(false);
+
+  const navigate = useNavigate();
 
   // Products are already transformed in the loader, no need to transform again
   const transformedProducts = useMemo(() => {
@@ -251,6 +254,19 @@ export function WidgetEditor({
                 helpText="Укажите количество слайдов, которые будут отображаться одновременно"
                 autoComplete="off"
               />
+
+              <Button
+                onClick={() => {
+                  const params = new URLSearchParams();
+                  params.set("placements", JSON.stringify(placements));
+                  navigate(
+                    `/app/widget-appearance/${widgetId}?${params.toString()}`,
+                  );
+                }}
+                variant="primary"
+              >
+                Change the appearance of the widget
+              </Button>
 
               {/* Show all existing relationships */}
               <ExistingProductRelationships

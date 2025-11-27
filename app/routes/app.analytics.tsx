@@ -11,14 +11,16 @@ import {
   EmptyState,
   OrdersSummary,
   OrdersStats,
+  WidgetClicksStats,
   type AnalyticsOrder,
 } from "../components/analytics";
 import { useState, useCallback, useEffect } from "react";
+import prisma from "../db.server";
 
 const ITEMS_PER_LOAD = 50; // Количество заказов для загрузки за раз
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  const { session } = await authenticate.admin(request);
 
   const url = new URL(request.url);
   const startDateParam = url.searchParams.get("startDate");
@@ -118,6 +120,49 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     };
   });
 
+  let widgetClickStats: Array<{
+    widgetId: string;
+    widgetType: string;
+    clickCount: number;
+    percentage: number;
+  }> = [];
+
+  try {
+    const widgetClickEventClient = (prisma as any).widgetClickEvent;
+    if (widgetClickEventClient?.groupBy) {
+      const rawStats = await widgetClickEventClient.groupBy({
+        where: { shop: session.shop?.toLowerCase() },
+        by: ["widgetId", "widgetType"],
+        _count: {
+          widgetId: true,
+        },
+        orderBy: {
+          _count: {
+            widgetId: "desc",
+          },
+        },
+      });
+
+      const totalClicks = rawStats.reduce(
+        (sum: number, item: any) => sum + (item?._count?.widgetId ?? 0),
+        0,
+      );
+
+      widgetClickStats = rawStats.map((item: any) => {
+        const count = item?._count?.widgetId ?? 0;
+        return {
+          widgetId: item?.widgetId || "Unknown widget",
+          widgetType: item?.widgetType || "N/A",
+          clickCount: count,
+          percentage:
+            totalClicks > 0 ? Math.round((count / totalClicks) * 100) : 0,
+        };
+      });
+    }
+  } catch (error) {
+    console.error("Failed to load widget click stats", error);
+  }
+
   return {
     orders: ordersData as AnalyticsOrder[],
     totalOrders: ordersData.length,
@@ -126,6 +171,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     startDate: startDate.toISOString().split("T")[0],
     endDate: endDate.toISOString().split("T")[0],
     filterSellenceOnly,
+    widgetClickStats,
   };
 };
 
@@ -150,6 +196,7 @@ export default function Analytics() {
   const data = fetcher.data || loaderData;
   const hasNextPage = data.hasNextPage;
   const nextCursor = data.nextCursor;
+  const widgetClickStats = data.widgetClickStats || [];
 
   // Обновляем список заказов и состояние фильтра при изменении данных из loader
   useEffect(() => {
@@ -226,6 +273,8 @@ export default function Analytics() {
             <Text as="h1" variant="headingLg">
               Sellence Orders Analytics
             </Text>
+
+            <WidgetClicksStats stats={widgetClickStats} />
 
             <DateRangeFilter
               startDate={selectedStartDate}

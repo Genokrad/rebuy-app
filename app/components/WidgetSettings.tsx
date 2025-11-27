@@ -33,14 +33,14 @@ export const WidgetSettings = ({
       discount4: "",
       discount5: "",
     };
-
+    
     discounts.forEach((discount: any, index: number) => {
       const value = Object.values(discount)[0];
       if (index < 5) {
         result[`discount${index + 1}` as keyof typeof result] = String(value);
       }
     });
-
+    
     return result;
   };
 
