@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useParams, useSearchParams } from "@remix-run/react";
 import { Page, Layout, Text, BlockStack, Card, Badge } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
+import { WidgetAppearancePreview } from "../components/widgetAppearance";
 
 export default function WidgetAppearanceRoute() {
   const { widgetId } = useParams();
@@ -58,6 +59,11 @@ export default function WidgetAppearanceRoute() {
               )}
             </BlockStack>
           </Card>
+          {placements.includes("products") && (
+            <Layout.Section>
+              <WidgetAppearancePreview widgetId={widgetId} />
+            </Layout.Section>
+          )}
         </Layout.Section>
       </Layout>
     </Page>

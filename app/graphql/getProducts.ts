@@ -27,6 +27,10 @@ export const GET_PRODUCTS_QUERY = `
                   url
                   altText
                 }
+                selectedOptions {
+                  name
+                  value
+                }
               }
             }
           }
@@ -41,6 +45,11 @@ export interface ProductImage {
   altText?: string;
 }
 
+export interface SelectedOption {
+  name: string;
+  value: string;
+}
+
 export interface ProductVariant {
   id: string;
   title: string;
@@ -48,6 +57,7 @@ export interface ProductVariant {
   compareAtPrice?: string;
   availableForSale: boolean;
   image?: ProductImage;
+  selectedOptions: SelectedOption[];
 }
 
 export interface Product {
@@ -74,7 +84,9 @@ export interface ProductsResponse {
         };
         variants: {
           edges: Array<{
-            node: ProductVariant;
+            node: ProductVariant & {
+              selectedOptions: SelectedOption[];
+            };
           }>;
         };
       };

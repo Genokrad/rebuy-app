@@ -38,6 +38,7 @@ export async function getAllProducts(request: Request): Promise<Product[]> {
       compareAtPrice: variant.node.compareAtPrice,
       availableForSale: variant.node.availableForSale,
       image: variant.node.image || undefined,
+      selectedOptions: variant.node.selectedOptions || [],
     })),
   })) as Product[];
 
