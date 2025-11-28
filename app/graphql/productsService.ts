@@ -12,7 +12,7 @@ export async function getAllProducts(request: Request): Promise<Product[]> {
   const response = await admin.graphql(GET_PRODUCTS_QUERY, {
     variables: {
       first: 150, // Получаем первые 150 продуктов
-      query: "status:active", // Фильтруем только активные продукты
+      query: "status:active OR status:unlisted", // Активные + unlisted (не отображаемые на сайте) продукты
     },
     apiVersion: ApiVersion.January25,
   });
@@ -38,10 +38,11 @@ export async function getAllProducts(request: Request): Promise<Product[]> {
       compareAtPrice: variant.node.compareAtPrice,
       availableForSale: variant.node.availableForSale,
       image: variant.node.image || undefined,
+      selectedOptions: variant.node.selectedOptions || [],
     })),
   })) as Product[];
 
-  // console.log(`Found ${products.length} active products`);
+  // console.log(`Found ${products.length} products (active + draft)`);
   // console.log(
   //   "First product with variants:",
   //   JSON.stringify(products[0], null, 2),

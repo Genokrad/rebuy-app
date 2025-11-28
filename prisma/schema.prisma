@@ -145,3 +145,64 @@ model MarketPrice {
   @@index([countryCode])
   @@index([variantDetailsId])
 }
+
+model ShopOrderMetric {
+  id                 String              @id @default(cuid())
+  shop               String
+  orderId            String
+  orderName          String?
+  currency           String?
+  totalPrice         String?
+  subtotalPrice      String?
+  totalDiscounts     String?
+  totalTax           String?
+  pluginInvolved     Boolean             @default(false)
+  pluginRevenue      String?
+  pluginDiscountTotal String?
+  orderCreatedAt     DateTime?
+  rawPayload         Json?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  lineItems          ShopOrderLineItem[]
+
+  @@unique([shop, orderId])
+  @@index([shop])
+  @@index([shop, pluginInvolved])
+  @@index([orderCreatedAt])
+}
+
+model ShopOrderLineItem {
+  id                 String           @id @default(cuid())
+  orderMetricId      String
+  order              ShopOrderMetric  @relation(fields: [orderMetricId], references: [id], onDelete: Cascade)
+  lineItemId         String
+  productId          String?
+  variantId          String?
+  title              String?
+  variantTitle       String?
+  quantity           Int
+  price              String?
+  linePrice          String?
+  discountedPrice    String?
+  discountAllocations Json?
+  properties         Json?
+  widgetId           String?
+  widgetType         String?
+  sellenceDiscount   Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+
+  @@index([orderMetricId])
+  @@index([sellenceDiscount])
+}
+
+model WidgetClickEvent {
+  id         String   @id @default(cuid())
+  shop       String
+  widgetId   String
+  widgetType String
+  createdAt  DateTime @default(now())
+
+  @@index([shop])
+  @@index([widgetId])
+  @@index([widgetType])
+}

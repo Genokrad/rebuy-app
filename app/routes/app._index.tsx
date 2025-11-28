@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useFetcher, Link } from "@remix-run/react";
 import {
@@ -23,6 +23,7 @@ import {
   deleteWidget,
   updateWidget,
   getWidgetsByShop,
+  cloneWidget,
 } from "../services/widgetService";
 import { widgetCards } from "../data/default-data";
 import {
@@ -209,6 +210,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   }
 
+  // Проверяем, это запрос на клонирование виджета
+  const cloneWidgetId = formData.get("cloneWidgetId") as string | null;
+  if (cloneWidgetId) {
+    try {
+      const widget = await cloneWidget(cloneWidgetId);
+      return { success: true, cloned: true, widget, error: null };
+    } catch (error) {
+      console.error("Error cloning widget:", error);
+      return { error: "Failed to clone widget", success: false, widget: null };
+    }
+  }
+
   // Проверяем, это обновление существующего виджета
   const updateWidgetId = formData.get("updateWidgetId") as string;
   if (updateWidgetId) {
@@ -274,6 +287,7 @@ export default function Index() {
     products?: any[];
     settings?: any;
   } | null>(null);
+  const [isSavingWidget, setIsSavingWidget] = useState(false);
 
   const handleWidgetClick = (widgetName: string, widgetType: string) => {
     setClickedWidget(widgetName);
@@ -288,6 +302,12 @@ export default function Index() {
   const handleDeleteWidget = (widgetId: string) => {
     const formData = new FormData();
     formData.append("widgetId", widgetId);
+    fetcher.submit(formData, { method: "POST" });
+  };
+
+  const handleCloneWidget = (widgetId: string) => {
+    const formData = new FormData();
+    formData.append("cloneWidgetId", widgetId);
     fetcher.submit(formData, { method: "POST" });
   };
 
@@ -330,9 +350,29 @@ export default function Index() {
       formData.append("settings", JSON.stringify(settings));
     }
 
+    setIsSavingWidget(true);
     fetcher.submit(formData, { method: "POST" });
-    setCurrentWidgets(null);
   };
+
+  useEffect(() => {
+    if (!isSavingWidget) {
+      return;
+    }
+
+    if (fetcher.state === "idle") {
+      setIsSavingWidget(false);
+      const updatedWidget = (fetcher.data as any)?.widget;
+      if (updatedWidget) {
+        setCurrentWidgets({
+          id: updatedWidget.id,
+          name: updatedWidget.name,
+          type: updatedWidget.type,
+          products: updatedWidget.products,
+          settings: (updatedWidget as any)?.settings,
+        });
+      }
+    }
+  }, [fetcher.state, fetcher.data, isSavingWidget]);
 
   return (
     <Page>
@@ -401,6 +441,7 @@ export default function Index() {
                     widgets={loaderData.widgets}
                     deleteWidget={handleDeleteWidget}
                     handleEditeWidgets={handleEditeWidgets}
+                    onCloneWidget={handleCloneWidget}
                   />
                 )}
 
@@ -422,6 +463,7 @@ export default function Index() {
                 existingProducts={currentWidgets.products}
                 // прокидываем сохраненные настройки
                 settings={(currentWidgets as any)?.settings}
+                isSaving={isSavingWidget}
                 onBack={handleBackToWidgets}
                 onSave={handleSaveWidget}
               />

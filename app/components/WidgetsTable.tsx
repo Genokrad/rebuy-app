@@ -8,7 +8,7 @@ import {
   ButtonGroup,
   Button,
 } from "@shopify/polaris";
-import { DeleteIcon, EditIcon } from "@shopify/polaris-icons";
+import { DeleteIcon, EditIcon, DuplicateIcon } from "@shopify/polaris-icons";
 import { formatDate } from "../services/utils";
 import type { Widget } from "./types";
 
@@ -16,12 +16,14 @@ interface WidgetsTableProps {
   widgets: Widget[];
   deleteWidget: (widgetId: string) => void;
   handleEditeWidgets: (widgets: string, name: string, type: string) => void;
+  onCloneWidget: (widgetId: string) => void;
 }
 
 export function WidgetsTable({
   widgets,
   deleteWidget,
   handleEditeWidgets,
+  onCloneWidget,
 }: WidgetsTableProps) {
   const tableRows = widgets.map((widget) => [
     <InlineStack key={`${widget.id}-name`} gap="200" align="start">
@@ -51,6 +53,11 @@ export function WidgetsTable({
         icon={EditIcon}
         accessibilityLabel="Edit widget"
         onClick={() => handleEditeWidgets(widget.id, widget.name, widget.type)}
+      />
+      <Button
+        icon={DuplicateIcon}
+        accessibilityLabel="Clone widget"
+        onClick={() => onCloneWidget(widget.id)}
       />
       <Button
         icon={DeleteIcon}

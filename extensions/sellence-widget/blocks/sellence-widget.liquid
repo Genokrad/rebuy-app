@@ -275,7 +275,9 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+  import { EVENTS, publish } from "@archetype-themes/utils/pubsub";
+
   const CURRENCY_SYMBOLS = {
     'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': 'C$',
     'AUD': 'A$', 'CHF': 'CHF', 'CNY': '¥', 'SEK': 'kr', 'NOK': 'kr',
@@ -415,6 +417,83 @@
       }
     }
 
+    async function trackWidgetClick(apiBaseUrl, widgetId, widgetType) {
+      const shopDomain =
+        (window?.Shopify && window.Shopify.shop) ||
+        (window?.ShopifyAnalytics && window.ShopifyAnalytics.meta && window.ShopifyAnalytics.meta.shopId) ||
+        window.location.hostname;
+
+      try {
+        await fetch(`${apiBaseUrl}/api/analytics/widget-click`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            widgetId,
+            widgetType,
+            shop: shopDomain,
+          }),
+        });
+      } catch (error) {
+        console.warn('Failed to track Sellence widget click', error);
+      }
+    }
+
+    function setAddButtonState(state, message) {
+      const button = document.querySelector('.sellence-widget-add-to-cart');
+      if (!button) return;
+
+      const label = button.textContent;
+
+      switch (state) {
+        case 'loading':
+          button.dataset.originalText = label;
+          button.textContent = message || 'Adding...';
+          button.setAttribute('disabled', 'disabled');
+          button.classList.add('btn--loading');
+          break;
+        case 'success':
+          button.textContent = message || 'Added to cart!';
+          setTimeout(() => {
+            button.textContent = button.dataset.originalText || 'Add all';
+          }, 2000);
+          button.removeAttribute('disabled');
+          button.classList.remove('btn--loading');
+          break;
+        case 'error':
+          button.textContent = message || 'Error';
+          setTimeout(() => {
+            button.textContent = button.dataset.originalText || 'Add all';
+          }, 3000);
+          button.removeAttribute('disabled');
+          button.classList.remove('btn--loading');
+          break;
+        default:
+          button.textContent = button.dataset.originalText || 'Add all';
+          button.removeAttribute('disabled');
+          button.classList.remove('btn--loading');
+      }
+    }
+
+    function publishAjaxProductAdded(responseJson) {
+      try {
+        publish(EVENTS.ajaxProductAdded, {
+          detail: {
+            product: responseJson,
+            addToCartBtn: document.querySelector('.sellence-widget-add-to-cart'),
+          },
+        });
+      } catch (error) {
+        document.dispatchEvent(
+          new CustomEvent('ajaxProductAdded', {
+            detail: {
+              product: responseJson,
+              addToCartBtn: document.querySelector('.sellence-widget-add-to-cart'),
+            },
+          }),
+        );
+      }
+    }
+
     // Функция для добавления выбранных товаров в корзину
     async function addSelectedItemsToCart(widget) {
       const checkedCheckboxes = document.querySelectorAll('#items-list .sellence-widget-checkbox:checked');
@@ -453,7 +532,9 @@
 
       try {
         // Отправляем запрос на сервер для вычисления скидки
+        setAddButtonState('loading');
         const cleanUrl = appUrl.replace(/\/$/, '');
+        trackWidgetClick(cleanUrl, widgetId, 'products-page');
         const discountResponse = await fetch(`${cleanUrl}/api/cart/calculate-discount`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -592,6 +673,7 @@
               const itemProperties = {
                 '_sellence_original_price': originalPrice.toString(),
                 '_sellence_widget_id': widgetId,
+                '_sellence_widget_type': 'products-page',
                 '_sellence_applied': 'true'
               };
 
@@ -617,6 +699,7 @@
         }
 
         if (cartItems.length === 0) {
+          setAddButtonState('error', 'No products available');
           throw new Error('No available products to add to cart');
         }
 
@@ -627,7 +710,10 @@
           body: JSON.stringify({ items: cartItems })
         });
 
-        if (!addToCartResponse.ok) {
+        const addResult = await addToCartResponse.clone().json().catch(() => null);
+
+        if (!addToCartResponse.ok || !addResult) {
+          setAddButtonState('error', 'Error adding to cart');
           // Получаем детали ошибки от Shopify
           const errorData = await addToCartResponse.json().catch(() => ({ error: 'Unknown error' }));
           console.error('Shopify Cart API error:', errorData);
@@ -642,10 +728,11 @@
           throw new Error(`${I18N.addToCartError}: ${errorMessage}`);
         }
 
-        // Перенаправляем на страницу корзины
-        window.location.href = '/cart';
+        publishAjaxProductAdded(addResult);
+        setAddButtonState('success');
       } catch (error) {
         console.error('Error adding items to cart:', error);
+        setAddButtonState('error');
         alert(`${I18N.addToCartError}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
@@ -911,10 +998,33 @@
 
               const priceContainer = itemContent.querySelector('.sellence-widget-item-price');
               if (priceContainer) {
+                const newPriceWrapper = priceContainer.querySelector('p.sellence-widget-price-new');
                 const newPriceSpan = priceContainer.querySelector('p.sellence-widget-price-new > span.sellence-widget-price-new');
+                const oldPriceWrapper = priceContainer.querySelector('p.sellence-widget-price-old');
                 const oldPriceSpan = priceContainer.querySelector('.sellence-widget-price-old-price');
-                if (newPriceSpan) newPriceSpan.textContent = formattedPriceWithDiscount;
-                if (oldPriceSpan) oldPriceSpan.textContent = formattedPrice;
+
+                if (newPriceSpan) {
+                  if (finalDiscount > 0) {
+                    newPriceSpan.textContent = formattedPriceWithDiscount;
+                    if (newPriceWrapper && newPriceWrapper.firstChild) {
+                      newPriceWrapper.firstChild.textContent = `${I18N.nowLabel} `;
+                    }
+                  } else {
+                    newPriceSpan.textContent = formattedPrice;
+                    if (newPriceWrapper && newPriceWrapper.firstChild) {
+                      newPriceWrapper.firstChild.textContent = '';
+                    }
+                  }
+                }
+
+                if (oldPriceWrapper) {
+                  if (finalDiscount > 0 && oldPriceSpan) {
+                    oldPriceWrapper.style.display = '';
+                    oldPriceSpan.textContent = formattedPrice;
+                  } else {
+                    oldPriceWrapper.style.display = 'none';
+                  }
+                }
               }
             });
 
@@ -970,6 +1080,7 @@
             const formattedPriceWithDiscount = formatWidgetPrice(price * (1 - finalDiscount / 100), currencyCode);
             // const formattedComparePrice = compareAtPrice ? formatWidgetPrice(compareAtPrice, currencyCode) : '';
 
+            const hasDiscount = finalDiscount > 0;
             item.innerHTML = `
               <label class="sellence-widget-item-label">
                 <input type="checkbox" class="sellence-widget-checkbox" checked>
@@ -977,8 +1088,15 @@
                 <div class="sellence-widget-item-content" data-product="${encodeURIComponent(JSON.stringify(childProduct))}">
                   <span class="sellence-widget-item-name">${productName}</span>
                   <div class="sellence-widget-item-price">
-                    <p class="sellence-widget-price-new">${I18N.nowLabel} <span class="sellence-widget-price-new">${formattedPriceWithDiscount}</span></p>
-                    <p class="sellence-widget-price-old">${I18N.wasLabel} <span class="sellence-widget-price-old-price">${formattedPrice}</span></p>
+                    <p class="sellence-widget-price-new">
+                      ${hasDiscount ? `${I18N.nowLabel} ` : ''}
+                      <span class="sellence-widget-price-new">${hasDiscount ? formattedPriceWithDiscount : formattedPrice}</span>
+                    </p>
+                    ${
+                      hasDiscount
+                        ? `<p class="sellence-widget-price-old">${I18N.wasLabel} <span class="sellence-widget-price-old-price">${formattedPrice}</span></p>`
+                        : ''
+                    }
                   </div>
                 </div>
               </label>
@@ -1073,7 +1191,7 @@
 
           // Устанавливаем значения тоталов
           totalPriceNew.textContent = formatWidgetPrice(totalNew, currencyCode);
-          if (totalOld > 0) {
+          if (finalDiscount > 0 && totalOld > totalNew) {
             totalPriceOld.textContent = formatWidgetPrice(totalOld, currencyCode);
             totalPriceOld.style.display = 'inline';
           } else {

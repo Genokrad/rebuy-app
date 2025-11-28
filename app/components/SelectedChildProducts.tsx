@@ -6,27 +6,49 @@ import {
   Card,
   Badge,
 } from "@shopify/polaris";
-import React from "react";
-import type { ChildProduct } from "./types";
+import React, { useState } from "react";
+import type { ChildProduct, ProductVariant } from "./types";
 
 interface Product {
   id: string;
   title: string;
-  variants?: Array<{
-    id: string;
-    title: string;
-  }>;
+  variants?: ProductVariant[];
 }
 
 interface SelectedChildProductsProps {
   selectedChildProducts: ChildProduct[];
   transformedProducts: Product[];
+  onReorder?: (next: ChildProduct[]) => void;
 }
 
 export function SelectedChildProducts({
   selectedChildProducts,
   transformedProducts,
+  onReorder,
 }: SelectedChildProductsProps) {
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  const handleDragStart = (index: number) => {
+    setDragIndex(index);
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  const handleDrop = (targetIndex: number) => {
+    if (dragIndex === null || dragIndex === targetIndex || !onReorder) {
+      setDragIndex(null);
+      return;
+    }
+
+    const next = [...selectedChildProducts];
+    const [moved] = next.splice(dragIndex, 1);
+    next.splice(targetIndex, 0, moved);
+    setDragIndex(null);
+    onReorder(next);
+  };
+
   if (selectedChildProducts.length === 0) {
     return null;
   }
@@ -48,69 +70,77 @@ export function SelectedChildProducts({
             );
 
             return (
-              <Card
+              <div
                 key={`${childProduct.productId}-${childProduct.variantId}`}
-                background="bg-surface-secondary"
+                draggable={!!onReorder}
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={handleDragOver}
+                onDrop={() => handleDrop(index)}
               >
-                <InlineStack
-                  gap="300"
-                  align="space-between"
-                  blockAlign="center"
-                >
-                  <InlineStack gap="200" align="start">
-                    {(childProduct.variantDetails?.image || variant?.image) && (
-                      <Thumbnail
-                        source={
-                          childProduct.variantDetails?.image?.url ||
-                          variant?.image?.url ||
-                          ""
-                        }
-                        alt={variant?.title || "Product"}
-                        size="small"
-                      />
-                    )}
-
-                    <BlockStack gap="100">
-                      <Text as="p" variant="bodyMd" fontWeight="medium">
-                        {product?.title || childProduct.productId}
-                      </Text>
-
-                      {variant && (
-                        <Text as="p" variant="bodySm" tone="subdued">
-                          Вариант: {variant.title}
-                        </Text>
+                <Card background="bg-surface-secondary">
+                  <InlineStack
+                    gap="300"
+                    align="space-between"
+                    blockAlign="center"
+                  >
+                    <InlineStack gap="200" align="start">
+                      {(childProduct.variantDetails?.image ||
+                        variant?.image) && (
+                        <Thumbnail
+                          source={
+                            childProduct.variantDetails?.image?.url ||
+                            variant?.image?.url ||
+                            ""
+                          }
+                          alt={variant?.title || "Product"}
+                          size="small"
+                        />
                       )}
 
-                      <InlineStack gap="200" align="start">
-                        <Text as="p" variant="bodySm" tone="subdued">
-                          Цена: {variant?.price || "N/A"}
+                      <BlockStack gap="100">
+                        <Text as="p" variant="bodyMd" fontWeight="medium">
+                          {product?.title || childProduct.productId}
                         </Text>
 
-                        {variant?.compareAtPrice && (
-                          <Text as="p" variant="bodySm" tone="critical">
-                            Было: {variant.compareAtPrice}
+                        {variant && (
+                          <Text as="p" variant="bodySm" tone="subdued">
+                            Вариант: {variant.title}
                           </Text>
                         )}
-                      </InlineStack>
-                    </BlockStack>
-                  </InlineStack>
 
-                  <InlineStack gap="200" align="center">
-                    <Badge
-                      tone={variant?.availableForSale ? "success" : "critical"}
-                      size="small"
-                    >
-                      {variant?.availableForSale
-                        ? "В наличии"
-                        : "Нет в наличии"}
-                    </Badge>
+                        <InlineStack gap="200" align="start">
+                          <Text as="p" variant="bodySm" tone="subdued">
+                            Цена: {variant?.price || "N/A"}
+                          </Text>
 
-                    <Text as="p" variant="bodySm" tone="subdued">
-                      ID: {childProduct.variantId.split("/").pop()}
-                    </Text>
+                          {variant?.compareAtPrice && (
+                            <Text as="p" variant="bodySm" tone="critical">
+                              Было: {variant.compareAtPrice}
+                            </Text>
+                          )}
+                        </InlineStack>
+                      </BlockStack>
+                    </InlineStack>
+
+                    <InlineStack gap="200" align="center">
+                      <Badge
+                        tone={
+                          variant?.availableForSale ? "success" : "critical"
+                        }
+                        size="small"
+                      >
+                        {variant?.availableForSale
+                          ? "В наличии"
+                          : "Нет в наличии"}
+                      </Badge>
+
+                      <Text as="p" variant="bodySm" tone="subdued">
+                        ID: {childProduct.variantId.split("/").pop()}
+                      </Text>
+                    </InlineStack>
                   </InlineStack>
-                </InlineStack>
-              </Card>
+                </Card>
+              </div>
             );
           })}
         </BlockStack>

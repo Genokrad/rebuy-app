@@ -3,6 +3,7 @@ import { render } from "preact";
 import {
   useCartLines,
   useDiscountCodes,
+  useShop,
 } from "@shopify/ui-extensions/checkout/preact";
 import { useEffect, useState, useRef } from "preact/hooks";
 
@@ -21,6 +22,7 @@ function Extension() {
   const [addingProducts, setAddingProducts] = useState(new Set());
   const [cartLinesVariantIds, setCartLinesVariantIds] = useState([]);
   const [slideCount, setSlideCount] = useState(0);
+  const shopInfo = useShop();
   // Используем useRef для отслеживания последнего сохраненного значения без триггера перерендера
   const lastSavedDiscountCodesRef = useRef(null);
 
@@ -160,58 +162,41 @@ function Extension() {
     updateCartAttribute();
   }, [discountCodes]); // Убрали lastSavedDiscountCodes из зависимостей, используем useRef
 
-  // Отслеживаем изменения стоимости корзины (может изменяться при применении промокода)
-  // Используем useMemo или убираем логирование, чтобы не вызывать бесконечные циклы
-  // Закомментировано для предотвращения циклов - можно включить для отладки
-  /*
-  useEffect(() => {
-    try {
-      const totalAmount = shopify.cost?.totalAmount?.value?.amount;
-      const subtotalAmount = shopify.cost?.subtotalAmount?.value?.amount;
-
-      console.log("=== CHECKOUT COST INFO ===");
-      console.log("Total Amount:", totalAmount);
-      console.log("Subtotal Amount:", subtotalAmount);
-      console.log("Full cost object:", shopify.cost);
-
-      // Логируем все свойства cost для поиска discount info
-      if (shopify.cost) {
-        console.log("Cost object keys:", Object.keys(shopify.cost));
-        // Проверяем возможные поля для discount
-        // @ts-ignore - totalDiscountAmount может существовать в runtime
-        const totalDiscount = shopify.cost.totalDiscountAmount;
-        if (totalDiscount) {
-          console.log("🎯 DISCOUNT AMOUNT FOUND:", totalDiscount);
-        }
-        // @ts-ignore - discountAmount может существовать в runtime
-        const discount = shopify.cost.discountAmount;
-        if (discount) {
-          console.log("🎯 DISCOUNT AMOUNT FOUND:", discount);
-        }
-      }
-
-      // Вычисляем скидку по разнице
-      if (totalAmount && subtotalAmount) {
-        const calculatedDiscount =
-          parseFloat(String(subtotalAmount)) - parseFloat(String(totalAmount));
-        if (calculatedDiscount > 0) {
-          console.log("🎯 DISCOUNT CALCULATED! Amount:", calculatedDiscount);
-        }
-      }
-    } catch (error) {
-      console.error("Error reading cost info:", error);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cartLines]); // Отслеживаем изменения через cartLines
-  */
-
   // Получаем настройки из extension
   const widgetId =
     shopify.settings.value.widget_id || "cmi31w59t0000uoi7tcj01tsl";
   const appUrl =
     shopify.settings.value.app_url ||
-    "https://inclusion-bikini-andrea-closed.trycloudflare.com";
+    "https://relationship-isolation-guy-classified.trycloudflare.com";
   const showBothPrices = shopify.settings.value.show_both_prices === true;
+  const normalizedAppUrl =
+    typeof appUrl === "string"
+      ? appUrl.replace(/\/$/, "")
+      : String(appUrl || "").replace(/\/$/, "");
+
+  const shopDomainFromContext =
+    shopInfo?.myshopifyDomain ||
+    shopInfo?.storefrontUrl ||
+    shopInfo?.id ||
+    "unknown-shop";
+
+  async function trackWidgetClick(widgetIdToTrack, widgetType) {
+    if (!normalizedAppUrl) return;
+
+    try {
+      await fetch(`${normalizedAppUrl}/api/analytics/widget-click`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          widgetId: widgetIdToTrack,
+          widgetType,
+          shop: shopDomainFromContext,
+        }),
+      });
+    } catch (error) {
+      console.warn("Failed to track Sellence widget click", error);
+    }
+  }
 
   // Функция для добавления перечеркивания через Unicode символы
   function strikethrough(text) {
@@ -429,17 +414,40 @@ function Extension() {
     setAddingProducts((prev) => new Set(prev).add(variantId));
 
     try {
+      // Получаем тип виджета из widgetData
+      const widgetType = widgetData?.widget?.type || "checkout";
+      trackWidgetClick(widgetId, widgetType);
+
+      // Формируем атрибуты для товара
+      const attributes = [
+        {
+          key: "_sellence_widget_id",
+          value: widgetId,
+        },
+        {
+          key: "_sellence_widget_type",
+          value: widgetType,
+        },
+        {
+          key: "_sellence_applied",
+          value: "true",
+        },
+      ];
+
       const result = await shopify.applyCartLinesChange({
         type: "addCartLine",
         merchandiseId: variantId,
         quantity: 1,
+        attributes: attributes,
       });
 
       if (result.type === "error") {
         console.error("Error adding product to cart:", result.message);
         // Можно показать ошибку пользователю
       } else {
-        console.log("Product added to cart successfully");
+        console.log(
+          "Product added to cart successfully with widget attributes",
+        );
       }
     } catch (err) {
       console.error("Error adding product to cart:", err);
