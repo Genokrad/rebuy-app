@@ -11,6 +11,7 @@ import {
   type Location,
   type LocationsResponse,
 } from "./getLocations";
+import prisma from "../db.server";
 
 /**
  * Внутренняя функция для получения всех маркетов
@@ -170,4 +171,26 @@ export async function getAllLocations(request: Request): Promise<Location[]> {
     console.error("Error fetching locations:", error);
     throw error;
   }
+}
+
+/**
+ * Обновляет для всех MarketPrice указанного маркета список доступных складов (warehouses)
+ * warehouseLocationIds - массив ID складов, например ["gid://shopify/Location/...", "..."]
+ */
+export async function updateMarketWarehousesForAllVariants(
+  marketId: string,
+  warehouseLocationIds: string[],
+) {
+  const warehousesJson = JSON.stringify(warehouseLocationIds);
+
+  await prisma.marketPrice.updateMany({
+    where: {
+      marketId,
+    },
+    data: {
+      // поле warehouses добавлено в Prisma-схему, но типы клиента могут быть ещё не обновлены локально
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...({ warehouses: warehousesJson } as any),
+    },
+  });
 }

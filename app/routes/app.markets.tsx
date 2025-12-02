@@ -1,5 +1,6 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { useLoaderData, useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import {
   Page,
@@ -13,7 +14,11 @@ import {
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
-import { getAllMarkets, getAllLocations } from "../graphql/marketsService";
+import {
+  getAllMarkets,
+  getAllLocations,
+  updateMarketWarehousesForAllVariants,
+} from "../graphql/marketsService";
 import type { Market } from "../graphql/getMarkets";
 import type { Location } from "../graphql/getLocations";
 
@@ -42,8 +47,36 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   };
 };
 
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+
+  const marketId = formData.get("marketId");
+  const warehousesRaw = formData.get("warehouses"); // строка вида "gid://...1,gid://...2"
+
+  if (typeof marketId !== "string" || typeof warehousesRaw !== "string") {
+    return json({ error: "Некорректные данные формы" }, { status: 400 });
+  }
+
+  const warehouseLocationIds = warehousesRaw
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+
+  try {
+    await updateMarketWarehousesForAllVariants(marketId, warehouseLocationIds);
+    return redirect("/app/markets");
+  } catch (error) {
+    console.error("Ошибка при сохранении складов для маркета:", error);
+    return json(
+      { error: "Не удалось сохранить список складов для маркета" },
+      { status: 500 },
+    );
+  }
+};
+
 export default function Markets() {
   const { markets, locations } = useLoaderData<typeof loader>();
+  const fetcher = useFetcher();
 
   // Состояние для хранения выбранных складов для каждого маркета
   // Ключ - ID маркета, значение - массив ID выбранных складов
@@ -154,30 +187,25 @@ export default function Markets() {
                                     Выбрано складов: {selectedForMarket.length}
                                   </Text>
                                 )}
-                                <Button
-                                  variant="primary"
-                                  disabled={selectedForMarket.length === 0}
-                                  onClick={() => {
-                                    const selectedLocationIds = locations
-                                      .filter((loc: Location) =>
-                                        selectedForMarket.includes(loc.id),
-                                      )
-                                      .map((loc) => ({ id: loc.id }));
-
-                                    // Пока просто выводим в консоль выбранные склады для этого маркета
-                                    // eslint-disable-next-line no-console
-                                    console.log(
-                                      "Selected warehouses for market",
-                                      {
-                                        marketId: market.id,
-                                        marketName: market.name,
-                                        locations: selectedLocationIds,
-                                      },
-                                    );
-                                  }}
-                                >
-                                  Сохранить для маркета (log)
-                                </Button>
+                                <fetcher.Form method="post">
+                                  <input
+                                    type="hidden"
+                                    name="marketId"
+                                    value={market.id}
+                                  />
+                                  <input
+                                    type="hidden"
+                                    name="warehouses"
+                                    value={selectedForMarket.join(",")}
+                                  />
+                                  <Button
+                                    variant="primary"
+                                    disabled={selectedForMarket.length === 0}
+                                    submit
+                                  >
+                                    Сохранить для маркета
+                                  </Button>
+                                </fetcher.Form>
                               </BlockStack>
                             )}
 

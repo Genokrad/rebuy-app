@@ -88,14 +88,30 @@ async function buildProductRelationships(
                 currencyCode: il.currencyCode,
               }),
             ),
-            marketsPrice: cp.variantDetails.marketPrices.map((mp: any) => ({
-              marketId: mp.marketId,
-              marketName: mp.marketName,
-              countryCode: mp.countryCode,
-              price: mp.price,
-              compareAtPrice: mp.compareAtPrice || undefined,
-              currencyCode: mp.currencyCode,
-            })),
+            marketsPrice: cp.variantDetails.marketPrices.map((mp: any) => {
+              // Парсим warehouses из JSON-строки, если она есть
+              let warehouses: string[] | undefined;
+              if (mp.warehouses) {
+                try {
+                  warehouses = JSON.parse(mp.warehouses);
+                } catch (e) {
+                  console.warn(
+                    `Failed to parse warehouses for marketPrice ${mp.id}:`,
+                    e,
+                  );
+                }
+              }
+
+              return {
+                marketId: mp.marketId,
+                marketName: mp.marketName,
+                countryCode: mp.countryCode,
+                price: mp.price,
+                compareAtPrice: mp.compareAtPrice || undefined,
+                currencyCode: mp.currencyCode,
+                warehouses,
+              };
+            }),
           }
         : undefined;
 
@@ -236,6 +252,18 @@ async function saveVariantDetails(
     productTitle: variantDetails.product?.title || "",
   };
 
+  // Сохраняем существующие warehouses перед удалением marketPrices
+  let existingWarehouses: Record<string, string | null> = {};
+  if (existing) {
+    const existingMarketPrices = await (prisma as any).marketPrice.findMany({
+      where: { variantDetailsId: existing.id },
+      select: { marketId: true, warehouses: true },
+    });
+    existingMarketPrices.forEach((mp: any) => {
+      existingWarehouses[mp.marketId] = mp.warehouses;
+    });
+  }
+
   if (existing) {
     // Обновляем существующую запись
     await (prisma as any).variantDetails.update({
@@ -289,7 +317,7 @@ async function saveVariantDetails(
     }
   }
 
-  // Сохраняем MarketPrices
+  // Сохраняем MarketPrices, восстанавливая warehouses из существующих записей
   if (
     variantDetails.marketsPrice &&
     Array.isArray(variantDetails.marketsPrice)
@@ -304,6 +332,8 @@ async function saveVariantDetails(
           price: marketPrice.price || "0",
           compareAtPrice: marketPrice.compareAtPrice || null,
           currencyCode: marketPrice.currencyCode || "USD",
+          // Восстанавливаем warehouses из существующей записи, если она была
+          warehouses: existingWarehouses[marketPrice.marketId] || null,
         },
       });
     }

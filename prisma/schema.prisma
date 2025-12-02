@@ -138,6 +138,7 @@ model MarketPrice {
   price           String
   compareAtPrice  String?
   currencyCode    String
+  warehouses      String?       // JSON array of location IDs for allowed warehouses, e.g. ["gid://shopify/Location/...", "..."]
   updatedAt       DateTime      @updatedAt
 
   @@unique([variantDetailsId, marketId])
