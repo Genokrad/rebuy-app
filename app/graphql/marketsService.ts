@@ -6,6 +6,11 @@ import {
   type Market,
   type MarketsResponse,
 } from "./getMarkets";
+import {
+  GET_LOCATIONS_QUERY,
+  type Location,
+  type LocationsResponse,
+} from "./getLocations";
 
 /**
  * Внутренняя функция для получения всех маркетов
@@ -127,4 +132,42 @@ export function getMarketCountryCode(market: Market): string | null {
 
   // Если нет regions или code, возвращаем null
   return null;
+}
+
+/**
+ * Получает все склады (locations) магазина
+ */
+export async function getAllLocations(request: Request): Promise<Location[]> {
+  const { admin } = await authenticate.admin(request);
+
+  try {
+    const response = await admin.graphql(GET_LOCATIONS_QUERY, {
+      variables: { first: 10 },
+      apiVersion: ApiVersion.January25,
+    });
+
+    const responseJson =
+      typeof response.json === "function"
+        ? await response.json()
+        : (response as any).body || response;
+
+    if (responseJson?.errors?.length) {
+      const firstMessage =
+        responseJson.errors[0]?.message || "Unknown GraphQL error";
+      console.error("GraphQL error fetching locations:", responseJson.errors);
+      throw new Error(firstMessage);
+    }
+
+    const data = (responseJson.data ?? {
+      locations: { edges: [] },
+    }) as LocationsResponse;
+
+    // Получаем все склады (без фильтрации, так как поле active убрано из запроса)
+    const locations: Location[] = data.locations.edges.map((edge) => edge.node);
+
+    return locations;
+  } catch (error) {
+    console.error("Error fetching locations:", error);
+    throw error;
+  }
 }
