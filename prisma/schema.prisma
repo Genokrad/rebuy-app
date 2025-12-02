@@ -207,3 +207,17 @@ model WidgetClickEvent {
   @@index([widgetId])
   @@index([widgetType])
 }
+
+model MarketWarehouse {
+  id          String   @id @default(cuid())
+  shop        String   // shop domain
+  marketId    String   // Shopify Market ID
+  marketName  String?  // Название маркета для удобства
+  warehouses  String   // JSON array of location IDs, e.g. ["gid://shopify/Location/...", "..."]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([shop, marketId])
+  @@index([shop])
+  @@index([marketId])
+}

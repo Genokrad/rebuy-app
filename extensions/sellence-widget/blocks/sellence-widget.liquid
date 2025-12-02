@@ -278,6 +278,8 @@
 <script type="module">
   import { EVENTS, publish } from "@archetype-themes/utils/pubsub";
 
+  let currentMarketplace = '';
+
   const CURRENCY_SYMBOLS = {
     'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': 'C$',
     'AUD': 'A$', 'CHF': 'CHF', 'CNY': '¥', 'SEK': 'kr', 'NOK': 'kr',
@@ -330,8 +332,6 @@
     const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     if (isNaN(numericAmount)) return '0';
 
-    console.log('numericAmount:', numericAmount);
-
     const formattedAmount = numericAmount.toFixed(2);
     const symbol = getCurrencySymbol(currencyCode);
 
@@ -345,7 +345,6 @@
         finalDiscount = Number(Object.entries(discount)[0][1]);
       }
     });
-    console.log('return finalDiscount: ===>>>', finalDiscount);
     return finalDiscount;
   }
 
@@ -436,6 +435,47 @@
       } catch (error) {
         console.warn('Failed to track Sellence widget click', error);
       }
+    }
+
+    function getQuantity(childProduct) {
+      // Безопасная проверка наличия variantDetails
+      if (!childProduct?.variantDetails) {
+        console.warn('getQuantity: variantDetails is missing');
+        return 100;
+      }
+
+      // Безопасная проверка marketsPrice - должен быть массивом
+      const marketsPrice = childProduct.variantDetails.marketsPrice;
+      if (!Array.isArray(marketsPrice)) {
+        console.warn('getQuantity: marketsPrice is not an array', marketsPrice);
+        return 100;
+      }
+
+      const marketPrice = marketsPrice.find(market => market.countryCode === currentMarketplace);
+
+      let maxQuantity = 0;
+
+      // Проверяем наличие warehouses и что это массив
+      if (marketPrice?.warehouses && Array.isArray(marketPrice.warehouses) && marketPrice.warehouses.length > 0) {
+        marketPrice.warehouses.forEach(warehouse => {
+          // Безопасная проверка inventoryLevels
+          const inventoryLevels = childProduct.variantDetails.inventoryLevels;
+          if (Array.isArray(inventoryLevels)) {
+            const inventoryLevel = inventoryLevels.find(level => level.id === warehouse);
+            if (inventoryLevel?.quantity > 0) {
+              maxQuantity += Number(inventoryLevel.quantity);
+            }
+          }
+        });
+      } else {
+        maxQuantity = 100;
+      }
+
+      if (childProduct.variantDetails.inventoryPolicy === 'CONTINUE') {
+        return 1000;
+      }
+    
+      return maxQuantity;
     }
 
     function setAddButtonState(state, message) {
@@ -593,19 +633,16 @@
                 // Проверяем, можно ли добавить товар
                 const inventoryPolicy = childProduct.variantDetails?.inventoryPolicy?.toUpperCase();
                 const availableForSale = childProduct.variantDetails?.availableForSale;
-                
+
                 // Если inventoryPolicy === "CONTINUE", товар можно добавить даже при нулевом количестве
                 if (inventoryPolicy === 'CONTINUE' && availableForSale !== false) {
                   canAdd = true;
                 } else if (inventoryPolicy === 'DENY') {
                   // Для DENY проверяем количество
-                  let maxQuantity = 0;
-                  childProduct.variantDetails?.inventoryLevels?.forEach(level => {
-                    if (level.quantity > maxQuantity) {
-                      maxQuantity = level.quantity;
-                    }
-                  });
+                  const maxQuantity = getQuantity(childProduct);
+
                   if (maxQuantity <= 0 || availableForSale === false) {
+                    document.querySelector('.sellence-widget-{{ block.settings.widget_id }}').style.display = 'block';
                     canAdd = false;
                   }
                 } else if (availableForSale === false) {
@@ -766,40 +803,37 @@
     document.addEventListener('DOMContentLoaded', initSlider);
 
     async function loadWidget() {
-      console.log('loadWidget');
       try {
-        console.log('loadWidget try');
         const cleanUrl = appUrl.replace(/\/$/, '');
         const apiUrl = cleanUrl + '/api/widget/' + widgetId + '?productId=' + encodeURIComponent(currentProductId);
 
         const response = await fetch(apiUrl);
-        console.log('response:', response);
 
         if (!response.ok) {
           throw new Error('HTTP error! status: ' + response.status);
         }
-        console.log('response ok');
         const data = await response.json();
-        console.log('data:', data);
 
         const initializeWidget = (widget) => {
-          let productSelectedCount = widget.product.childProducts.length;
-
-          if (widget.product.childProducts.length > 0) {
-            document.querySelector('.sellence-widget-{{ block.settings.widget_id }}').style.display = 'block';
-          } else {
-            console.log('no child products');
+          // Безопасная проверка наличия childProducts
+          if (!widget?.product?.childProducts || !Array.isArray(widget.product.childProducts)) {
+            console.warn('initializeWidget: childProducts is missing or not an array', widget);
             return;
           }
 
-          console.log('Sellence widget data:', data);
+          let productSelectedCount = widget.product.childProducts.length;
+
+          if (productSelectedCount > 0) {
+            document.querySelector('.sellence-widget-{{ block.settings.widget_id }}').style.display = 'block';
+          } else {
+            return;
+          }
 
           const sortedDiscounts = widget.settings.discounts
           let finalDiscount = getFinalDiscount(productSelectedCount, sortedDiscounts);
 
           // Получаем текущий маркетплейс
-          const currentMarketplace = document.getElementById('sellence-widget-{{ block.id }}').dataset.currentMarketplace || 'US';
-          console.log('Current marketplace:', currentMarketplace);
+          currentMarketplace = document.getElementById('sellence-widget-{{ block.id }}').dataset.currentMarketplace || 'US';
 
           // Инициализируем слайдер с товарами
           initializeProductsSlider(widget, currentMarketplace);
@@ -827,15 +861,20 @@
         // Функция для создания слайдера с товарами
         function initializeProductsSlider(widget, currentMarketplace) {
           const productsList = document.getElementById('products-list');
-          if (!productsList || !widget.product?.childProducts) return;
+          // Безопасная проверка наличия childProducts и что это массив
+          if (!productsList || !widget.product?.childProducts || !Array.isArray(widget.product.childProducts)) {
+            console.warn('initializeProductsSlider: childProducts is missing or not an array', widget);
+            return;
+          }
 
           // Очищаем список
           productsList.innerHTML = '';
 
           let indexOfAvailableProducts = 0;
+          const childProducts = widget.product.childProducts; // Сохраняем для безопасного использования
 
           // Добавляем товары в слайдер
-          widget.product.childProducts.forEach((childProduct, index) => {
+          childProducts.forEach((childProduct, index) => {
             if (!isAvailableForSale(childProduct) || indexOfAvailableProducts >= widget.settings.slideCount) {
               return null;
             }
@@ -844,6 +883,13 @@
 
             const slide = document.createElement('li');
             slide.className = 'splide__slide';
+
+            const maxQuantity = getQuantity(childProduct);
+
+            if (maxQuantity <= 0) {
+
+              return null;
+            }
 
             // Получаем цену для текущего маркетплейса
             const inventoryLevel = childProduct.variantDetails?.inventoryLevels?.find(
@@ -873,9 +919,10 @@
               }
 
               // Создаем новый слайдер
+              const childProductsCount = childProducts.length; // Используем сохраненную переменную
               new Splide('#products-slider', {
                 type: 'slide',
-                perPage: Math.min(4, widget.product.childProducts.length),
+                perPage: Math.min(4, childProductsCount),
                 perMove: 1,
                 gap: '20px',
                 arrows: false,
@@ -884,7 +931,7 @@
                 snap: true,
                 breakpoints: {
                   1240: {
-                    perPage: Math.min(2, widget.product.childProducts.length),
+                    perPage: Math.min(2, childProductsCount),
                   },
                   1024: {
                     perPage: 1,
@@ -1034,26 +1081,30 @@
 
             // Обновляем слайдер по текущему набору выбранных товаров
             rebuildProductsSliderFromChecked(currentMarketplace);
-
-            // console.log('Выбрано элементов:', howManyProductsPicked);
-            // console.log('Список выбранных:', selectedNames);
           });
         }
 
         // Функция для создания списка товаров
         function initializeItemsList(widget, currentMarketplace, finalDiscount) {
           const itemsList = document.getElementById('items-list');
-          if (!itemsList || !widget.product?.childProducts) return;
+          // Безопасная проверка наличия childProducts и что это массив
+          if (!itemsList || !widget.product?.childProducts || !Array.isArray(widget.product.childProducts)) {
+            console.warn('initializeItemsList: childProducts is missing or not an array', widget);
+            return;
+          }
 
           // Очищаем список
           itemsList.innerHTML = '';
 
           let indexOfAvailableProducts = 0;
+          const childProducts = widget.product.childProducts; // Сохраняем для безопасного использования
 
           // Добавляем товары в список
-          widget.product.childProducts.forEach((childProduct, index) => {
+          childProducts.forEach((childProduct, index) => {
 
-            if (!isAvailableForSale(childProduct) || indexOfAvailableProducts >= widget.settings.slideCount) {
+            const maxQuantity = getQuantity(childProduct);
+
+            if (!isAvailableForSale(childProduct) || indexOfAvailableProducts >= widget.settings.slideCount || maxQuantity <= 0) {
               return null;
             }
 
@@ -1105,10 +1156,9 @@
             itemsList.appendChild(item);
           });
 
-          howManyProductsPicked = widget?.product?.childProducts?.length || 0;
+          howManyProductsPicked = childProducts.length || 0;
 
           addListenersToItemsList(itemsList, currentMarketplace, widget.settings.discounts, widget);
-          console.log('How many products picked:', howManyProductsPicked);
         }
 
         // Функция для обновления общей цены
@@ -1201,8 +1251,6 @@
         }
 
         const productPagePlacement = data?.widget?.settings?.placements?.includes('products');
-
-        console.log('productPagePlacement:', productPagePlacement);
 
         if (data?.widget?.product?.parentProduct && productPagePlacement) {
           initializeWidget(data.widget);

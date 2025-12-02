@@ -28,6 +28,12 @@ const api = shopifyApi({
  * }
  */
 export const action = async ({ request }: ActionFunctionArgs) => {
+  console.log(
+    "[Webhook] Request headers:",
+    Object.fromEntries(request.headers),
+  );
+  console.log("[Webhook] Request method:", request.method);
+  console.log("[Webhook] Request URL:", request.url);
   try {
     const { payload, shop, topic, session } =
       await authenticate.webhook(request);

@@ -176,13 +176,18 @@ export async function getAllLocations(request: Request): Promise<Location[]> {
 /**
  * Обновляет для всех MarketPrice указанного маркета список доступных складов (warehouses)
  * warehouseLocationIds - массив ID складов, например ["gid://shopify/Location/...", "..."]
+ * shop - домен магазина
+ * marketName - название маркета (опционально, для удобства)
  */
 export async function updateMarketWarehousesForAllVariants(
   marketId: string,
   warehouseLocationIds: string[],
+  shop: string,
+  marketName?: string,
 ) {
   const warehousesJson = JSON.stringify(warehouseLocationIds);
 
+  // Обновляем все существующие MarketPrice
   await prisma.marketPrice.updateMany({
     where: {
       marketId,
@@ -193,4 +198,86 @@ export async function updateMarketWarehousesForAllVariants(
       ...({ warehouses: warehousesJson } as any),
     },
   });
+
+  // Сохраняем настройки маркета в отдельную таблицу для использования при создании новых товаров
+  await (prisma as any).marketWarehouse.upsert({
+    where: {
+      shop_marketId: {
+        shop,
+        marketId,
+      },
+    },
+    update: {
+      warehouses: warehousesJson,
+      marketName: marketName || null,
+      updatedAt: new Date(),
+    },
+    create: {
+      shop,
+      marketId,
+      marketName: marketName || null,
+      warehouses: warehousesJson,
+    },
+  });
+}
+
+/**
+ * Получает настройки складов для маркета из таблицы MarketWarehouse
+ */
+export async function getMarketWarehouses(
+  shop: string,
+  marketId: string,
+): Promise<string[] | null> {
+  const marketWarehouse = await (prisma as any).marketWarehouse.findUnique({
+    where: {
+      shop_marketId: {
+        shop,
+        marketId,
+      },
+    },
+  });
+
+  if (!marketWarehouse || !marketWarehouse.warehouses) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(marketWarehouse.warehouses);
+  } catch (e) {
+    console.error(
+      `Failed to parse warehouses for market ${marketId} in shop ${shop}:`,
+      e,
+    );
+    return null;
+  }
+}
+
+/**
+ * Получает все настройки складов для всех маркетов магазина
+ * Возвращает Record<marketId, locationIds[]>
+ */
+export async function getAllMarketWarehouses(
+  shop: string,
+): Promise<Record<string, string[]>> {
+  const marketWarehouses = await (prisma as any).marketWarehouse.findMany({
+    where: { shop },
+    select: { marketId: true, warehouses: true },
+  });
+
+  const result: Record<string, string[]> = {};
+
+  for (const mw of marketWarehouses) {
+    if (mw.warehouses) {
+      try {
+        result[mw.marketId] = JSON.parse(mw.warehouses);
+      } catch (e) {
+        console.error(
+          `Failed to parse warehouses for market ${mw.marketId} in shop ${shop}:`,
+          e,
+        );
+      }
+    }
+  }
+
+  return result;
 }

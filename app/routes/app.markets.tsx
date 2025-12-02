@@ -18,12 +18,14 @@ import {
   getAllMarkets,
   getAllLocations,
   updateMarketWarehousesForAllVariants,
+  getAllMarketWarehouses,
 } from "../graphql/marketsService";
 import type { Market } from "../graphql/getMarkets";
 import type { Location } from "../graphql/getLocations";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  const { session } = await authenticate.admin(request);
+  const shop = session.shop;
 
   // Получаем все маркеты (регионы) магазина
   let markets: any[] = [];
@@ -41,16 +43,29 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     console.error("Ошибка при получении складов:", error);
   }
 
+  // Получаем сохраненные настройки складов для всех маркетов
+  let savedMarketWarehouses: Record<string, string[]> = {};
+  try {
+    savedMarketWarehouses = await getAllMarketWarehouses(shop);
+  } catch (error) {
+    console.error("Ошибка при получении сохраненных складов:", error);
+  }
+
   return {
     markets,
     locations,
+    savedMarketWarehouses,
   };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
+  const shop = session.shop;
+
   const formData = await request.formData();
 
   const marketId = formData.get("marketId");
+  const marketName = formData.get("marketName");
   const warehousesRaw = formData.get("warehouses"); // строка вида "gid://...1,gid://...2"
 
   if (typeof marketId !== "string" || typeof warehousesRaw !== "string") {
@@ -63,7 +78,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     .filter(Boolean);
 
   try {
-    await updateMarketWarehousesForAllVariants(marketId, warehouseLocationIds);
+    await updateMarketWarehousesForAllVariants(
+      marketId,
+      warehouseLocationIds,
+      shop,
+      typeof marketName === "string" ? marketName : undefined,
+    );
     return redirect("/app/markets");
   } catch (error) {
     console.error("Ошибка при сохранении складов для маркета:", error);
@@ -75,14 +95,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function Markets() {
-  const { markets, locations } = useLoaderData<typeof loader>();
+  const { markets, locations, savedMarketWarehouses } =
+    useLoaderData<typeof loader>();
   const fetcher = useFetcher();
 
   // Состояние для хранения выбранных складов для каждого маркета
   // Ключ - ID маркета, значение - массив ID выбранных складов
+  // Инициализируем из сохраненных данных
   const [selectedLocations, setSelectedLocations] = useState<
     Record<string, string[]>
-  >({});
+  >(savedMarketWarehouses || {});
 
   // Обработчик изменения выбора складов для маркета
   const handleLocationChange = (marketId: string, selected: string[]) => {
@@ -192,6 +214,11 @@ export default function Markets() {
                                     type="hidden"
                                     name="marketId"
                                     value={market.id}
+                                  />
+                                  <input
+                                    type="hidden"
+                                    name="marketName"
+                                    value={market.name}
                                   />
                                   <input
                                     type="hidden"

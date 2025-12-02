@@ -201,6 +201,7 @@ export async function createWidget(
             await saveVariantDetails(
               childProductRecord.id,
               childProduct.variantDetails,
+              widget.shop,
             );
           }
         }
@@ -228,11 +229,41 @@ export async function createWidget(
 
 /**
  * Сохраняет или обновляет VariantDetails
+ * shop - опциональный параметр, если не передан, будет найден через widgetLinks
  */
 async function saveVariantDetails(
   childProductId: string,
   variantDetails: any,
+  shop?: string,
 ): Promise<void> {
+  // Если shop не передан, пытаемся найти его через widgetLinks
+  if (!shop) {
+    const childProduct = await (prisma as any).childProduct.findUnique({
+      where: { id: childProductId },
+      include: {
+        widgetLinks: {
+          include: {
+            widgetProduct: {
+              include: {
+                widget: {
+                  select: { shop: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (
+      childProduct?.widgetLinks &&
+      childProduct.widgetLinks.length > 0 &&
+      childProduct.widgetLinks[0]?.widgetProduct?.widget?.shop
+    ) {
+      shop = childProduct.widgetLinks[0].widgetProduct.widget.shop;
+    }
+  }
+
   // Проверяем, существует ли уже запись
   const existing = await (prisma as any).variantDetails.findUnique({
     where: { childProductId },
@@ -262,6 +293,22 @@ async function saveVariantDetails(
     existingMarketPrices.forEach((mp: any) => {
       existingWarehouses[mp.marketId] = mp.warehouses;
     });
+  }
+
+  // Загружаем настройки складов из MarketWarehouse для всех маркетов
+  const marketWarehouses: Record<string, string | null> = {};
+  if (
+    shop &&
+    variantDetails.marketsPrice &&
+    Array.isArray(variantDetails.marketsPrice)
+  ) {
+    const { getMarketWarehouses } = await import("../graphql/marketsService");
+    for (const marketPrice of variantDetails.marketsPrice) {
+      const warehouses = await getMarketWarehouses(shop, marketPrice.marketId);
+      if (warehouses) {
+        marketWarehouses[marketPrice.marketId] = JSON.stringify(warehouses);
+      }
+    }
   }
 
   if (existing) {
@@ -317,12 +364,18 @@ async function saveVariantDetails(
     }
   }
 
-  // Сохраняем MarketPrices, восстанавливая warehouses из существующих записей
+  // Сохраняем MarketPrices, используя warehouses из MarketWarehouse или из существующих записей
   if (
     variantDetails.marketsPrice &&
     Array.isArray(variantDetails.marketsPrice)
   ) {
     for (const marketPrice of variantDetails.marketsPrice) {
+      // Приоритет: MarketWarehouse > существующие warehouses > null
+      const warehouses =
+        marketWarehouses[marketPrice.marketId] ||
+        existingWarehouses[marketPrice.marketId] ||
+        null;
+
       await (prisma as any).marketPrice.create({
         data: {
           variantDetailsId: variantDetailsRecord.id,
@@ -332,8 +385,7 @@ async function saveVariantDetails(
           price: marketPrice.price || "0",
           compareAtPrice: marketPrice.compareAtPrice || null,
           currencyCode: marketPrice.currencyCode || "USD",
-          // Восстанавливаем warehouses из существующей записи, если она была
-          warehouses: existingWarehouses[marketPrice.marketId] || null,
+          warehouses,
         },
       });
     }
@@ -488,6 +540,7 @@ export async function updateWidget(
               await saveVariantDetails(
                 childProductRecord.id,
                 childProduct.variantDetails,
+                widget.shop,
               );
             }
           }
