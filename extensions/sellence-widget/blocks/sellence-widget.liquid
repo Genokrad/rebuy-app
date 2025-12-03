@@ -12,17 +12,10 @@
 
 <style>
   .sellence-widget-{{ block.settings.widget_id }} {
-    display: none;
     margin-top: 16px;
     margin-bottom: 16px;
   }
-  .product__media-wrapper {
-    max-width: 50% !important;
-  }
 
-  .product__info-wrapper {
-    max-width: 50% !important;
-  }
   #sellence-widget-content {
     background-color: #f5f5ee;
     padding: 36px;
@@ -30,53 +23,6 @@
     display: flex;
     flex-direction: column;
   }
-
-  /* Стили для слайдера */
-  .sellence-products-slider {
-    width: 100%;
-  }
-
-  .sellence-products-slider .splide__slide {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-  }
-
-  .sellence-products-slider .splide__slide:not(:last-child)::after {
-    content: '+';
-    position: absolute;
-    right: -15px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 20px;
-    font-weight: bold;
-    color: #666;
-    z-index: 10;
-  }
-
-  .sellence-pdp-widget-product-image {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .sellence-pdp-widget-product-image img {
-    width: 120px;
-    height: 120px;
-    object-fit: cover;
-    border-radius: 8px;
-  }
-
-  /* Скрываем стандартные элементы управления Splide */
-  .sellence-products-slider .splide__pagination {
-    display: none !important;
-  }
-
-  .sellence-products-slider .splide__arrows {
-    display: none !important;
-  }
-
   .sellence-widget-title {
     font-size: 27px;
     font-weight: 500;
@@ -86,7 +32,6 @@
     margin-bottom: 20px;
   }
 
-  /* Стили для списка товаров */
   .sellence-widget-this-item-list {
     list-style: none;
     padding: 0;
@@ -96,109 +41,26 @@
     gap: 12px;
   }
 
-  .sellence-widget-item {
-    margin: 0;
-  }
-
-  .sellence-widget-item-label {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    padding: 8px 0;
-    margin: 0;
-  }
-
-  .sellence-widget-checkbox {
-    display: none;
-  }
-
-  .sellence-widget-checkmark {
-    width: 20px;
-    height: 20px;
-    background-color: #000;
-    border-radius: 3px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  .sellence-widget-checkmark::after {
-    content: '✓';
-    color: white;
+  .sellence-widget-total-price {
     font-size: 14px;
-    font-weight: bold;
+    font-style: normal;
+    font-weight: 900;
+    line-height: 24px;
+    letter-spacing: 0.75px;
   }
 
-  .sellence-widget-checkbox:not(:checked) + .sellence-widget-checkmark {
-    background-color: transparent;
-    border: 2px solid #ccc;
+  .sellence-widget-total-price-new {
+    font-weight: 400;
+    color: red;
   }
 
-  .sellence-widget-checkbox:not(:checked) + .sellence-widget-checkmark::after {
-    display: none;
-  }
-
-  .sellence-widget-item-content {
-    display: flex;
-    justify-content: space-between;
-    /* flex-direction: column; */
-    gap: 16px;
-    flex: 1;
-    width: 100%;
-  }
-
-  .sellence-widget-item-name {
-    font-size: 14px;
-    color: #333;
-    text-decoration: underline;
-    line-height: 1.3;
-    display: flex;
-    align-items: center;
-  }
-
-  .sellence-widget-item-price {
-    display: flex;
-    align-items: center;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .sellence-widget-price-new {
-    font-size: 14px;
-    font-weight: 600;
-    color: #e74c3c;
-    margin: 0;
-  }
-
-  .sellence-widget-price-currency-code {
-    font-size: 14px;
-    font-weight: 600;
-    color: #e74c3c;
-  }
-
-  .sellence-widget-price-old-currency-code {
-    font-size: 14px;
-    color: #999;
+  .sellence-widget-total-price-old {
+    font-weight: 400;
+    color: #8e8e8e;
     text-decoration: line-through;
   }
 
-  .sellence-widget-price-old {
-    font-size: 14px;
-    color: #999;
-    text-decoration: line-through;
-    margin: 0;
-    display: flex;
-    gap: 2px;
-  }
-  
-  .sellence-widget-checkbox {
-    display: none !important;
-  }
-
-  .sellence-widget-add-to-cart {
+    .sellence-widget-add-to-cart {
     padding: 10px 15px;
     width: 100%;
     height: auto;
@@ -206,26 +68,27 @@
     font-size: 16px;
     border-style: solid;
     border-width: 1px;
-    border-color: #000;
-    background-color: transparent;
-    color: #000;
+    color: white;
     font-weight: 500;
     cursor: pointer;
-    width: 50%;
     margin-bottom: 20px;
+    border-radius: 8px;
+    border: 1px solid #4B3E34;
+    background: #4B3E34;
 
     @media (max-width: 1024px) {
       width: 100%;
     }
   }
 
-  .sellence-widget-product-label {
-    font-size: 16px;
-    font-weight: 500;
-    color: #000;
-    line-height: 1;
+  .sellence-widget-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #E0E0E0;
     margin: 0;
-    margin-bottom: 16px;
   }
 
   .sellence-widget-total-price {
@@ -245,20 +108,257 @@
     color: #8e8e8e;
     text-decoration: line-through;
   }
+
+  .sellence-widget-price-new {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e74c3c;
+    margin: 0;
+  }
+
+  .sellence-widget-item-price {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sellence-widget-price-old {
+    font-size: 14px;
+    color: #999;
+    text-decoration: line-through;
+    margin: 0;
+    display: flex;
+    gap: 2px;
+  }
+
+  .sellence-widget-item-label {
+    max-width: 99px;
+    position: relative;
+    margin: 0;
+  }
+
+  .sellence-widget-checkbox {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 1;
+    visibility: hidden;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .sellence-widget-checkbox[checked] {
+    background-color: #000;
+    color: #fff;
+  }
+
+
+  .sellence-widget-item-label-text-add {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    border-radius: 8px;
+    border: 1px solid #000;
+    /* max-width: 99px; */
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.105px;
+    padding: 5px 28px;
+  }
+
+  .sellence-widget-item-label-text-added {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    background-color: #000;
+    color: #fff;
+    /* max-width: 99px; */
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.105px;
+    padding: 6px 28px;
+  }
+
+  /* Toggle "Add" / "Added" button state based on checkbox */
+  .sellence-widget-checkbox:checked + .sellence-widget-item-label-text-add {
+    display: none;
+  }
+
+  .sellence-widget-checkbox:checked + .sellence-widget-item-label-text-add + .sellence-widget-item-label-text-added {
+    display: flex;
+  }
+
+  .sellence-widget-item-bottm-content {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .sellence-widget-item-image {
+    min-width: 100px;
+    height: 100px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .variants-list {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+
+  .variants-list-item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    /* padding: 2px; */
+    cursor: pointer;
+  }
+
+  .variants-list-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .variants-list-swatch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    padding: 2px;
+    border: 1px solid transparent;
+    min-width: 27px;
+    min-height: 28px;
+  }
+
+  .variants-list-input + .variants-list-swatch {
+    border-color: #E0E0E0;
+  }
+
+  .variants-list-input:focus + .variants-list-swatch {
+    border-color: #000;
+  }
+
+  .variants-list-input:hover + .variants-list-swatch {
+    border-color: #000;
+  }
+
+  .variants-list-input:checked + .variants-list-swatch {
+    border-color: #000;
+  }
+
+  .sellence-widget-item-image-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  /* Styles for product page */
 </style>
 
 <div class="sellence-widget d sellence-widget-{{ block.settings.widget_id }}" id="sellence-widget-{{ block.id }}" data-current-marketplace="{{ localization.country.iso_code }}">
-  <div id="sellence-widget-content" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+  <div id="sellence-widget-content" class="">
     <h2 class="sellence-widget-title">{{ 'sellence-widget.title' | t }}</h2>
 
-    <!-- Splide.js слайдер -->
-    <div class="splide sellence-products-slider" id="products-slider">
-      <div class="splide__track">
-        <ul class="splide__list" id="products-list">
-          <!-- Товары будут добавлены динамически через JavaScript -->
-        </ul>
-      </div>
-    </div>
+    <ul class="sellence-widget-this-item-list" id="items-list">
+      <li class="sellence-widget-item">
+        <div class="sellence-widget-item-image">
+          <img src="{{ 'wunderbox-4-7-years-old-developmental-box-for-kids-611288.jpeg' | asset_url }}" alt="Product Image" width="100" height="100" class="sellence-widget-item-image-img">
+        </div>
+        <div class="sellence-widget-item-content" data-product="${encodeURIComponent(JSON.stringify(childProduct))}">
+          <span class="sellence-widget-item-name">Helper Tower: A Multi-functional Foldable Step Stool for Kids</span>
+          <div class="variants-list">
+            <label class="variants-list-item">
+              <input
+                type="radio"
+                name="sellence-color"
+                value="beige"
+                data-color="beige"
+                class="variants-list-input"
+                checked
+              >
+              <span class="variants-list-swatch">
+                <img src="{{ 'beige.svg' | asset_url }}" alt="Beige" width="20" height="20">
+              </span>
+            </label>
+            <label class="variants-list-item">
+              <input
+                type="radio"
+                name="sellence-color"
+                value="blue"
+                data-color="blue"
+                class="variants-list-input"
+              >
+              <span class="variants-list-swatch">
+                <img src="{{ 'gray.svg' | asset_url }}" alt="Gray" width="20" height="20">
+              </span>
+            </label>
+            <label class="variants-list-item">
+              <input
+                type="radio"
+                name="sellence-color"
+                value="green"
+                data-color="green"
+                class="variants-list-input"
+              >
+              <span class="variants-list-swatch">
+                <img src="{{ 'graphite.svg' | asset_url }}" alt="Graphite" width="20" height="20">
+              </span>
+            </label>
+            <label class="variants-list-item">
+              <input
+                type="radio"
+                name="sellence-color"
+                value="red"
+                data-color="red"
+                class="variants-list-input"
+              >
+              <span class="variants-list-swatch">
+                <img src="{{ 'ivory.svg' | asset_url }}" alt="Ivory" width="20" height="20">
+              </span>
+            </label>
+          </div>
+          <div class="sellence-widget-item-bottm-content">
+            <div class="sellence-widget-item-price">
+              <p class="sellence-widget-price-new">
+                <span class="sellence-widget-price-new">CHF37.05</span>
+              </p>
+              <p class="sellence-widget-price-old"><span class="sellence-widget-price-old-price">CHF39.00</span></p>
+            </div>
+            <label class="sellence-widget-item-label">
+              <input type="checkbox" class="sellence-widget-checkbox" checked="">
+              <div class="sellence-widget-item-label-text-add">
+                <span>Add</span>
+              </div>
+              <div class="sellence-widget-item-label-text-added">
+                <span>Added</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      </li>
+      <!-- Товары будут добавлены динамически через JavaScript -->
+    </ul>
 
     <p class="sellence-widget-total-price">{{ 'sellence-widget.total_price' | t }}
       <span class="sellence-widget-total-price-new"></span>
@@ -266,16 +366,259 @@
     </p>
 
     <button class="sellence-widget-add-to-cart">{{ 'sellence-widget.add_all' | t }}</button>
-
-    <strong class="sellence-widget-product-label">{{ 'sellence-widget.this_item' | t }}</strong>
-
-    <ul class="sellence-widget-this-item-list" id="items-list">
-      <!-- Товары будут добавлены динамически через JavaScript -->
-    </ul>
   </div>
 </div>
 
-<script type="module">
+<script>
+  const currentMarketplace = '{{ localization.country.iso_code }}';
+
+  const CURRENCY_SYMBOLS = {
+    'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': 'C$',
+    'AUD': 'A$', 'CHF': 'CHF', 'CNY': '¥', 'SEK': 'kr', 'NOK': 'kr',
+    'DKK': 'kr', 'PLN': 'zł', 'CZK': 'Kč', 'HUF': 'Ft', 'RUB': '₽',
+    'BRL': 'R$', 'INR': '₹', 'KRW': '₩', 'SGD': 'S$', 'HKD': 'HK$',
+    'NZD': 'NZ$', 'MXN': '$', 'ZAR': 'R', 'TRY': '₺', 'ILS': '₪',
+    'AED': 'د.إ', 'SAR': '﷼', 'THB': '฿', 'MYR': 'RM', 'PHP': '₱',
+    'IDR': 'Rp', 'VND': '₫', 'EGP': '£', 'NGN': '₦', 'KES': 'KSh',
+    'GHS': '₵', 'MAD': 'د.م.', 'TND': 'د.ت', 'DZD': 'د.ج', 'LBP': 'ل.ل',
+    'JOD': 'د.ا', 'KWD': 'د.ك', 'BHD': 'د.ب', 'QAR': 'ر.ق', 'OMR': 'ر.ع.',
+    'YER': '﷼', 'IQD': 'د.ع', 'AFN': '؋', 'PKR': '₨', 'BDT': '৳',
+    'LKR': '₨', 'NPR': '₨', 'MMK': 'K', 'KHR': '៛', 'LAK': '₭',
+    'BND': 'B$', 'FJD': 'FJ$', 'PGK': 'K', 'SBD': 'SI$', 'VUV': 'Vt',
+    'WST': 'WS$', 'TOP': 'T$', 'BTN': 'Nu.', 'MVR': 'ރ.', 'SCR': '₨',
+    'MUR': '₨', 'KMF': 'CF', 'DJF': 'Fdj', 'ETB': 'Br', 'SOS': 'S',
+    'TZS': 'TSh', 'UGX': 'USh', 'RWF': 'RF', 'BIF': 'FBu', 'MWK': 'MK',
+    'ZMW': 'ZK', 'BWP': 'P', 'SZL': 'L', 'LSL': 'L', 'NAD': 'N$',
+    'AOA': 'Kz', 'MZN': 'MT', 'MGA': 'Ar', 'CDF': 'FC', 'XAF': 'FCFA',
+    'XOF': 'CFA', 'GMD': 'D', 'GNF': 'FG', 'LRD': 'L$', 'SLL': 'Le',
+    'CVE': '$', 'STN': 'Db', 'ERN': 'Nfk', 'SDG': 'ج.س.', 'SSP': '£',
+    'LYD': 'ل.د', 'MRO': 'UM', 'MRU': 'UM', 'XPF': '₣', 'NIO': 'C$',
+    'GTQ': 'Q', 'HNL': 'L', 'SVC': '$', 'BZD': 'BZ$', 'JMD': 'J$',
+    'TTD': 'TT$', 'BBD': 'Bds$', 'XCD': '$', 'AWG': 'ƒ', 'ANG': 'ƒ',
+    'SRD': '$', 'GYD': 'G$', 'VES': 'Bs.S', 'COP': '$', 'PEN': 'S/',
+    'BOB': 'Bs', 'CLP': '$', 'ARS': '$', 'UYU': '$U', 'PYG': '₲',
+    'FKP': '£', 'GIP': '£', 'ISK': 'kr', 'RON': 'lei', 'BGN': 'лв',
+    'HRK': 'kn', 'RSD': 'дин.', 'MKD': 'ден', 'ALL': 'L', 'BAM': 'КМ',
+    'MDL': 'L', 'UAH': '₴', 'BYN': 'Br', 'AMD': '֏', 'GEL': '₾',
+    'AZN': '₼', 'KZT': '₸', 'KGS': 'с', 'TJS': 'SM', 'TMT': 'T',
+    'UZS': 'лв', 'MNT': '₮'
+  };
+
+  function getCurrencySymbol(currencyCode) {
+    if (!currencyCode) return '';
+    const symbol = CURRENCY_SYMBOLS[currencyCode.toUpperCase()];
+    return symbol || currencyCode;
+  }
+
+  function formatWidgetPrice(amount, currencyCode) {
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(numericAmount)) return '0';
+
+    const formattedAmount = numericAmount.toFixed(2);
+    const symbol = getCurrencySymbol(currencyCode);
+
+    return `${symbol}${formattedAmount}`;
+  }
+
+  function getFinalDiscount(productSelectedCount, sortedDiscounts) {
+    let finalDiscount = 0;
+    sortedDiscounts.forEach(discount => {
+      if (productSelectedCount >= Number(Object.entries(discount)[0][0])) {
+        finalDiscount = Number(Object.entries(discount)[0][1]);
+      }
+    });
+    return finalDiscount;
+  }
+
+  function priceFromMarket(marketsPrice, currentMarketplace) {
+    const currentMarket = marketsPrice?.find(market => market.countryCode === currentMarketplace);
+    const price = currentMarket?.price;
+    const currencyCode = currentMarket?.currencyCode;
+    return { price, currencyCode };
+  }
+
+  function isAvailableForSale(childProduct) {
+    // Если availableForSale явно false, товар недоступен
+    if (childProduct.variantDetails?.availableForSale === false) {
+      return false;
+    }
+
+    // Если inventoryPolicy === "CONTINUE", товар доступен для продажи даже при нулевом количестве
+    const inventoryPolicy = childProduct.variantDetails?.inventoryPolicy?.toUpperCase();
+    if (inventoryPolicy === 'CONTINUE') {
+      return true;
+    }
+
+    // Для "DENY" проверяем наличие товара
+    if (inventoryPolicy === 'DENY') {
+      let maxQuantity = 0;
+      childProduct.variantDetails?.inventoryLevels?.forEach(level => {
+        if (level.quantity > maxQuantity) {
+          maxQuantity = level.quantity;
+        }
+      });
+      
+      // Если количество <= 0 и политика DENY, товар недоступен
+      if (maxQuantity <= 0) {
+        return false;
+      }
+    }
+
+    // По умолчанию считаем товар доступным, если availableForSale !== false
+    return true;
+  }
+
+  function getQuantity(childProduct) {
+    // Безопасная проверка наличия variantDetails
+    if (!childProduct?.variantDetails) {
+      console.warn('getQuantity: variantDetails is missing');
+      return 100;
+    }
+
+    // Безопасная проверка marketsPrice - должен быть массивом
+    const marketsPrice = childProduct.variantDetails.marketsPrice;
+    if (!Array.isArray(marketsPrice)) {
+      console.warn('getQuantity: marketsPrice is not an array', marketsPrice);
+      return 100;
+    }
+
+    const marketPrice = marketsPrice.find(market => market.countryCode === currentMarketplace);
+
+    let maxQuantity = 0;
+
+    // Проверяем наличие warehouses и что это массив
+    if (marketPrice?.warehouses && Array.isArray(marketPrice.warehouses) && marketPrice.warehouses.length > 0) {
+      marketPrice.warehouses.forEach(warehouse => {
+        // Безопасная проверка inventoryLevels
+        const inventoryLevels = childProduct.variantDetails.inventoryLevels;
+        if (Array.isArray(inventoryLevels)) {
+          const inventoryLevel = inventoryLevels.find(level => level.id === warehouse);
+          if (inventoryLevel?.quantity > 0) {
+            maxQuantity += Number(inventoryLevel.quantity);
+          }
+        }
+      });
+    } else {
+      maxQuantity = 100;
+    }
+
+    if (childProduct.variantDetails.inventoryPolicy === 'CONTINUE') {
+      return 1000;
+    }
+  
+    return maxQuantity;
+  }
+
+  (function() {
+    const widgetId = '{{ block.settings.widget_id }}';
+    const appUrl = '{{ block.settings.app_url }}';
+    const currentProductId = '{{ product.id }}';
+    // const statusElement = document.getElementById('sellence-status-{{ block.id }}');
+    // const contentElement = document.getElementById('sellence-widget-content-{{ block.id }}');
+    let howManyProductsPicked = 0;
+
+    async function hasPromoCodeInCart() {
+      try {
+        const cartResponse = await fetch('/cart.js');
+        if (!cartResponse.ok) {
+          console.warn('Failed to fetch cart, assuming no promo code');
+          return false;
+        }
+        const cart = await cartResponse.json();
+        // Проверяем наличие атрибута _sellence_has_discount_code в корзине
+        const hasDiscountCode = cart.attributes && cart.attributes._sellence_has_discount_code;
+        if (hasDiscountCode) {
+          console.log('🎯 Promo code detected in cart:', hasDiscountCode);
+        }
+        return !!hasDiscountCode;
+      } catch (error) {
+        console.error('Error checking cart for promo code:', error);
+        return false; // В случае ошибки предполагаем, что промокода нет
+      }
+    }
+
+    function buildProductsFromVariants(variants) {
+      // Группируем варианты по productId
+      const productsMap = new Map();
+
+      console.log('currentMarketplace', currentMarketplace);
+      
+      variants.forEach(variant => {
+        const productId = variant.productId;
+
+        console.log('variant', variant);
+
+        const currentInventoryLevel = variant.variantDetails?.inventoryLevels?.find(
+          level => level.countryCode === currentMarketplace
+        );
+
+        console.log('variant.variantDetails', currentInventoryLevel);
+
+        // Проверяем, можно ли добавить этот вариант
+        const quantity = currentInventoryLevel?.quantity || 0;
+        const inventoryPolicy = variant.variantDetails?.inventoryPolicy;
+        
+        // Вариант добавляется только если:
+        // 1. quantity > 0, ИЛИ
+        // 2. quantity <= 0 И inventoryPolicy === 'CONTINUE'
+        const canAddVariant = quantity > 0 || (quantity <= 0 && inventoryPolicy === 'CONTINUE');
+
+        if (!canAddVariant) {
+          console.log('Variant skipped:', variant.variantId, 'quantity:', quantity, 'policy:', inventoryPolicy);
+          return; // Пропускаем этот вариант
+        }
+
+        // Если продукта еще нет в Map, создаем его
+        if (!productsMap.has(productId)) {
+          productsMap.set(productId, {
+            productId: productId,
+            productTitle: variant.variantDetails?.product?.title || '',
+            variants: []
+          });
+        }
+        
+        // Добавляем вариант к продукту
+        productsMap.get(productId).variants.push({
+          variantId: variant.variantId,
+          variantDetails: variant.variantDetails,
+          selectedOptions: variant.variantDetails?.selectedOptions
+        });
+      });
+
+      // Преобразуем Map в массив и фильтруем продукты, у которых есть хотя бы один вариант
+      return Array.from(productsMap.values()).filter(product => product.variants.length > 0);
+    }
+
+    async function loadWidget() {
+      try {
+        const cleanUrl = appUrl.replace(/\/$/, '');
+        const apiUrl = cleanUrl + '/api/widget/' + widgetId + '?productId=' + encodeURIComponent(currentProductId);
+
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+          throw new Error('HTTP error! status: ' + response.status);
+        }
+        const data = await response.json();
+
+        const products = buildProductsFromVariants(data.widget.product.childProducts)
+        const settings = data.widget.settings;
+
+        console.log('products', products);
+        console.log('settings', settings);
+      } catch (error) {
+        console.error('Error loading widget:', error);
+        statusElement.innerHTML = '❌ Ошибка: ' + error.message;
+        statusElement.className = 'text-red-600 font-medium';
+      }
+    }
+
+    loadWidget();
+  })();
+  console.log('Sellence Widget Block');
+</script>
+
+{% comment %} <script type="module">
   import { EVENTS, publish } from "@archetype-themes/utils/pubsub";
 
   let currentMarketplace = '';
@@ -347,7 +690,6 @@
     });
     return finalDiscount;
   }
-
 
   function priceFromMarket(marketsPrice, currentMarketplace) {
     const currentMarket = marketsPrice?.find(market => market.countryCode === currentMarketplace);
@@ -1267,7 +1609,7 @@
 
     loadWidget();
   })();
-</script>
+</script> {% endcomment %}
 
 {% schema %}
 {
