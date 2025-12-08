@@ -25,153 +25,11 @@ function Extension() {
   const shopInfo = useShop();
   // Используем useRef для отслеживания последнего сохраненного значения без триггера перерендера
   const lastSavedDiscountCodesRef = useRef(null);
-  // ID варианта товара, который должен быть всегда добавлен в корзину (получаем из метаполя магазина)
-  const [requiredVariantId, setRequiredVariantId] = useState(null);
-  // Используем useRef для отслеживания, был ли уже добавлен требуемый товар
-  const requiredVariantAddedRef = useRef(false);
 
   useEffect(() => {
     const variantIds = cartLines.map((line) => line.merchandise.id);
     setCartLinesVariantIds(variantIds);
   }, [cartLines]);
-
-  // Получаем ID варианта товара из метаполя магазина
-  useEffect(() => {
-    const fetchRequiredVariantId = async () => {
-      try {
-        const query = `
-          query {
-            shop {
-              metafield(namespace: "custom", key: "free_product_id") {
-                id
-                reference {
-                  ... on Product {
-                    id
-                    variants(first: 1) {
-                      edges {
-                        node {
-                          id
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        `;
-
-        const result = await shopify.query(query);
-
-        // Проверяем результат запроса
-        // @ts-ignore - result.data имеет динамическую структуру
-        const data = result?.data;
-        // @ts-ignore
-        const shop = data?.shop;
-        // @ts-ignore
-        const metafield = shop?.metafield;
-        // @ts-ignore
-        const reference = metafield?.reference;
-
-        // Проверяем, что reference это Product с вариантами
-        if (
-          reference &&
-          typeof reference === "object" &&
-          "variants" in reference &&
-          reference.variants?.edges &&
-          Array.isArray(reference.variants.edges) &&
-          reference.variants.edges.length > 0
-        ) {
-          const variantId = reference.variants.edges[0]?.node?.id;
-          if (variantId) {
-            console.log(
-              "✅ Found required variant ID from shop metafield:",
-              variantId,
-            );
-            setRequiredVariantId(variantId);
-          } else {
-            console.log("ℹ️ No variant ID found in metafield");
-            setRequiredVariantId(null);
-          }
-        } else {
-          console.log(
-            "ℹ️ No free product metafield found or product has no variants",
-          );
-          setRequiredVariantId(null);
-        }
-      } catch (err) {
-        console.error(
-          "Error fetching required variant ID from shop metafield:",
-          err,
-        );
-        setRequiredVariantId(null);
-      }
-    };
-
-    fetchRequiredVariantId();
-  }, []);
-
-  // Автоматически добавляем требуемый вариант товара при открытии чекаута (1 раз)
-  useEffect(() => {
-    const addRequiredVariant = async () => {
-      // Если ID варианта не получен из метаполя, не добавляем товар
-      if (!requiredVariantId) {
-        return;
-      }
-
-      // Проверяем, был ли уже добавлен товар или идет процесс добавления
-      if (requiredVariantAddedRef.current) {
-        return;
-      }
-
-      // Проверяем количество требуемого варианта в корзине
-      const requiredVariantCount = cartLines.filter(
-        (line) => line.merchandise.id === requiredVariantId,
-      ).length;
-
-      // Если товар уже есть в корзине (хотя бы один раз), помечаем как добавленный
-      if (requiredVariantCount > 0) {
-        requiredVariantAddedRef.current = true;
-        return;
-      }
-
-      // Если товара нет и корзина не пустая, добавляем его
-      if (cartLines.length > 0) {
-        // Устанавливаем флаг ДО добавления, чтобы предотвратить повторные вызовы
-        requiredVariantAddedRef.current = true;
-
-        try {
-          console.log(
-            `✅ Adding required variant ${requiredVariantId} to cart as separate line`,
-          );
-
-          const result = await shopify.applyCartLinesChange({
-            type: "addCartLine",
-            merchandiseId: requiredVariantId,
-            quantity: 1,
-          });
-
-          if (result.type === "error") {
-            console.error(
-              "Error adding required variant to cart:",
-              result.message,
-            );
-            // Сбрасываем флаг при ошибке, чтобы можно было попробовать снова
-            requiredVariantAddedRef.current = false;
-          } else {
-            console.log("Required variant added to cart successfully");
-          }
-        } catch (err) {
-          console.error("Error adding required variant to cart:", err);
-          // Сбрасываем флаг при ошибке
-          requiredVariantAddedRef.current = false;
-        }
-      }
-    };
-
-    addRequiredVariant();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cartLines, requiredVariantId]);
 
   // Сохраняем discount codes в атрибут корзины для Cart Transform Function
   useEffect(() => {
@@ -409,31 +267,14 @@ function Extension() {
         return;
       }
 
+      setLoading(true);
+      setError(null);
+
       // Формируем базовый URL
       const cleanUrl =
         typeof appUrl === "string"
           ? appUrl.replace(/\/$/, "")
           : String(appUrl).replace(/\/$/, "");
-
-      // Проверяем, не является ли URL Cloudflare туннелем (trycloudflare.com)
-      // Если это туннель и он недоступен, пропускаем загрузку виджета
-      if (cleanUrl.includes("trycloudflare.com")) {
-        // Для Cloudflare туннелей проверяем доступность через быстрый HEAD запрос
-        // Но если это вызывает ошибки, просто пропускаем загрузку виджета
-        console.log(
-          "⚠️ Cloudflare tunnel URL detected, widget data loading may be skipped if tunnel is unavailable",
-        );
-        // Можно раскомментировать следующую проверку, если хотите явно проверять доступность
-        // try {
-        //   await fetch(`${cleanUrl}/health`, { method: 'HEAD', signal: AbortSignal.timeout(2000) });
-        // } catch {
-        //   console.log("⚠️ API server unavailable, skipping widget data load");
-        //   return;
-        // }
-      }
-
-      setLoading(true);
-      setError(null);
 
       // Перебираем все товары в корзине, пока не найдем товар с childProducts
       for (let i = 0; i < cartLines.length; i++) {
@@ -509,22 +350,7 @@ function Extension() {
             // Продолжаем поиск со следующим товаром
           }
         } catch (err) {
-          // Проверяем, является ли ошибка сетевой (недоступность сервера)
-          const isNetworkError =
-            err instanceof TypeError &&
-            (err.message.includes("Failed to fetch") ||
-              err.message.includes("ERR_NAME_NOT_RESOLVED") ||
-              err.message.includes("network"));
-
-          if (isNetworkError) {
-            // Для сетевых ошибок просто логируем как предупреждение и продолжаем
-            console.log(
-              `⚠️ API server unavailable for product ${productId}, skipping widget data load`,
-            );
-          } else {
-            // Для других ошибок логируем как ошибку
-            console.error(`Error checking product ${productId}:`, err);
-          }
+          console.error(`Error checking product ${productId}:`, err);
           // Продолжаем со следующим товаром при ошибке
           continue;
         }
