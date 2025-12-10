@@ -10,12 +10,35 @@ import type { ChildProduct } from "../components/types";
 // Публичный API endpoint для получения данных виджета
 // Доступен из темы магазина без аутентификации
 export async function loader({ params, request }: LoaderFunctionArgs) {
+  // Обработка OPTIONS запроса для CORS preflight
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS, POST",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Max-Age": "86400",
+      },
+    });
+  }
+
   const { widgetId } = params;
   const url = new URL(request.url);
   const currentProductId = url.searchParams.get("productId");
 
   if (!widgetId) {
-    return json({ error: "Widget ID is required" }, { status: 400 });
+    return json(
+      { error: "Widget ID is required" },
+      {
+        status: 400,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, OPTIONS, POST",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        },
+      },
+    );
   }
 
   try {
@@ -23,7 +46,17 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     const widget = await getWidgetById(widgetId);
 
     if (!widget) {
-      return json({ error: "Widget not found" }, { status: 404 });
+      return json(
+        { error: "Widget not found" },
+        {
+          status: 404,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS, POST",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          },
+        },
+      );
     }
 
     const currentproductObject = widget.products?.find((product) =>
@@ -106,8 +139,9 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       {
         headers: {
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Allow-Methods": "GET, OPTIONS, POST",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Max-Age": "86400",
         },
       },
     );
@@ -122,21 +156,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
         status: 500,
         headers: {
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Allow-Methods": "GET, OPTIONS, POST",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Max-Age": "86400",
         },
       },
     );
   }
-}
-
-// Обработка OPTIONS запроса для CORS
-export async function OPTIONS() {
-  return new Response(null, {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
-  });
 }

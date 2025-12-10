@@ -164,10 +164,10 @@ function Extension() {
 
   // Получаем настройки из extension
   const widgetId =
-    shopify.settings.value.widget_id || "cmi31w59t0000uoi7tcj01tsl";
+    shopify.settings.value.widget_id || "cmhz7l5xc0001uo39ym9vq6f5";
   const appUrl =
     shopify.settings.value.app_url ||
-    "https://relationship-isolation-guy-classified.trycloudflare.com";
+    "https://folder-geological-managers-anything.trycloudflare.com";
   const showBothPrices = shopify.settings.value.show_both_prices === true;
   const normalizedAppUrl =
     typeof appUrl === "string"

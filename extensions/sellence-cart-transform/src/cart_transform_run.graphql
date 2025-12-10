@@ -6,6 +6,11 @@ query RunInput {
     lines {
       id
       quantity
+      merchandise {
+        ... on ProductVariant {
+          id
+        }
+      }
       cost {
         amountPerQuantity {
           amount
@@ -21,6 +26,10 @@ query RunInput {
         value
       }
       sellenceOriginalPrice: attribute(key: "_sellence_original_price") {
+        key
+        value
+      }
+      freeProduct: attribute(key: "_free_product") {
         key
         value
       }

@@ -34,8 +34,72 @@ export function cartTransformRun(input) {
   console.log('Has discount code attribute:', hasDiscountCodeAttr);
   console.log('Has discount code:', hasDiscountCode);
 
+  // Находим бесплатный товар и первый обычный товар
+  let freeProductLine = null;
+  let firstRegularLine = null;
+
+  for (const line of input.cart.lines) {
+    const freeProductAttr = line.freeProduct;
+    if (freeProductAttr?.value === 'true') {
+      freeProductLine = line;
+      console.log(`🎁 Found free product line: ${line.id}`);
+    } else if (!firstRegularLine) {
+      // Первый товар, который не является бесплатным
+      firstRegularLine = line;
+    }
+  }
+
+  // Если есть бесплатный товар и есть хотя бы один обычный товар
+  if (freeProductLine && firstRegularLine && firstRegularLine.merchandise?.id) {
+    // Сначала делаем бесплатный товар бесплатным (цена = 0)
+    operations.push({
+      lineUpdate: {
+        cartLineId: freeProductLine.id,
+        price: {
+          adjustment: {
+            fixedPricePerUnit: {
+              amount: "0.00",
+            },
+          },
+        },
+      },
+    });
+
+    // Затем объединяем бесплатный товар с первым обычным товаром
+    // parentVariantId - это ID варианта, который будет представлять объединенную линию (основной товар)
+    // cartLines - массив линий для объединения
+    operations.push({
+      linesMerge: {
+        parentVariantId: firstRegularLine.merchandise.id,
+        cartLines: [
+          {
+            cartLineId: firstRegularLine.id,
+            quantity: firstRegularLine.quantity,
+          },
+          {
+            cartLineId: freeProductLine.id,
+            quantity: freeProductLine.quantity,
+          },
+        ],
+      },
+    });
+
+    const currencyCode = firstRegularLine.cost?.amountPerQuantity?.currencyCode || "USD";
+    console.log(`🎁 FREE PRODUCT - Merging free product (line ${freeProductLine.id}) with regular product (line ${firstRegularLine.id})`);
+    console.log(`  Parent variant ID: ${firstRegularLine.merchandise.id}`);
+    console.log(`  Free product price set to: 0.00 ${currencyCode}`);
+  }
+
   // Проходим по всем линиям корзины
   for (const line of input.cart.lines) {
+    // Пропускаем бесплатный товар, так как мы уже обработали его выше
+    if (line.freeProduct?.value === 'true') {
+      continue;
+    }
+    // Пропускаем первую обычную линию, если она уже смерджится с бесплатным товаром
+    if (freeProductLine && firstRegularLine && line.id === firstRegularLine.id) {
+      continue;
+    }
     // Получаем attributes через алиасы из GraphQL query
     const sellenceDiscountAttr = line.sellenceDiscount;
     const sellenceDiscountPercentAttr = line.sellenceDiscountPercent;
