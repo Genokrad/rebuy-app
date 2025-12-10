@@ -132,15 +132,15 @@ function Extension() {
   }, [cartLines, freeProductVariantId]);
 
   // 2. Check instructions for feature availability, see https://shopify.dev/docs/api/checkout-ui-extensions/apis/cart-instructions for details
-  if (!shopify.instructions.value.attributes.canUpdateAttributes) {
-    // For checkouts such as draft order invoices, cart attributes may not be allowed
-    // Consider rendering a fallback UI or nothing at all, if the feature is unavailable
-    return (
-      <s-banner heading="add-free-product" tone="warning">
-        {shopify.i18n.translate("attributeChangesAreNotSupported")}
-      </s-banner>
-    );
-  }
+  // if (!shopify.instructions.value.attributes.canUpdateAttributes) {
+  //   // For checkouts such as draft order invoices, cart attributes may not be allowed
+  //   // Consider rendering a fallback UI or nothing at all, if the feature is unavailable
+  //   return (
+  //     <s-banner heading="add-free-product" tone="warning">
+  //       {shopify.i18n.translate("attributeChangesAreNotSupported")}
+  //     </s-banner>
+  //   );
+  // }
 
   // 3. Render a UI
   return null;
