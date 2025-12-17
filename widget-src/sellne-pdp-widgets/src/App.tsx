@@ -187,12 +187,30 @@ function App({ blockId }: AppProps) {
       return "";
     }
 
+    const totalProductsAvailable = displayedProducts.length;
+    const canAddMore = Math.max(
+      0,
+      totalProductsAvailable - selectedProductsCount,
+    );
+
+    // Если нет ни одного порога, достижимого при текущем наличии — ничего не показываем
+    const hasReachableTier = sortedDiscounts.some((tier) => {
+      const [countStr, discountValue] = Object.entries(tier)[0];
+      const count = Number(countStr);
+      const discountNum = Number(discountValue);
+      return discountNum > 0 && count <= totalProductsAvailable;
+    });
+    if (!hasReachableTier) {
+      return "";
+    }
+
     const lastTier = sortedDiscounts[sortedDiscounts.length - 1];
     const [lastCountStr, lastDiscountValue] = Object.entries(lastTier)[0];
     const maxThreshold = Number(lastCountStr);
     const maxDiscount = Number(lastDiscountValue);
 
     // Если уже достигнут или превышен максимальный порог и при этом скидка > 0
+    // (и этот порог достижим, см. проверку выше) — показываем сообщение о максимальной скидке
     if (selectedProductsCount >= maxThreshold && maxDiscount > 0) {
       return `You are already using the maximum discount of ${maxDiscount}% 🎉`;
     }
@@ -216,15 +234,26 @@ function App({ blockId }: AppProps) {
     )[0];
     const nextThreshold = Number(nextCountStr);
     const nextDiscount = Number(nextDiscountValue);
+
     const remaining = nextThreshold - selectedProductsCount;
 
-    if (remaining <= 0) {
+    // Если достигнуть следующего порога невозможно (нет доступных товаров) — не показываем сообщение
+    if (
+      remaining <= 0 ||
+      remaining > canAddMore ||
+      nextThreshold > totalProductsAvailable
+    ) {
       return "";
     }
 
     const productWord = remaining === 1 ? "product" : "products";
     return `Add ${remaining} more ${productWord} to your cart and unlock a ${nextDiscount}% discount!`;
-  }, [selectedProductsCount, sortedDiscounts, finalDiscount]);
+  }, [
+    selectedProductsCount,
+    sortedDiscounts,
+    displayedProducts.length,
+    finalDiscount,
+  ]);
 
   // Когда данные успешно загружены, делаем виджет видимым (display: flex)
   useEffect(() => {

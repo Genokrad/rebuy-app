@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import type { ProductCardProps, VariantOption } from "../../types";
 import styles from "./ProductCard.module.css";
 import AddButton from "./addButton/AddBuuton";
@@ -21,20 +21,21 @@ export function ProductCard({
   // console.log(productIndex, productIndex, "<<<<<====== productIndex");
   // Все товары изначально должны быть added
   const [isAdded, setIsAdded] = useState(true);
-  const [redirectUrl, setRedirectUrl] = useState("");
 
-  useEffect(() => {
+  // Строим ссылку на продукт по handle (без лишнего setState)
+  const redirectUrl = useMemo(() => {
     const handle = product.variants[0]?.variantDetails?.product?.handle;
-    if (handle) {
+    if (!handle) return "";
+    try {
       const current = window.location.href;
       const url = new URL(current);
       const base = `${url.origin}${url.pathname.replace(/\/[^/]*$/, "/")}`;
-
-      const finalUrl = `${base}/${handle}`;
-
-      setRedirectUrl(finalUrl);
+      // pathname уже заканчивается на '/', поэтому не добавляем двойной слэш
+      return `${base}${handle}`;
+    } catch {
+      return "";
     }
-  }, []);
+  }, [product.variants]);
 
   // console.log("redirectUrl ===>>>>>", redirectUrl);
 
@@ -125,8 +126,13 @@ export function ProductCard({
 
   // Вычисляем выбранный вариант на основе выбранных опций
   const selectedVariant = useMemo(() => {
-    return findVariantByOptions(selectedColor, selectedCushion);
-  }, [findVariantByOptions, selectedColor, selectedCushion]);
+    // Если не нашли вариант по опциям (например, нет selectedOptions), возвращаем первый вариант
+    return (
+      findVariantByOptions(selectedColor, selectedCushion) ||
+      product.variants[0] ||
+      null
+    );
+  }, [findVariantByOptions, selectedColor, selectedCushion, product.variants]);
 
   // console.log(selectedVariant, productIndex, "<<<<<====== selectedVariant");
 
@@ -144,6 +150,7 @@ export function ProductCard({
   // Получаем окончательную цену для выбранного варианта
   // Всегда используем окончательную цену из marketsPrice для текущего маркетплейса
   const { price, compareAtPrice, currencyCode } = useMemo(() => {
+    console.log("selectedVariant ===>>>>>", selectedVariant);
     if (!selectedVariant?.variantDetails) {
       return { price: "", compareAtPrice: "", currencyCode: "" };
     }
@@ -152,6 +159,13 @@ export function ProductCard({
     let price = selectedVariant.variantDetails.price || "";
     let compareAtPrice = selectedVariant.variantDetails.compareAtPrice || null;
     let currencyCode = selectedVariant.variantDetails.currencyCode || "";
+
+    console.log(
+      "selectedVariant.variantDetails.marketsPrice ===>>>>>",
+      selectedVariant.variantDetails.marketsPrice,
+    );
+
+    console.log("currentMarketplace ===>>>>>", currentMarketplace);
 
     if (currentMarketplace && selectedVariant.variantDetails.marketsPrice) {
       const marketPrice = selectedVariant.variantDetails.marketsPrice.find(
