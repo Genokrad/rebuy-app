@@ -40,7 +40,6 @@ const optionNameTranslations: Record<string, string> = {
  * @returns "Color", "Cushion" или исходное имя, если маппинга нет
  */
 export function normalizeOptionName(name: string): string {
-  console.log(name, "<<<<<====== name");
   if (!name) return name;
 
   const lower = name.toLowerCase().trim();

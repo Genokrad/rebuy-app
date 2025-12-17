@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import type { ProductCardProps, VariantOption } from "../../types";
 import styles from "./ProductCard.module.css";
 import AddButton from "./addButton/AddBuuton";
@@ -21,6 +21,35 @@ export function ProductCard({
   // console.log(productIndex, productIndex, "<<<<<====== productIndex");
   // Все товары изначально должны быть added
   const [isAdded, setIsAdded] = useState(true);
+  const [redirectUrl, setRedirectUrl] = useState("");
+
+  useEffect(() => {
+    const handle = product.variants[0]?.variantDetails?.product?.handle;
+    if (handle) {
+      const current = window.location.href;
+      const url = new URL(current);
+      const base = `${url.origin}${url.pathname.replace(/\/[^/]*$/, "/")}`;
+
+      const finalUrl = `${base}/${handle}`;
+
+      setRedirectUrl(finalUrl);
+    }
+  }, []);
+
+  // console.log("redirectUrl ===>>>>>", redirectUrl);
+
+  // console.log("hasColorOption ===>>>>>", hasColorOption);
+  // console.log(
+  //   "product ===>>>>>",
+  //   product.variants[0]?.variantDetails?.product?.handle,
+  // );
+
+  // const current = window.location.href;
+
+  // const url = new URL(current);
+  // const base = `${url.origin}${url.pathname.replace(/\/[^/]*$/, "/")}`;
+
+  // console.log("Base URL ===>>>>>", base);
 
   // Вспомогательные функции для проверки опций
   // Используем normalizeOptionName, чтобы поддерживать любые языки (Farbe, Couleur, Colore и т.д.)
@@ -306,17 +335,18 @@ export function ProductCard({
     }
   };
 
-  // console.log("hasColorOption ===>>>>>", hasColorOption);
-  // console.log("hasCushionOption ===>>>>>", hasCushionOption);
-
   return (
     <li className={styles.item}>
-      <ProductImage
-        productImage={productImage}
-        productTitle={product.productTitle}
-      />
+      <a href={redirectUrl} target="_blank">
+        <ProductImage
+          productImage={productImage}
+          productTitle={product.productTitle}
+        />
+      </a>
       <div className={styles.itemContent}>
-        <span className={styles.itemName}>{product.productTitle}</span>
+        <a href={redirectUrl} target="_blank" className={styles.itemName}>
+          {product.productTitle}
+        </a>
 
         {/* Список вариантов (swatches) */}
         {hasColorOption && (

@@ -245,6 +245,7 @@ function App({ blockId }: AppProps) {
 
       if (content) {
         content.style.display = "flex";
+        content.style.width = "100%";
       }
     }
   }, [loading, error, products.length, sellenceWidgetId, widgetId]);
