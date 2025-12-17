@@ -8,6 +8,7 @@ interface TotalPriceProps {
   selectedProductIds: Set<string>;
   currentMarketplace?: string;
   discount: number;
+  totalPriceLabel?: string;
 }
 
 export function TotalPrice({
@@ -15,6 +16,7 @@ export function TotalPrice({
   selectedProductIds,
   currentMarketplace,
   discount,
+  totalPriceLabel,
 }: TotalPriceProps) {
   // Вычисляем общую сумму выбранных товаров
   const totalPrice = useMemo(() => {
@@ -85,7 +87,7 @@ export function TotalPrice({
   return (
     <div className={styles.totalPrice}>
       <p className={styles.totalPriceNew}>
-        <span>Total Price:</span>{" "}
+        <span>{totalPriceLabel || "Total Price:"}</span>{" "}
         <span className={styles.totalPrice}>{formattedTotalPrice}</span>
       </p>
     </div>

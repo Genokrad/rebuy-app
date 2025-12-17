@@ -17,6 +17,8 @@ export function ProductCard({
   onToggle,
   onSelectNewVariant,
   onChangingTheOption,
+  addText,
+  addedText,
 }: ProductCardProps) {
   // console.log(productIndex, productIndex, "<<<<<====== productIndex");
   // Все товары изначально должны быть added
@@ -390,7 +392,12 @@ export function ProductCard({
             currencyCode={currencyCode}
             discount={discount}
           />
-          <AddButton isAdded={isAdded} handleAddToggle={handleAddToggle} />
+          <AddButton
+            isAdded={isAdded}
+            handleAddToggle={handleAddToggle}
+            addText={addText}
+            addedText={addedText}
+          />
         </div>
       </div>
     </li>
