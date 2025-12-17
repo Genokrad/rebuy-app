@@ -68,9 +68,23 @@ async function buildProductRelationships(
               : null,
             price: cp.variantDetails.price,
             compareAtPrice: cp.variantDetails.compareAtPrice || undefined,
+            selectedOptions: cp.variantDetails.selectedOptions
+              ? (() => {
+                  try {
+                    return JSON.parse(cp.variantDetails.selectedOptions);
+                  } catch (e) {
+                    console.warn(
+                      `Failed to parse selectedOptions for variant ${cp.variantDetails.variantId}:`,
+                      e,
+                    );
+                    return undefined;
+                  }
+                })()
+              : undefined,
             product: {
               id: cp.variantDetails.productId,
               title: cp.variantDetails.productTitle,
+              handle: cp.variantDetails.productHandle || "",
               featuredImage: cp.variantDetails.imageUrl
                 ? { url: cp.variantDetails.imageUrl }
                 : null,
@@ -281,6 +295,10 @@ async function saveVariantDetails(
     imageUrl: variantDetails.image?.url || null,
     productId: variantDetails.product?.id || "",
     productTitle: variantDetails.product?.title || "",
+    productHandle: variantDetails.product?.handle || null,
+    selectedOptions: variantDetails.selectedOptions
+      ? JSON.stringify(variantDetails.selectedOptions)
+      : null,
   };
 
   // Сохраняем существующие warehouses перед удалением marketPrices
@@ -680,4 +698,168 @@ export async function updateChildProductVariantDetails(
 
   // Сохраняем variantDetails
   await saveVariantDetails(childProduct.id, variantDetails);
+}
+
+/**
+ * Обновляет productHandle для всех вариантов в базе данных
+ * Получает handle продуктов из Shopify через ChildProduct.productId и сохраняет их в VariantDetails
+ */
+export async function updateAllProductHandles(admin: {
+  graphql: (query: string, options?: any) => Promise<any>;
+}): Promise<{ updated: number; errors: number }> {
+  console.log("[updateAllProductHandles] Starting update process...");
+
+  // Получаем все ChildProduct с их productId и связанными VariantDetails
+  const allChildProducts = await (prisma as any).childProduct.findMany({
+    where: {
+      variantDetails: {
+        isNot: null, // Только те, у которых есть VariantDetails
+      },
+    },
+    select: {
+      id: true,
+      productId: true,
+      variantDetails: {
+        select: {
+          id: true,
+          productHandle: true,
+        },
+      },
+    },
+  });
+
+  console.log(
+    `[updateAllProductHandles] Found ${allChildProducts.length} child products with variant details`,
+  );
+
+  // Получаем все уникальные productId из ChildProduct
+  const productIds = Array.from(
+    new Set(
+      allChildProducts
+        .map((cp: any) => cp.productId)
+        .filter((id: string) => id && id !== ""),
+    ),
+  );
+
+  console.log(
+    `[updateAllProductHandles] Found ${productIds.length} unique products`,
+  );
+
+  if (productIds.length === 0) {
+    console.log("[updateAllProductHandles] No products to update");
+    return { updated: 0, errors: 0 };
+  }
+
+  const GET_PRODUCT_HANDLES_QUERY = `
+    query getProductHandles($ids: [ID!]!) {
+      nodes(ids: $ids) {
+        ... on Product {
+          id
+          handle
+        }
+      }
+    }
+  `;
+
+  let updated = 0;
+  let errors = 0;
+
+  // Обрабатываем по 50 продуктов за раз (лимит Shopify)
+  const batchSize = 50;
+  for (let i = 0; i < productIds.length; i += batchSize) {
+    const batch = productIds.slice(i, i + batchSize);
+
+    try {
+      console.log(
+        `[updateAllProductHandles] Processing batch ${i + 1}-${Math.min(i + batchSize, productIds.length)} of ${productIds.length}`,
+      );
+
+      const response = await admin.graphql(GET_PRODUCT_HANDLES_QUERY, {
+        variables: { ids: batch },
+      });
+
+      const responseJson =
+        typeof response.json === "function"
+          ? await response.json()
+          : (response as any).body || response;
+
+      if (responseJson?.errors?.length) {
+        console.error(
+          `[updateAllProductHandles] GraphQL errors:`,
+          responseJson.errors,
+        );
+        errors += batch.length;
+        continue;
+      }
+
+      const products = responseJson.data?.nodes || [];
+      const productHandleMap = new Map<string, string>();
+
+      products.forEach((product: any) => {
+        if (product?.id && typeof product.id === "string" && product?.handle) {
+          productHandleMap.set(product.id, product.handle);
+          console.log(
+            `[updateAllProductHandles] Mapped product ${product.id} -> handle: ${product.handle}`,
+          );
+        }
+      });
+
+      // Обновляем все VariantDetails для этих продуктов
+      // Находим все ChildProduct с этими productId и обновляем их VariantDetails
+      for (const productId of batch) {
+        if (typeof productId !== "string") {
+          errors++;
+          continue;
+        }
+
+        const handle = productHandleMap.get(productId);
+        if (!handle) {
+          console.warn(
+            `[updateAllProductHandles] Handle not found for product ${productId}`,
+          );
+          errors++;
+          continue;
+        }
+
+        // Находим все ChildProduct с этим productId
+        const childProductsForThisProduct = allChildProducts.filter(
+          (cp: any) => cp.productId === productId,
+        );
+
+        // Обновляем VariantDetails для каждого ChildProduct
+        for (const childProduct of childProductsForThisProduct) {
+          if (childProduct.variantDetails) {
+            try {
+              await (prisma as any).variantDetails.update({
+                where: { id: childProduct.variantDetails.id },
+                data: { productHandle: handle },
+              });
+              updated++;
+              console.log(
+                `[updateAllProductHandles] Updated VariantDetails ${childProduct.variantDetails.id} with handle ${handle}`,
+              );
+            } catch (updateError) {
+              console.error(
+                `[updateAllProductHandles] Error updating VariantDetails ${childProduct.variantDetails.id}:`,
+                updateError,
+              );
+              errors++;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error(
+        `[updateAllProductHandles] Error processing batch ${i}-${i + batch.length}:`,
+        error,
+      );
+      errors += batch.length;
+    }
+  }
+
+  console.log(
+    `[updateAllProductHandles] Complete. Updated: ${updated}, Errors: ${errors}`,
+  );
+
+  return { updated, errors };
 }

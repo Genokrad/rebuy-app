@@ -64,6 +64,7 @@ export interface VariantDetails {
   product: {
     id: string;
     title: string;
+    handle?: string;
     featuredImage: {
       url: string;
     } | null;

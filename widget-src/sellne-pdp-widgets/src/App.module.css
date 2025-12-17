@@ -1,0 +1,118 @@
+/* Стили для основного контейнера виджета */
+.container {
+  width: 100%;
+  max-width: 100%;
+}
+
+.title {
+  font-size: 27px;
+  font-weight: 500;
+  margin: 0;
+  color: #232323;
+  line-height: 1;
+  margin-bottom: 20px;
+}
+
+.productsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* Состояния загрузки, ошибки, пустого состояния */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.error {
+  padding: 1rem;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 4px;
+  color: #c33;
+  text-align: center;
+}
+
+.errorText {
+  margin: 0;
+  font-weight: 500;
+}
+
+.empty {
+  padding: 2rem;
+  text-align: center;
+  color: #999;
+}
+
+.emptyText {
+  margin: 0;
+}
+
+/* Общая цена и кнопка добавления всех (если нужно) */
+.totalPrice {
+  font-size: 15px;
+  font-weight: 600;
+  color: red;
+  margin-bottom: 16px;
+}
+
+.totalPriceNew {
+  font-weight: 400;
+  color: #000;
+}
+
+.totalPriceOld {
+  font-weight: 400;
+  color: #8e8e8e;
+  text-decoration: line-through;
+}
+
+.addToCart {
+  padding: 10px 15px;
+  width: 100%;
+  height: auto;
+  text-align: center;
+  font-size: 16px;
+  border-style: solid;
+  border-width: 1px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  border: 1px solid #4B3E34;
+  background: #4B3E34;
+  transition: background-color 0.2s;
+}
+
+.addToCart:hover {
+  background: #3a2f26;
+}
+
+@media (max-width: 1024px) {
+  .addToCart {
+    width: 100%;
+  }
+}
+
+.addToCart:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.discountMessage {
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.66;
+  letter-spacing: 0.75px;
+  text-align: center;
+}

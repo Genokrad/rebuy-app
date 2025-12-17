@@ -1,0 +1,87 @@
+/* Глобальные стили только для виджета - используйте минимально */
+/* Эти стили изолированы через Shadow DOM или префиксы в main.tsx */
+
+/* Сброс стилей для виджета */
+.sellence-widget-root {
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+}
+
+/* Border-box для всех элементов виджета */
+.sellence-widget-root *,
+.sellence-widget-root *::before,
+.sellence-widget-root *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Сброс для списков */
+.sellence-widget-root ul,
+.sellence-widget-root ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Сброс для заголовков */
+.sellence-widget-root h1,
+.sellence-widget-root h2,
+.sellence-widget-root h3,
+.sellence-widget-root h4,
+.sellence-widget-root h5,
+.sellence-widget-root h6 {
+  margin: 0;
+  padding: 0;
+  font-weight: inherit;
+  font-size: inherit;
+}
+
+/* Сброс для параграфов */
+.sellence-widget-root p {
+  margin: 0;
+  padding: 0;
+}
+
+/* Сброс для ссылок */
+.sellence-widget-root a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Сброс для изображений */
+.sellence-widget-root img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Сброс для кнопок и инпутов */
+.sellence-widget-root button,
+.sellence-widget-root input,
+.sellence-widget-root textarea,
+.sellence-widget-root select {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+.sellence-widget-root button {
+  cursor: pointer;
+}
+
+/* Сброс для label */
+.sellence-widget-root label {
+  margin: 0;
+  padding: 0;
+}
