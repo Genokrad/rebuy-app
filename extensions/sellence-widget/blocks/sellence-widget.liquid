@@ -273,123 +273,32 @@
 </style>
 
 <div class="sellence-widget d sellence-widget-{{ block.settings.widget_id }}" id="sellence-widget-{{ block.id }}" data-current-marketplace="{{ localization.country.iso_code }}" data-widget-id="{{ block.settings.widget_id }}">
-  <div id="sellence-widget-content" class="">
-    {% comment %} <h2 class="sellence-widget-title">{{ 'sellence-widget.title' | t }}</h2>
+  <div id="for-react-render-{{ block.id }}"></div>
+  <!-- Передаем конфигурацию в React через объект конфигов -->
+  <script type="module">
+    import { EVENTS, publish } from "@archetype-themes/utils/pubsub";
 
-    <ul class="sellence-widget-this-item-list" id="items-list">
-      <li class="sellence-widget-item">
-        <div class="sellence-widget-item-image">
-          <img src="{{ 'wunderbox-4-7-years-old-developmental-box-for-kids-611288.jpeg' | asset_url }}" alt="Product Image" width="100" height="100" class="sellence-widget-item-image-img">
-        </div>
-        <div class="sellence-widget-item-content" data-product="${encodeURIComponent(JSON.stringify(childProduct))}">
-          <span class="sellence-widget-item-name">Helper Tower: A Multi-functional Foldable Step Stool for Kids</span>
-          <div class="variants-list">
-            <label class="variants-list-item">
-              <input
-                type="radio"
-                name="sellence-color"
-                value="beige"
-                data-color="beige"
-                class="variants-list-input"
-                checked
-              >
-              <span class="variants-list-swatch">
-                <img src="{{ 'beige.svg' | asset_url }}" alt="Beige" width="20" height="20">
-              </span>
-            </label>
-            <label class="variants-list-item">
-              <input
-                type="radio"
-                name="sellence-color"
-                value="blue"
-                data-color="blue"
-                class="variants-list-input"
-              >
-              <span class="variants-list-swatch">
-                <img src="{{ 'gray.svg' | asset_url }}" alt="Gray" width="20" height="20">
-              </span>
-            </label>
-            <label class="variants-list-item">
-              <input
-                type="radio"
-                name="sellence-color"
-                value="green"
-                data-color="green"
-                class="variants-list-input"
-              >
-              <span class="variants-list-swatch">
-                <img src="{{ 'graphite.svg' | asset_url }}" alt="Graphite" width="20" height="20">
-              </span>
-            </label>
-            <label class="variants-list-item">
-              <input
-                type="radio"
-                name="sellence-color"
-                value="red"
-                data-color="red"
-                class="variants-list-input"
-              >
-              <span class="variants-list-swatch">
-                <img src="{{ 'ivory.svg' | asset_url }}" alt="Ivory" width="20" height="20">
-              </span>
-            </label>
-          </div>
-          <div class="sellence-widget-item-bottm-content">
-            <div class="sellence-widget-item-price">
-              <p class="sellence-widget-price-new">
-                <span class="sellence-widget-price-new">CHF37.05</span>
-              </p>
-              <p class="sellence-widget-price-old"><span class="sellence-widget-price-old-price">CHF39.00</span></p>
-            </div>
-            <label class="sellence-widget-item-label">
-              <input type="checkbox" class="sellence-widget-checkbox" checked="">
-              <div class="sellence-widget-item-label-text-add">
-                <span>Add</span>
-              </div>
-              <div class="sellence-widget-item-label-text-added">
-                <span>Added</span>
-              </div>
-            </label>
-          </div>
-        </div>
-      </li>
-      <!-- Товары будут добавлены динамически через React -->
-    </ul> {% endcomment %}
+    // Экспортируем publish и EVENTS в глобальную область видимости
+    // чтобы React bundle мог их использовать
+    window.publish = publish;
+    window.EVENTS = EVENTS;
 
-    <div id="for-react-render-{{ block.id }}"></div>
-    <!-- Передаем конфигурацию в React через объект конфигов -->
-    <script type="module">
-      import { EVENTS, publish } from "@archetype-themes/utils/pubsub";
+    window.SELLENCE_WIDGET_CONFIGS = window.SELLENCE_WIDGET_CONFIGS || {};
+    window.SELLENCE_WIDGET_CONFIGS['{{ block.id }}'] = {
+      widgetId: '{{ block.settings.widget_id }}',
+      appUrl: '{{ block.settings.app_url }}',
+      productId: '{{ product.id }}',
+      marketplace: '{{ localization.country.iso_code }}',
+      containerId: 'for-react-render-{{ block.id }}',
+      sellenceWidgetId: 'sellence-widget-{{ block.settings.widget_id }}',
+      shop: '{{ shop.permanent_domain }}',
+      widgetType: 'products-page',
+      // shopId будет извлечен в React из URL изображения продукта
+    };
+  </script>
 
-      // Экспортируем publish и EVENTS в глобальную область видимости
-      // чтобы React bundle мог их использовать
-      window.publish = publish;
-      window.EVENTS = EVENTS;
-
-      window.SELLENCE_WIDGET_CONFIGS = window.SELLENCE_WIDGET_CONFIGS || {};
-      window.SELLENCE_WIDGET_CONFIGS['{{ block.id }}'] = {
-        widgetId: '{{ block.settings.widget_id }}',
-        appUrl: '{{ block.settings.app_url }}',
-        productId: '{{ product.id }}',
-        marketplace: '{{ localization.country.iso_code }}',
-        containerId: 'for-react-render-{{ block.id }}',
-        sellenceWidgetId: 'sellence-widget-{{ block.settings.widget_id }}',
-        shop: '{{ shop.permanent_domain }}',
-        widgetType: 'products-page',
-        // shopId будет извлечен в React из URL изображения продукта
-      };
-    </script>
-
-    <!-- Sellne PDP Widgets React Bundle - загружаем после создания контейнера и передачи конфигурации -->
-    <script src="{{ 'pdp-widgets-bundle.js' | asset_url }}"></script>
-
-    {% comment %} <p class="sellence-widget-total-price">{{ 'sellence-widget.total_price' | t }}
-      <span class="sellence-widget-total-price-new"></span>
-      <span class="sellence-widget-total-price-old"></span>
-    </p>
-
-    <button class="sellence-widget-add-to-cart">{{ 'sellence-widget.add_all' | t }}</button> {% endcomment %}
-  </div>
+  <!-- Sellne PDP Widgets React Bundle - загружаем после создания контейнера и передачи конфигурации -->
+  <script src="{{ 'pdp-widgets-bundle.js' | asset_url }}"></script>
 </div>
 
 {% schema %}

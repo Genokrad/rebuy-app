@@ -429,46 +429,48 @@ function App({ blockId }: AppProps) {
   };
 
   return (
-    <div className={styles.container}>
-      {settings?.title && <h2 className={styles.title}>{settings.title}</h2>}
+    <div id="sellence-widget-content" style={{ width: "100%" }}>
+      <div className={styles.container}>
+        {settings?.title && <h2 className={styles.title}>{settings.title}</h2>}
 
-      <ul className={styles.productsList} id="items-list">
-        {displayedProducts.map((product, index) => (
-          <ProductCard
-            key={product.productId}
-            product={product}
-            currentMarketplace={currentMarketplace}
-            shopId={shopId}
-            discount={finalDiscount}
-            productIndex={index}
-            onSelectNewVariant={onSelectNewVariant}
-            onChangingTheOption={onChangingTheOption}
-            onToggle={(isAdded) =>
-              handleProductToggle(product.productId, isAdded)
-            }
-          />
-        ))}
-      </ul>
-      <TotalPrice
-        products={displayedProducts}
-        selectedProductIds={selectedProducts}
-        currentMarketplace={currentMarketplace}
-        discount={finalDiscount}
-      />
-      <Button
-        onClick={handleAddToCart}
-        text={"Add to cart"}
-        classProp={styles.addToCart}
-        dataAttribute="add-to-cart"
-        isLoading={isAddingToCart}
-        disabled={isAddingToCart}
-      />
-      {discountMessageText && (
-        <DiscountMessage
-          text={discountMessageText}
-          classProp={styles.discountMessage}
+        <ul className={styles.productsList} id="items-list">
+          {displayedProducts.map((product, index) => (
+            <ProductCard
+              key={product.productId}
+              product={product}
+              currentMarketplace={currentMarketplace}
+              shopId={shopId}
+              discount={finalDiscount}
+              productIndex={index}
+              onSelectNewVariant={onSelectNewVariant}
+              onChangingTheOption={onChangingTheOption}
+              onToggle={(isAdded) =>
+                handleProductToggle(product.productId, isAdded)
+              }
+            />
+          ))}
+        </ul>
+        <TotalPrice
+          products={displayedProducts}
+          selectedProductIds={selectedProducts}
+          currentMarketplace={currentMarketplace}
+          discount={finalDiscount}
         />
-      )}
+        <Button
+          onClick={handleAddToCart}
+          text={"Add to cart"}
+          classProp={styles.addToCart}
+          dataAttribute="add-to-cart"
+          isLoading={isAddingToCart}
+          disabled={isAddingToCart}
+        />
+        {discountMessageText && (
+          <DiscountMessage
+            text={discountMessageText}
+            classProp={styles.discountMessage}
+          />
+        )}
+      </div>
     </div>
   );
 }

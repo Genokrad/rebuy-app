@@ -61,7 +61,7 @@ export default function WidgetAppearanceRoute() {
           </Card>
           {placements.includes("products") && (
             <Layout.Section>
-              <WidgetAppearancePreview widgetId={widgetId} />
+              {/* <WidgetAppearancePreview widgetId={widgetId} /> */}
             </Layout.Section>
           )}
         </Layout.Section>

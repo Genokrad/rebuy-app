@@ -37,6 +37,9 @@ function initAllWidgets() {
   const containers = document.querySelectorAll('[id^="for-react-render-"]');
 
   containers.forEach((container) => {
+    if (container instanceof HTMLElement) {
+      container.style.width = "100%";
+    }
     const containerId = container.id;
     // Извлекаем blockId из ID контейнера (формат: "for-react-render-{blockId}")
     const blockId = containerId.replace("for-react-render-", "");
