@@ -97,6 +97,8 @@ model VariantDetails {
   imageUrl         String?
   productId        String
   productTitle     String
+  productHandle    String?        // Handle продукта для создания ссылок на товар
+  selectedOptions  Json?           // Массив selectedOptions как есть: [{ name: 'Color', value: 'green' }]
   inventoryLevels  InventoryLevel[]
   marketPrices     MarketPrice[]
   updatedAt        DateTime       @updatedAt

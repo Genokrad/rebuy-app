@@ -531,11 +531,51 @@ function Extension() {
 
   const cartLinesWithDiscount = getCartLinesWithSellenceDiscount();
 
+  // Функция для проверки доступности товара для продажи
+  function isAvailableForSale(childProduct) {
+    const variantDetails = childProduct?.variantDetails;
+
+    // Если availableForSale явно false, товар недоступен
+    if (variantDetails?.availableForSale === false) {
+      return false;
+    }
+
+    // Если inventoryPolicy === "CONTINUE", товар доступен для продажи даже при нулевом количестве
+    const inventoryPolicy = variantDetails?.inventoryPolicy?.toUpperCase();
+    if (inventoryPolicy === "CONTINUE") {
+      return true;
+    }
+
+    // Для "DENY" проверяем наличие товара
+    if (inventoryPolicy === "DENY") {
+      let maxQuantity = 0;
+      variantDetails?.inventoryLevels?.forEach((level) => {
+        if (level.quantity > maxQuantity) {
+          maxQuantity = level.quantity;
+        }
+      });
+
+      // Если количество <= 0 и политика DENY, товар недоступен
+      if (maxQuantity <= 0) {
+        return false;
+      }
+    }
+
+    // По умолчанию считаем товар доступным, если availableForSale !== false
+    return true;
+  }
+
   let count = 0;
   let productsForRender = [];
 
   childProducts.forEach((childProduct) => {
+    // Пропускаем товары, которые уже в корзине
     if (cartLinesVariantIds.includes(childProduct.variantId)) {
+      return null;
+    }
+
+    // Пропускаем недоступные товары
+    if (!isAvailableForSale(childProduct)) {
       return null;
     }
 

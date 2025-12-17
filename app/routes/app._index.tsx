@@ -24,6 +24,7 @@ import {
   updateWidget,
   getWidgetsByShop,
   cloneWidget,
+  updateAllProductHandles,
 } from "../services/widgetService";
 import { widgetCards } from "../data/default-data";
 import {
@@ -197,6 +198,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
 
   const formData = await request.formData();
+
+  // Проверяем, это запрос на обновление handles всех продуктов
+  if (formData.get("updateHandles")) {
+    try {
+      const { admin } = await authenticate.admin(request);
+      const result = await updateAllProductHandles(admin);
+      console.log("result =====>>>>>", result);
+      return {
+        success: true,
+        handlesUpdated: true,
+        updatedCount: result.updated,
+        errorsCount: result.errors,
+        error: null,
+      };
+    } catch (error) {
+      console.error("Error updating product handles:", error);
+      return {
+        error: "Failed to update product handles",
+        success: false,
+        handlesUpdated: false,
+      };
+    }
+  }
 
   // Проверяем, это запрос на удаление виджета
   if (formData.get("widgetId")) {
@@ -409,7 +433,7 @@ export default function Index() {
                     }
                     title={
                       loaderData?.cartTransformActive
-                        ? "Cart Transform Function Active"
+                        ? "Cart Transform Function Active !!"
                         : "Cart Transform Function Not Active"
                     }
                   >
@@ -445,11 +469,41 @@ export default function Index() {
                   />
                 )}
 
-                {/* Ссылка на страницу маркетов */}
+                {/* Ссылка на страницу маркетов и обновление handles */}
                 <BlockStack gap="200">
                   <Link to="/app/markets" style={{ textDecoration: "none" }}>
                     <Button>Просмотреть все маркеты (Markets)</Button>
                   </Link>
+                  <fetcher.Form method="post">
+                    <input type="hidden" name="updateHandles" value="true" />
+                    <Button
+                      submit
+                      loading={fetcher.state === "submitting"}
+                      variant="primary"
+                    >
+                      {"handlesUpdated" in (fetcher.data || {}) &&
+                      (fetcher.data as any)?.handlesUpdated
+                        ? `Обновлено: ${(fetcher.data as any).updatedCount || 0} вариантов`
+                        : "Обновить handles всех товаров"}
+                    </Button>
+                  </fetcher.Form>
+                  {"handlesUpdated" in (fetcher.data || {}) &&
+                    (fetcher.data as any)?.handlesUpdated && (
+                      <Banner tone="success">
+                        <Text as="p">
+                          Успешно обновлено{" "}
+                          {(fetcher.data as any).updatedCount || 0} вариантов.
+                          {((fetcher.data as any).errorsCount || 0) > 0 &&
+                            ` Ошибок: ${(fetcher.data as any).errorsCount}`}
+                        </Text>
+                      </Banner>
+                    )}
+                  {fetcher.data?.error &&
+                    fetcher.data.error.includes("handles") && (
+                      <Banner tone="critical">
+                        <Text as="p">{fetcher.data.error}</Text>
+                      </Banner>
+                    )}
                 </BlockStack>
               </BlockStack>
             )}

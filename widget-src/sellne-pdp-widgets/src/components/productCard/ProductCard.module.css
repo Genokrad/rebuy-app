@@ -1,0 +1,200 @@
+/* Стили для карточки продукта - изолированные через CSS Modules */
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #E0E0E0;
+  margin: 0;
+}
+
+.itemImage {
+  min-width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+}
+
+.itemImageImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.itemContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 90px;
+  justify-content: space-between;
+}
+
+.itemName {
+  font-size: 14px;
+  font-weight: 400;
+  margin: 0;
+  color: #232323;
+  line-height: 1.4;
+}
+
+/* Варианты (swatches) */
+.variantsList {
+  display: flex;
+  gap: 8px;
+  /* margin-top: 8px;
+  margin-bottom: 8px; */
+}
+
+.variantsListItem {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  margin: 0;
+}
+
+.variantsListInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.variantsListSwatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 2px;
+  border: 1px solid transparent;
+  min-width: 27px;
+  min-height: 28px;
+}
+
+.variantsListInput+.variantsListSwatch {
+  border-color: #E0E0E0;
+}
+
+.variantsListInput:focus+.variantsListSwatch {
+  border-color: #000;
+}
+
+.variantsListInput:hover+.variantsListSwatch {
+  border-color: #000;
+}
+
+.variantsListInput:checked+.variantsListSwatch {
+  border-color: #000;
+}
+
+.variantsListSwatch img {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Нижняя часть с ценой и кнопкой */
+.itemBottomContent {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.itemPrice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.priceNew {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e74c3c;
+  margin: 0;
+}
+
+.priceOld {
+  font-size: 14px;
+  color: #999;
+  text-decoration: line-through;
+  margin: 0;
+  display: flex;
+  gap: 2px;
+}
+
+/* Кнопка Add/Added */
+.itemLabel {
+  max-width: 99px;
+  position: relative;
+  margin: 0;
+}
+
+.checkbox {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.checkbox[checked] {
+  background-color: #000;
+  color: #fff;
+}
+
+.labelTextAdd {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  border: 1px solid #000;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.105px;
+  padding: 5px 28px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.labelTextAdd:hover {
+  background-color: #f5f5f5;
+}
+
+.labelTextAdded {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  background-color: #000;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.105px;
+  padding: 6px 28px;
+}
+
+/* Toggle "Add" / "Added" button state based on checkbox */
+.checkbox:checked+.labelTextAdd {
+  display: none;
+}
+
+.checkbox:checked+.labelTextAdd+.labelTextAdded {
+  display: flex;
+}

@@ -14,9 +14,14 @@ export const GET_VARIANT_DETAILS_QUERY = `
       }
       price
       compareAtPrice
+      selectedOptions {
+        name
+        value
+      }
       product {
         id
         title
+        handle
         featuredImage {
           url
         }
@@ -101,6 +106,11 @@ export interface MarketPrice {
   currencyCode: string; // код валюты (например, "EUR", "USD", "AUD")
 }
 
+export interface SelectedOption {
+  name: string;
+  value: string;
+}
+
 export interface VariantDetails {
   inventoryQuantity: number;
   availableForSale: boolean;
@@ -112,9 +122,11 @@ export interface VariantDetails {
   } | null;
   price: string;
   compareAtPrice?: string;
+  selectedOptions?: SelectedOption[];
   product: {
     id: string;
     title: string;
+    handle: string;
     featuredImage: {
       url: string;
     } | null;

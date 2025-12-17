@@ -223,12 +223,13 @@ async function getVariantDetailsInternal(
       }
     }
 
-    // Возвращаем обновленную структуру с marketsPrice
+    // Возвращаем обновленную структуру с marketsPrice и selectedOptions
     return {
       ...variant,
       image: finalImage,
       inventoryLevels: simplifiedInventoryLevels,
       marketsPrice: marketsPrice,
+      selectedOptions: variant.selectedOptions || [],
     };
   } catch (error) {
     console.error(`Error fetching variant details for ${variantId}:`, error);
