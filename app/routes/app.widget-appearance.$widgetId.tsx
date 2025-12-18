@@ -152,8 +152,19 @@ export default function WidgetAppearanceRoute() {
     }));
   };
 
-  const currentTexts =
-    previewTextsByLocale[currentLocale] || previewTextsByLocale.us;
+  const defaultTexts: PreviewTexts = {
+    title: "Buy more at a lower price",
+    addedText: "Added",
+    addText: "Add",
+    totalPriceLabel: "Total Price:",
+    discountText: "Add 1 more product to unlock a 2% discount!",
+    addToCartText: "Add to cart",
+  };
+
+  const currentTexts: PreviewTexts =
+    previewTextsByLocale[currentLocale] ||
+    previewTextsByLocale.en ||
+    defaultTexts;
 
   const placements = useMemo(() => {
     if (!placementsParam) return [];

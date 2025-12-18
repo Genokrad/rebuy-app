@@ -62,6 +62,7 @@ export const WidgetAppearanceControls: FC<Props> = ({
           style={styles.controlInput}
           value={texts.title ?? ""}
           onChange={handleInput("title")}
+          placeholder="Buy more at a lower price"
         />
       </label>
       <label style={styles.controlLabel}>
@@ -70,6 +71,7 @@ export const WidgetAppearanceControls: FC<Props> = ({
           style={styles.controlInput}
           value={texts.addedText ?? ""}
           onChange={handleInput("addedText")}
+          placeholder="Added"
         />
       </label>
       <label style={styles.controlLabel}>
@@ -78,6 +80,7 @@ export const WidgetAppearanceControls: FC<Props> = ({
           style={styles.controlInput}
           value={texts.addText ?? ""}
           onChange={handleInput("addText")}
+          placeholder="Add"
         />
       </label>
       <label style={styles.controlLabel}>
@@ -86,6 +89,7 @@ export const WidgetAppearanceControls: FC<Props> = ({
           style={styles.controlInput}
           value={texts.totalPriceLabel ?? ""}
           onChange={handleInput("totalPriceLabel")}
+          placeholder="Total Price:"
         />
       </label>
       <label style={styles.controlLabel}>
@@ -141,6 +145,7 @@ export const WidgetAppearanceControls: FC<Props> = ({
           style={styles.controlInput}
           value={texts.addToCartText ?? ""}
           onChange={handleInput("addToCartText")}
+          placeholder="Add to cart"
         />
       </label>
 
