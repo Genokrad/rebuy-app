@@ -9,6 +9,20 @@ import {
 } from "@shopify/polaris";
 import { useCallback } from "react";
 
+/**
+ * Форматирует дату в детерминированном формате для избежания ошибок гидратации
+ * Использует фиксированную локаль 'en-US' для одинакового форматирования на сервере и клиенте
+ */
+function formatDateForDisplay(dateString: string): string {
+  const date = new Date(dateString);
+  // Используем фиксированную локаль для детерминированного форматирования
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
 interface DateRangeFilterProps {
   startDate: string;
   endDate: string;
@@ -81,8 +95,8 @@ export function DateRangeFilter({
           onChange={onFilterSellenceOnlyChange}
         />
         <Text as="p" variant="bodySm" tone="subdued">
-          Selected range: {new Date(startDate).toLocaleDateString()} -{" "}
-          {new Date(endDate).toLocaleDateString()}
+          Selected range: {formatDateForDisplay(startDate)} -{" "}
+          {formatDateForDisplay(endDate)}
         </Text>
       </BlockStack>
     </Card>

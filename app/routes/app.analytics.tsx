@@ -3,11 +3,10 @@ import { useLoaderData, useFetcher } from "@remix-run/react";
 import { Page, Layout, Text, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
-import { getOrders } from "../graphql/ordersService";
+import { getOrdersBulk } from "../graphql/bulkOrdersService";
 import {
   DateRangeFilter,
   OrdersTable,
-  LoadMoreButton,
   EmptyState,
   OrdersSummary,
   OrdersStats,
@@ -17,7 +16,19 @@ import {
 import { useState, useCallback, useEffect } from "react";
 import prisma from "../db.server";
 
-const ITEMS_PER_LOAD = 50; // Количество заказов для загрузки за раз
+/**
+ * Форматирует дату в детерминированном формате для избежания ошибок гидратации
+ * Использует фиксированную локаль 'en-US' для одинакового форматирования на сервере и клиенте
+ */
+function formatDateForDisplay(dateString: string): string {
+  const date = new Date(dateString);
+  // Используем фиксированную локаль для детерминированного форматирования
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -25,7 +36,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const startDateParam = url.searchParams.get("startDate");
   const endDateParam = url.searchParams.get("endDate");
-  const cursorParam = url.searchParams.get("cursor");
   const filterSellenceOnlyParam = url.searchParams.get("filterSellenceOnly");
   const filterSellenceOnly = filterSellenceOnlyParam === "true";
 
@@ -42,18 +52,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   startDate.setHours(0, 0, 0, 0);
   endDate.setHours(23, 59, 59, 999);
 
-  // Получаем заказы из Shopify
-  const result = await getOrders(
+  // Получаем все заказы из Shopify используя bulk операцию
+  const allOrders = await getOrdersBulk(
     request,
     startDate,
     endDate,
-    cursorParam || null,
-    ITEMS_PER_LOAD,
     filterSellenceOnly,
   );
 
   // Формируем данные для отображения
-  const ordersData = result.orders.map((order) => {
+  const ordersData = allOrders.map((order) => {
     // Получаем тип виджета из первого line item с атрибутами Sellence
     let widgetType = "N/A";
     let sellenceDiscountTotal = 0;
@@ -115,7 +123,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       currency: order.currencyCode || "USD",
       widgetType,
       createdAt: order.createdAt
-        ? new Date(order.createdAt).toLocaleDateString()
+        ? formatDateForDisplay(order.createdAt)
         : "N/A",
     };
   });
@@ -130,8 +138,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const widgetClickEventClient = (prisma as any).widgetClickEvent;
     if (widgetClickEventClient?.groupBy) {
+      // Добавляем фильтрацию по датам для кликов
       const rawStats = await widgetClickEventClient.groupBy({
-        where: { shop: session.shop?.toLowerCase() },
+        where: {
+          shop: session.shop?.toLowerCase(),
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
         by: ["widgetId", "widgetType"],
         _count: {
           widgetId: true,
@@ -166,8 +181,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return {
     orders: ordersData as AnalyticsOrder[],
     totalOrders: ordersData.length,
-    hasNextPage: result.hasNextPage,
-    nextCursor: result.nextCursor,
+    hasNextPage: false, // Bulk операции возвращают все данные сразу
+    nextCursor: null, // Больше не нужен курсор
     startDate: startDate.toISOString().split("T")[0],
     endDate: endDate.toISOString().split("T")[0],
     filterSellenceOnly,
@@ -188,14 +203,10 @@ export default function Analytics() {
   const [filterSellenceOnly, setFilterSellenceOnly] = useState<boolean>(
     loaderData.filterSellenceOnly,
   );
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [allOrders, setAllOrders] = useState(loaderData.orders);
 
-  // Используем данные из fetcher, если они есть (для пагинации), иначе из loader
+  // Используем данные из fetcher, если они есть, иначе из loader
   const data = fetcher.data || loaderData;
-  const hasNextPage = data.hasNextPage;
-  const nextCursor = data.nextCursor;
   const widgetClickStats = data.widgetClickStats || [];
 
   // Обновляем список заказов и состояние фильтра при изменении данных из loader
@@ -208,29 +219,20 @@ export default function Analytics() {
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data) {
       const newData = fetcher.data;
-      if (cursor) {
-        // Пагинация - добавляем к существующим
-        setAllOrders((prev) => [...prev, ...newData.orders]);
-        setIsLoadingMore(false);
-      } else {
-        // Новый фильтр - заменяем все
-        setAllOrders(newData.orders);
-      }
+      // Заменяем все заказы при новом фильтре
+      setAllOrders(newData.orders);
     }
-  }, [fetcher.state, fetcher.data, cursor]);
+  }, [fetcher.state, fetcher.data]);
 
   const handleStartDateChange = useCallback((value: string) => {
     setSelectedStartDate(value);
-    setCursor(null); // Сбрасываем курсор при изменении даты
   }, []);
 
   const handleEndDateChange = useCallback((value: string) => {
     setSelectedEndDate(value);
-    setCursor(null); // Сбрасываем курсор при изменении даты
   }, []);
 
   const handleApplyDateFilter = useCallback(() => {
-    setCursor(null);
     fetcher.load(
       `/app/analytics?startDate=${selectedStartDate}&endDate=${selectedEndDate}&filterSellenceOnly=${filterSellenceOnly}`,
     );
@@ -239,30 +241,12 @@ export default function Analytics() {
   const handleFilterSellenceOnlyChange = useCallback(
     (checked: boolean) => {
       setFilterSellenceOnly(checked);
-      setCursor(null);
       fetcher.load(
         `/app/analytics?startDate=${selectedStartDate}&endDate=${selectedEndDate}&filterSellenceOnly=${checked}`,
       );
     },
     [selectedStartDate, selectedEndDate, fetcher],
   );
-
-  const handleLoadMore = useCallback(() => {
-    if (!nextCursor || isLoadingMore || fetcher.state === "loading") return;
-
-    setIsLoadingMore(true);
-    setCursor(nextCursor);
-    fetcher.load(
-      `/app/analytics?startDate=${selectedStartDate}&endDate=${selectedEndDate}&filterSellenceOnly=${filterSellenceOnly}&cursor=${nextCursor}`,
-    );
-  }, [
-    nextCursor,
-    selectedStartDate,
-    selectedEndDate,
-    filterSellenceOnly,
-    fetcher,
-    isLoadingMore,
-  ]);
 
   return (
     <Page>
@@ -294,20 +278,10 @@ export default function Analytics() {
               />
             )}
 
-            <OrdersSummary
-              totalOrders={allOrders.length}
-              hasMore={hasNextPage}
-            />
+            <OrdersSummary totalOrders={allOrders.length} hasMore={false} />
 
             {allOrders.length > 0 ? (
-              <BlockStack gap="300">
-                <OrdersTable orders={allOrders} />
-                <LoadMoreButton
-                  onLoadMore={handleLoadMore}
-                  isLoading={isLoadingMore || fetcher.state === "loading"}
-                  hasMore={hasNextPage}
-                />
-              </BlockStack>
+              <OrdersTable orders={allOrders} />
             ) : (
               <EmptyState />
             )}

@@ -38,6 +38,7 @@ export function useWidgetData(blockId: string): UseWidgetDataResult {
             sellenceWidgetId: widgetConfig.sellenceWidgetId || undefined,
             shop: widgetConfig.shop || undefined,
             widgetType: widgetConfig.widgetType || "products-page",
+            locale: widgetConfig.locale || undefined,
           });
         }
       }, 200);
@@ -54,6 +55,7 @@ export function useWidgetData(blockId: string): UseWidgetDataResult {
       sellenceWidgetId: widgetConfig.sellenceWidgetId || undefined,
       shop: widgetConfig.shop || undefined,
       widgetType: widgetConfig.widgetType || "products-page",
+      locale: widgetConfig.locale || undefined,
     });
   }, [blockId]);
 
@@ -133,5 +135,6 @@ export function useWidgetData(blockId: string): UseWidgetDataResult {
     sellenceWidgetId: config?.sellenceWidgetId,
     shop: config?.shop,
     widgetType: config?.widgetType || "products-page",
+    locale: config?.locale,
   };
 }

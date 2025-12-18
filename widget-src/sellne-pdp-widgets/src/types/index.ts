@@ -104,6 +104,7 @@ export interface WidgetConfig {
   sellenceWidgetId?: string;
   shop?: string;
   widgetType?: string;
+  locale?: string;
 }
 
 /**
@@ -119,6 +120,7 @@ export interface RawWidgetConfig {
   sellenceWidgetId?: string;
   shop?: string;
   widgetType?: string;
+  locale?: string;
 }
 
 /**
@@ -131,7 +133,6 @@ export interface SellenceWidgetConfigs {
 // Расширяем Window для поддержки SELLENCE_WIDGET_CONFIGS
 declare global {
   interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     SELLENCE_WIDGET_CONFIGS?: SellenceWidgetConfigs;
   }
 }
@@ -173,6 +174,8 @@ export interface ProductCardProps {
     productIndex: number,
     newIsAdded: boolean,
   ) => void;
+  addText?: string;
+  addedText?: string;
 }
 
 /**
@@ -215,6 +218,19 @@ export interface WidgetSettings {
   placements?: string[];
   slideCount?: number;
   title?: string;
+  appearanceTexts?: Record<
+    string,
+    {
+      title?: string;
+      addedText?: string;
+      addText?: string;
+      totalPriceLabel?: string;
+      discountText?: string;
+      addToCartText?: string;
+      maxDiscountText?: string;
+      nextDiscountText?: string;
+    }
+  >;
 }
 
 /**
@@ -233,4 +249,5 @@ export interface UseWidgetDataResult {
   sellenceWidgetId?: string;
   shop?: string;
   widgetType?: string;
+  locale?: string;
 }

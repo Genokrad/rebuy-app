@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useWidgetData } from "./hooks/useWidgetData";
 import { usePublishCartEvent } from "./hooks/usePublishCartEvent";
 import { useAddToCart } from "./hooks/useAddToCart";
@@ -10,6 +10,20 @@ import type { AppProps, ProductVariant } from "./types";
 import styles from "./App.module.css";
 import Button from "./components/Button";
 
+const DEFAULT_LOCALE = "en";
+const fallbackTexts = {
+  title: "Buy more at a lower price",
+  addedText: "Added",
+  addText: "Add",
+  totalPriceLabel: "Total Price:",
+  discountText: "Add 1 more product to unlock a 2% discount!",
+  addToCartText: "Add to cart",
+  maxDiscountText:
+    "You are already using the maximum discount of ${maxDiscount}% 🎉",
+  nextDiscountText:
+    "Add ${remaining} more products to your cart and unlock a ${nextDiscount}% discount!",
+};
+
 function App({ blockId }: AppProps) {
   const {
     products,
@@ -17,6 +31,7 @@ function App({ blockId }: AppProps) {
     error,
     settings,
     currentMarketplace,
+    locale,
     shopId,
     appUrl,
     widgetId,
@@ -26,7 +41,8 @@ function App({ blockId }: AppProps) {
     widgetType,
   } = useWidgetData(blockId);
 
-  console.log("sellenceWidgetId ===>>>>>", products);
+  console.log("currentMarketplace ===>>>>>", currentMarketplace);
+  console.log("currentLocale ===>>>>>", locale);
 
   // Используем кастомные хуки (должны быть вызваны до любых условных return)
   const { publishAjaxProductAdded } = usePublishCartEvent();
@@ -37,6 +53,34 @@ function App({ blockId }: AppProps) {
   const displayedProducts = useMemo(
     () => products.slice(0, slideCount),
     [products, slideCount],
+  );
+
+  // Тексты для текущей локали (fallback на EN)
+  const currentTexts = useMemo(() => {
+    const textsByLocale =
+      settings?.appearanceTexts || (settings as any)?.appearanceTextsByLocale;
+    const localeFromConfig = locale ? locale.toLowerCase() : "";
+    const localeKey = localeFromConfig || DEFAULT_LOCALE;
+
+    const localeTexts =
+      textsByLocale?.[localeKey] ??
+      textsByLocale?.[DEFAULT_LOCALE] ??
+      (textsByLocale
+        ? textsByLocale[Object.keys(textsByLocale)[0]]
+        : undefined);
+
+    return {
+      ...fallbackTexts,
+      ...(localeTexts || {}),
+    };
+  }, [settings, currentMarketplace]);
+
+  const formatTemplate = useCallback(
+    (template: string, vars: Record<string, string | number>) =>
+      template.replace(/\$\{(\w+)\}/g, (_, key) =>
+        vars[key] !== undefined ? String(vars[key]) : "",
+      ),
+    [],
   );
 
   const [selectedVariants, setSelectedVariants] = useState<
@@ -212,7 +256,10 @@ function App({ blockId }: AppProps) {
     // Если уже достигнут или превышен максимальный порог и при этом скидка > 0
     // (и этот порог достижим, см. проверку выше) — показываем сообщение о максимальной скидке
     if (selectedProductsCount >= maxThreshold && maxDiscount > 0) {
-      return `You are already using the maximum discount of ${maxDiscount}% 🎉`;
+      const template =
+        currentTexts.maxDiscountText ||
+        "You are already using the maximum discount of ${maxDiscount}% 🎉";
+      return formatTemplate(template, { maxDiscount });
     }
 
     // Ищем следующий порог после текущего количества товаров,
@@ -247,12 +294,22 @@ function App({ blockId }: AppProps) {
     }
 
     const productWord = remaining === 1 ? "product" : "products";
-    return `Add ${remaining} more ${productWord} to your cart and unlock a ${nextDiscount}% discount!`;
+    const template =
+      currentTexts.nextDiscountText ||
+      "Add ${remaining} more products to your cart and unlock a ${nextDiscount}% discount!";
+    return formatTemplate(template, {
+      remaining,
+      productWord,
+      nextDiscount,
+    });
   }, [
     selectedProductsCount,
     sortedDiscounts,
     displayedProducts.length,
     finalDiscount,
+    currentTexts.maxDiscountText,
+    currentTexts.nextDiscountText,
+    formatTemplate,
   ]);
 
   // Когда данные успешно загружены, делаем виджет видимым (display: flex)
@@ -431,7 +488,9 @@ function App({ blockId }: AppProps) {
   return (
     <div id="sellence-widget-content" style={{ width: "100%" }}>
       <div className={styles.container}>
-        {settings?.title && <h2 className={styles.title}>{settings.title}</h2>}
+        {currentTexts.title && (
+          <h2 className={styles.title}>{currentTexts.title}</h2>
+        )}
 
         <ul className={styles.productsList} id="items-list">
           {displayedProducts.map((product, index) => (
@@ -447,6 +506,8 @@ function App({ blockId }: AppProps) {
               onToggle={(isAdded) =>
                 handleProductToggle(product.productId, isAdded)
               }
+              addText={currentTexts.addText}
+              addedText={currentTexts.addedText}
             />
           ))}
         </ul>
@@ -455,10 +516,11 @@ function App({ blockId }: AppProps) {
           selectedProductIds={selectedProducts}
           currentMarketplace={currentMarketplace}
           discount={finalDiscount}
+          totalPriceLabel={currentTexts.totalPriceLabel}
         />
         <Button
           onClick={handleAddToCart}
-          text={"Add to cart"}
+          text={currentTexts.addToCartText || "Add to cart"}
           classProp={styles.addToCart}
           dataAttribute="add-to-cart"
           isLoading={isAddingToCart}
