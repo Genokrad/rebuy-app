@@ -27,9 +27,11 @@ interface DateRangeFilterProps {
   startDate: string;
   endDate: string;
   filterSellenceOnly: boolean;
+  excludeCancelled?: boolean;
   onStartDateChange: (value: string) => void;
   onEndDateChange: (value: string) => void;
   onFilterSellenceOnlyChange: (checked: boolean) => void;
+  onExcludeCancelledChange?: (checked: boolean) => void;
   onApplyFilter: () => void;
   isLoading: boolean;
 }
@@ -38,9 +40,11 @@ export function DateRangeFilter({
   startDate,
   endDate,
   filterSellenceOnly,
+  excludeCancelled = false,
   onStartDateChange,
   onEndDateChange,
   onFilterSellenceOnlyChange,
+  onExcludeCancelledChange,
   onApplyFilter,
   isLoading,
 }: DateRangeFilterProps) {
@@ -89,11 +93,20 @@ export function DateRangeFilter({
             </Button>
           </div>
         </InlineStack>
-        <Checkbox
-          label="Show only Sellence orders"
-          checked={filterSellenceOnly}
-          onChange={onFilterSellenceOnlyChange}
-        />
+        <BlockStack gap="200">
+          <Checkbox
+            label="Show only Sellence orders"
+            checked={filterSellenceOnly}
+            onChange={onFilterSellenceOnlyChange}
+          />
+          {onExcludeCancelledChange && (
+            <Checkbox
+              label="Exclude cancelled orders"
+              checked={excludeCancelled}
+              onChange={onExcludeCancelledChange}
+            />
+          )}
+        </BlockStack>
         <Text as="p" variant="bodySm" tone="subdued">
           Selected range: {formatDateForDisplay(startDate)} -{" "}
           {formatDateForDisplay(endDate)}

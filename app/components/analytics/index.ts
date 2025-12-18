@@ -5,3 +5,4 @@ export { EmptyState } from "./EmptyState";
 export { OrdersSummary } from "./OrdersSummary";
 export { OrdersStats } from "./OrdersStats";
 export { WidgetClicksStats } from "./WidgetClicksStats";
+export { ProductsAnalyticsTable } from "./ProductsAnalyticsTable";

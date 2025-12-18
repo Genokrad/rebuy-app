@@ -17,6 +17,9 @@ export interface PreviewTexts {
   addToCartText?: string;
   maxDiscountText?: string;
   nextDiscountText?: string;
+  widgetBackgroundColor?: string;
+  buttonBackgroundColor?: string;
+  addedButtonBackgroundColor?: string;
 }
 
 type PreviewTextKey = keyof PreviewTexts;
@@ -76,8 +79,12 @@ export const WidgetAppearancePreviewLite: FC<PreviewProps> = ({
     },
   ];
 
+  const widgetBackgroundColor = texts.widgetBackgroundColor || "#f5f5ee";
+  const buttonBackgroundColor = texts.buttonBackgroundColor || "#4B3E34";
+  const addedButtonBackgroundColor = texts.addedButtonBackgroundColor || "#000";
+
   return (
-    <div style={styles.wrapper}>
+    <div style={{ ...styles.wrapper, backgroundColor: widgetBackgroundColor }}>
       <h2 style={styles.title}>{texts.title ?? "Buy more at a lower price"}</h2>
 
       <ul style={styles.list} aria-label="Preview products list">
@@ -106,10 +113,20 @@ export const WidgetAppearancePreviewLite: FC<PreviewProps> = ({
                   )}
                 </div>
                 <div style={styles.itemLabel}>
-                  <div style={styles.labelTextAdd}>
+                  <div
+                    style={{
+                      ...styles.labelTextAdd,
+                      borderColor: buttonBackgroundColor,
+                    }}
+                  >
                     <span>{texts.addText}</span>
                   </div>
-                  <div style={styles.labelTextAdded}>
+                  <div
+                    style={{
+                      ...styles.labelTextAdded,
+                      backgroundColor: addedButtonBackgroundColor,
+                    }}
+                  >
                     <span>{texts.addedText}</span>
                   </div>
                 </div>
@@ -126,7 +143,13 @@ export const WidgetAppearancePreviewLite: FC<PreviewProps> = ({
         </p>
       </div>
 
-      <button style={styles.addToCart}>
+      <button
+        style={{
+          ...styles.addToCart,
+          backgroundColor: buttonBackgroundColor,
+          borderColor: buttonBackgroundColor,
+        }}
+      >
         {texts.addToCartText ?? "Add to cart"}
       </button>
 
@@ -152,7 +175,6 @@ export const WidgetAppearancePreviewLite: FC<PreviewProps> = ({
 
 const styles: Record<string, React.CSSProperties> = {
   wrapper: {
-    backgroundColor: "#f5f5ee",
     padding: 36,
     borderRadius: 16,
     display: "flex",
@@ -286,8 +308,6 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     marginBottom: 12,
     borderRadius: 8,
-    border: "1px solid #4B3E34",
-    background: "#4B3E34",
   },
   discountMessageGroup: {
     display: "flex",

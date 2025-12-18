@@ -1,5 +1,13 @@
 import { Card, DataTable } from "@shopify/polaris";
 
+export interface OrderProduct {
+  title: string;
+  variantTitle?: string;
+  quantity: number;
+  price: string;
+  currency: string;
+}
+
 export interface AnalyticsOrder {
   orderId: string;
   orderName: string;
@@ -10,6 +18,7 @@ export interface AnalyticsOrder {
   currency: string;
   widgetType: string;
   createdAt: string;
+  products: OrderProduct[];
 }
 
 interface OrdersTableProps {
@@ -30,11 +39,25 @@ export function OrdersTable({ orders }: OrdersTableProps) {
       }
     }
 
+    // Формируем строку с товарами
+    const productsDisplay =
+      order.products.length > 0
+        ? order.products
+            .map((product) => {
+              const variantInfo = product.variantTitle
+                ? ` (${product.variantTitle})`
+                : "";
+              return `${product.title}${variantInfo} × ${product.quantity} - ${product.price} ${product.currency}`;
+            })
+            .join("; ")
+        : "No products";
+
     return [
       order.orderName,
       `${order.priceWithDiscount} ${order.currency}`,
       discountDisplay,
       order.widgetType,
+      productsDisplay,
       order.createdAt,
     ];
   });
@@ -42,12 +65,13 @@ export function OrdersTable({ orders }: OrdersTableProps) {
   return (
     <Card>
       <DataTable
-        columnContentTypes={["text", "text", "text", "text", "text"]}
+        columnContentTypes={["text", "text", "text", "text", "text", "text"]}
         headings={[
           "Order ID",
           "Total with Discount",
           "Sellence Discount",
           "Widget Type",
+          "Products",
           "Date",
         ]}
         rows={tableRows}

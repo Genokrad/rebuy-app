@@ -176,6 +176,8 @@ export interface ProductCardProps {
   ) => void;
   addText?: string;
   addedText?: string;
+  buttonBackgroundColor?: string;
+  addedButtonBackgroundColor?: string;
 }
 
 /**
@@ -229,6 +231,9 @@ export interface WidgetSettings {
       addToCartText?: string;
       maxDiscountText?: string;
       nextDiscountText?: string;
+      widgetBackgroundColor?: string;
+      buttonBackgroundColor?: string;
+      addedButtonBackgroundColor?: string;
     }
   >;
 }

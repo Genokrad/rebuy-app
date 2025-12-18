@@ -11,6 +11,7 @@ const BULK_OPERATION_QUERY_TEMPLATE = (dateQuery: string) => `
           id
           name
           createdAt
+          cancelledAt
           currencyCode
           totalPriceSet {
             shopMoney {
@@ -413,6 +414,7 @@ export async function getOrdersBulk(
   startDate: Date,
   endDate: Date,
   filterSellenceOnly: boolean = false,
+  excludeCancelled: boolean = false,
 ): Promise<Order[]> {
   try {
     // Запускаем bulk операцию
@@ -422,7 +424,12 @@ export async function getOrdersBulk(
     const resultUrl = await waitForBulkOperation(request, operationId);
 
     // Скачиваем и парсим результаты
-    const allOrders = await downloadAndParseBulkResults(resultUrl);
+    let allOrders = await downloadAndParseBulkResults(resultUrl);
+
+    // Фильтруем отмененные заказы, если нужно
+    if (excludeCancelled) {
+      allOrders = allOrders.filter((order) => !order.cancelledAt);
+    }
 
     // Фильтруем заказы только если включен фильтр Sellence
     if (filterSellenceOnly) {

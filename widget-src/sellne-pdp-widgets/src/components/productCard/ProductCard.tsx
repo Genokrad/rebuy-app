@@ -19,6 +19,8 @@ export function ProductCard({
   onChangingTheOption,
   addText,
   addedText,
+  buttonBackgroundColor,
+  addedButtonBackgroundColor,
 }: ProductCardProps) {
   // console.log(productIndex, productIndex, "<<<<<====== productIndex");
   // Все товары изначально должны быть added
@@ -397,6 +399,8 @@ export function ProductCard({
             handleAddToggle={handleAddToggle}
             addText={addText}
             addedText={addedText}
+            buttonBackgroundColor={buttonBackgroundColor}
+            addedButtonBackgroundColor={addedButtonBackgroundColor}
           />
         </div>
       </div>

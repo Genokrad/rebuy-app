@@ -5,6 +5,7 @@ const Button = ({
   dataAttribute,
   isLoading = false,
   disabled = false,
+  backgroundColor,
 }: {
   onClick: () => void;
   text: string;
@@ -12,6 +13,7 @@ const Button = ({
   dataAttribute?: string;
   isLoading?: boolean;
   disabled?: boolean;
+  backgroundColor?: string;
 }) => {
   return (
     <button
@@ -20,6 +22,14 @@ const Button = ({
       data-sellence-widget-button={dataAttribute}
       disabled={disabled || isLoading}
       aria-busy={isLoading}
+      style={
+        backgroundColor
+          ? {
+              backgroundColor,
+              borderColor: backgroundColor,
+            }
+          : undefined
+      }
     >
       {isLoading ? "Adding..." : text}
     </button>

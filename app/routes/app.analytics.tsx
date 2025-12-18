@@ -1,6 +1,13 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useFetcher } from "@remix-run/react";
-import { Page, Layout, Text, BlockStack } from "@shopify/polaris";
+import { useLoaderData, useFetcher, Link } from "@remix-run/react";
+import {
+  Page,
+  Layout,
+  Text,
+  BlockStack,
+  Button,
+  InlineStack,
+} from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { getOrdersBulk } from "../graphql/bulkOrdersService";
@@ -113,6 +120,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       }
     }
 
+    // Формируем список товаров из заказа
+    const products = order.lineItems.map((lineItem) => ({
+      title: lineItem.title || "Unknown Product",
+      variantTitle: lineItem.variantTitle,
+      quantity: lineItem.quantity || 0,
+      price: lineItem.discountedTotal || lineItem.originalTotal || "0",
+      currency: lineItem.currencyCode || order.currencyCode || "USD",
+    }));
+
     return {
       orderId: order.id.split("/").pop() || order.id,
       orderName: order.name,
@@ -125,6 +141,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       createdAt: order.createdAt
         ? formatDateForDisplay(order.createdAt)
         : "N/A",
+      products,
     };
   });
 
@@ -254,11 +271,14 @@ export default function Analytics() {
       <Layout>
         <Layout.Section>
           <BlockStack gap="500">
-            <Text as="h1" variant="headingLg">
-              Sellence Orders Analytics
-            </Text>
-
-            <WidgetClicksStats stats={widgetClickStats} />
+            <InlineStack align="space-between" blockAlign="center">
+              <Text as="h1" variant="headingLg">
+                Sellence Orders Analytics
+              </Text>
+              <Link to="/app/products-analytics">
+                <Button>View Products Analytics</Button>
+              </Link>
+            </InlineStack>
 
             <DateRangeFilter
               startDate={selectedStartDate}
@@ -270,6 +290,8 @@ export default function Analytics() {
               onApplyFilter={handleApplyDateFilter}
               isLoading={fetcher.state === "loading"}
             />
+
+            <WidgetClicksStats stats={widgetClickStats} />
 
             {allOrders.length > 0 && (
               <OrdersStats
