@@ -36,9 +36,20 @@ function validateVariantIds(
     return { isValid: false, error: "Widget has no products configured" };
   }
 
+  // Функция для проверки, содержит ли parentProduct указанный ID
+  const parentProductContains = (
+    parentProduct: string | string[],
+    productId: string,
+  ): boolean => {
+    if (Array.isArray(parentProduct)) {
+      return parentProduct.includes(productId);
+    }
+    return parentProduct === productId;
+  };
+
   // Находим relationship для указанного parentProduct
   const productRelationship = widgetProducts.find((rel) =>
-    rel.parentProduct.includes(parentProductId),
+    parentProductContains(rel.parentProduct, parentProductId),
   );
 
   if (!productRelationship) {

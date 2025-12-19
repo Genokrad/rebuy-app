@@ -28,6 +28,16 @@ export function SelectedChildProducts({
 }: SelectedChildProductsProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
+  // Функция для нормализации ID продукта (убираем префикс gid://shopify/Product/ если есть)
+  const normalizeProductId = (id: string | null | undefined): string => {
+    if (!id) return "";
+    // Если это GID формат, извлекаем числовой ID
+    if (id.startsWith("gid://shopify/Product/")) {
+      return id.replace("gid://shopify/Product/", "");
+    }
+    return id;
+  };
+
   const handleDragStart = (index: number) => {
     setDragIndex(index);
   };
@@ -62,9 +72,14 @@ export function SelectedChildProducts({
 
         <BlockStack gap="200">
           {selectedChildProducts.map((childProduct, index) => {
-            const product = transformedProducts.find(
-              (p) => p.id === childProduct.productId,
+            // Нормализуем ID для сравнения
+            const normalizedChildProductId = normalizeProductId(
+              childProduct.productId,
             );
+            const product = transformedProducts.find((p) => {
+              const normalizedPId = normalizeProductId(p.id);
+              return normalizedPId === normalizedChildProductId;
+            });
             const variant = product?.variants?.find(
               (v: any) => v.id === childProduct.variantId,
             );
