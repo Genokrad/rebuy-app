@@ -1,4 +1,5 @@
 import styles from "../ProductCard.module.css";
+import { optimizeShopifyImageUrl } from "../../../utils/imageOptimizer";
 
 const ProductImage = ({
   productImage,
@@ -7,11 +8,16 @@ const ProductImage = ({
   productImage: string;
   productTitle: string;
 }) => {
+  // Оптимизируем URL изображения для получения миниатюры 100x100
+  const optimizedImageUrl = productImage
+    ? optimizeShopifyImageUrl(productImage, 100, 100)
+    : "";
+
   return (
     <div className={styles.itemImage}>
-      {productImage && (
+      {optimizedImageUrl && (
         <img
-          src={productImage}
+          src={optimizedImageUrl}
           alt={productTitle}
           width="100"
           height="100"
