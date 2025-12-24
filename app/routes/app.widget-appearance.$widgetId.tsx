@@ -115,13 +115,14 @@ export default function WidgetAppearanceRoute() {
     "fr",
     "de",
     "no",
-    "pt",
+    "pt-pt",
     "ro",
     "sl",
     "sv",
     "pl",
     "nl",
     "es",
+    "ua",
   ];
   const initialAppearanceTexts = (loaderData as any).appearanceTexts || {};
 

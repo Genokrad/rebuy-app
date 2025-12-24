@@ -3,8 +3,10 @@ import styles from "../ProductCard.module.css";
 const AddButton = ({
   isAdded,
   handleAddToggle,
-  addText,
-  addedText,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  addText: _addText,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  addedText: _addedText,
   buttonBackgroundColor,
   addedButtonBackgroundColor,
 }: {
@@ -31,7 +33,21 @@ const AddButton = ({
             : undefined
         }
       >
-        <span>{addText || "Add"}</span>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M8 3.33333V12.6667M3.33333 8H12.6667"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </div>
       <div
         className={styles.labelTextAdded}
@@ -41,7 +57,21 @@ const AddButton = ({
             : undefined
         }
       >
-        <span>{addedText || "Added"}</span>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M13.3333 4L6 11.3333L2.66667 8"
+            stroke="white"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </div>
     </label>
   );

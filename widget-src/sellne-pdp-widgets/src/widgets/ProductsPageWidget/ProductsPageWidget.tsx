@@ -16,7 +16,7 @@ const fallbackTexts = {
   addText: "Add",
   totalPriceLabel: "Total Price:",
   discountText: "Add 1 more product to unlock a 2% discount!",
-  addToCartText: "Add to cart",
+  addToCartText: "Create bundle",
   maxDiscountText:
     "You are already using the maximum discount of ${maxDiscount}% 🎉",
   nextDiscountText:
@@ -68,6 +68,9 @@ export function ProductsPageWidget({ widgetData }: ProductsPageWidgetProps) {
         : undefined);
     const localeFromConfig = locale ? locale.toLowerCase() : "";
     const localeKey = localeFromConfig || DEFAULT_LOCALE;
+
+    console.log("localeKey ==>>>>", localeKey);
+    console.log("textsByLocale ==>>>>", textsByLocale);
 
     const localeTexts =
       textsByLocale?.[localeKey] ??
