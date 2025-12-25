@@ -12,6 +12,9 @@ export default async () => {
   render(<Extension />, document.body);
 };
 
+const WIDGET_ID_FOR_CHECKOUT_APP = "cmjbgas460000uo5u16xoc2x8";
+const URL_FOR_CHECKOUT_APP = "https://matt-train-decide-well.trycloudflare.com";
+
 function Extension() {
   // Хуки должны вызываться до любых ранних return'ов
   const cartLines = useCartLines();
@@ -212,10 +215,8 @@ function Extension() {
 
   // Получаем настройки из extension
   const widgetId =
-    shopify.settings.value.widget_id || "cmhz7l5xc0001uo39ym9vq6f5";
-  const appUrl =
-    shopify.settings.value.app_url ||
-    "https://folder-geological-managers-anything.trycloudflare.com";
+    shopify.settings.value.widget_id || WIDGET_ID_FOR_CHECKOUT_APP;
+  const appUrl = shopify.settings.value.app_url || URL_FOR_CHECKOUT_APP;
   const showBothPrices = shopify.settings.value.show_both_prices === true;
   const normalizedAppUrl =
     typeof appUrl === "string"

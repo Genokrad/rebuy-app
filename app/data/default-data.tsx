@@ -9,18 +9,18 @@ export const widgetCards = [
     description: "Create an upsell widget on the product page",
     icon: <ProductSvg />,
   },
-  // {
-  //   id: "cart",
-  //   title: "Cart",
-  //   type: "cart",
-  //   description: "Create an upsell widget on the Cart",
-  //   icon: <CartSvg />,
-  // },
-  // {
-  //   id: "checkout",
-  //   title: "Checkout page",
-  //   type: "checkout",
-  //   description: "Create an upsell widget on the checkout page",
-  //   icon: <PageSvg />,
-  // },
+  {
+    id: "cart",
+    title: "Cart",
+    type: "cart",
+    description: "Create an upsell widget on the Cart",
+    icon: <CartSvg />,
+  },
+  {
+    id: "checkout",
+    title: "Checkout page",
+    type: "checkout",
+    description: "Create an upsell widget on the checkout page",
+    icon: <PageSvg />,
+  },
 ];

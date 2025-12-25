@@ -1,5 +1,5 @@
 import { useState, type FC } from "react";
-import type { PreviewTexts } from "./WidgetAppearancePreviewLite";
+import type { PreviewTexts } from "./widgetTypes/types";
 import { TextSettings } from "./TextSettings";
 import { ColorSettings } from "./ColorSettings";
 
