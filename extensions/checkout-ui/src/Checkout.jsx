@@ -31,6 +31,54 @@ function Extension() {
     setCartLinesVariantIds(variantIds);
   }, [cartLines]);
 
+  // Сохраняем настройку applyDiscountToEntireOrder в атрибут корзины для Cart Transform Function
+  useEffect(() => {
+    const updateApplyDiscountToEntireOrderAttribute = async () => {
+      if (!widgetData?.widget?.settings?.applyDiscountToEntireOrder) {
+        // Если настройка выключена или не существует, удаляем атрибут
+        try {
+          const result = await shopify.applyAttributeChange({
+            type: "removeAttribute",
+            key: "_sellence_apply_discount_to_entire_order",
+          });
+          if (result.type === "success") {
+            console.log("✅ Removed apply discount to entire order attribute");
+          }
+        } catch (error) {
+          console.error(
+            "Error removing apply discount to entire order attribute:",
+            error,
+          );
+        }
+        return;
+      }
+
+      // Если настройка включена, устанавливаем атрибут
+      try {
+        const result = await shopify.applyAttributeChange({
+          type: "updateAttribute",
+          key: "_sellence_apply_discount_to_entire_order",
+          value: "true",
+        });
+        if (result.type === "success") {
+          console.log("✅ Set apply discount to entire order attribute: true");
+        } else {
+          console.error(
+            "Error setting apply discount to entire order attribute:",
+            result.message,
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Error setting apply discount to entire order attribute:",
+          error,
+        );
+      }
+    };
+
+    updateApplyDiscountToEntireOrderAttribute();
+  }, [widgetData?.widget?.settings?.applyDiscountToEntireOrder]);
+
   // Сохраняем discount codes в атрибут корзины для Cart Transform Function
   useEffect(() => {
     const updateCartAttribute = async () => {

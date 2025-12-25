@@ -220,6 +220,7 @@ export interface WidgetSettings {
   placements?: string[];
   slideCount?: number;
   title?: string;
+  applyDiscountToEntireOrder?: boolean;
   appearanceTexts?: Record<
     string,
     {

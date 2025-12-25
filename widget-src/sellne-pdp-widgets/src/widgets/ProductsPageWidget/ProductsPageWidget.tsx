@@ -431,6 +431,8 @@ export function ProductsPageWidget({ widgetData }: ProductsPageWidgetProps) {
         currentMarketplace: currentMarketplace || "",
         widgetId,
         publishCartEvent: publishAjaxProductAdded,
+        applyDiscountToEntireOrder:
+          settings?.applyDiscountToEntireOrder || false,
       });
 
       console.log("addToCartResult ===>>>>>", addToCartResult);

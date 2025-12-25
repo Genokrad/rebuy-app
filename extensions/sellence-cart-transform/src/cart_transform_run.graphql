@@ -3,6 +3,11 @@ query RunInput {
     hasDiscountCode: attribute(key: "_sellence_has_discount_code") {
       value
     }
+    applyDiscountToEntireOrder: attribute(
+      key: "_sellence_apply_discount_to_entire_order"
+    ) {
+      value
+    }
     lines {
       id
       quantity
