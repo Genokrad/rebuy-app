@@ -13,7 +13,8 @@ export default async () => {
 };
 
 const WIDGET_ID_FOR_CHECKOUT_APP = "cmjbgas460000uo5u16xoc2x8";
-const URL_FOR_CHECKOUT_APP = "https://matt-train-decide-well.trycloudflare.com";
+const URL_FOR_CHECKOUT_APP =
+  " https://score-celebrities-eco-assembled.trycloudflare.com";
 
 function Extension() {
   // Хуки должны вызываться до любых ранних return'ов
@@ -396,10 +397,19 @@ function Extension() {
               Array.isArray(childProducts) &&
               childProducts.length > 0
             ) {
-              // console.log(
-              //   `Found product with ${childProducts.length} child products!`,
-              //   data,
-              // );
+              // Логируем для отладки переводов
+              if (data.widget.settings?.appearanceTexts) {
+                console.log(
+                  "✅ Widget appearanceTexts loaded:",
+                  data.widget.settings.appearanceTexts,
+                );
+              } else {
+                console.log(
+                  "⚠️ Widget settings found but no appearanceTexts:",
+                  data.widget.settings,
+                );
+              }
+
               setWidgetData(data);
               setSlideCount(data?.widget?.settings?.slideCount || 0);
               setLoading(false);
@@ -663,14 +673,11 @@ function Extension() {
   }
 
   // Получаем переводы из настроек виджета
+  // appearanceTexts приходят вместе с данными виджета в одном API запросе
   const appearanceTexts = widgetData?.widget?.settings?.appearanceTexts || {};
   const clientLocale = getClientLocale();
 
   // Логируем для отладки
-  if (appearanceTexts && Object.keys(appearanceTexts).length > 0) {
-    console.log("Widget appearance texts:", appearanceTexts);
-    console.log("Client locale:", clientLocale);
-  }
 
   // Функция для получения текста по языку с fallback на en
   const getText = (key) => {
