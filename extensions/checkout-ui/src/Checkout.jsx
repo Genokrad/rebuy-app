@@ -223,6 +223,24 @@ function Extension() {
       ? appUrl.replace(/\/$/, "")
       : String(appUrl || "").replace(/\/$/, "");
 
+  // Получаем язык клиента из локализации
+  // В Shopify checkout UI extensions язык доступен через shopify.localization.language
+  const getClientLocale = () => {
+    try {
+      const language = shopify.localization?.language?.value;
+      if (language) {
+        // isoCode может быть в формате "EN" или "en-US", нормализуем
+        const isoCode = language.isoCode;
+        if (isoCode) {
+          return isoCode.toLowerCase().split("-")[0];
+        }
+      }
+    } catch (e) {
+      console.warn("Could not get client locale:", e);
+    }
+    return "en"; // Fallback на английский
+  };
+
   const shopDomainFromContext =
     shopInfo?.myshopifyDomain ||
     shopInfo?.storefrontUrl ||
@@ -644,11 +662,51 @@ function Extension() {
     return null;
   }
 
+  // Получаем переводы из настроек виджета
+  const appearanceTexts = widgetData?.widget?.settings?.appearanceTexts || {};
+  const clientLocale = getClientLocale();
+
+  // Логируем для отладки
+  if (appearanceTexts && Object.keys(appearanceTexts).length > 0) {
+    console.log("Widget appearance texts:", appearanceTexts);
+    console.log("Client locale:", clientLocale);
+  }
+
+  // Функция для получения текста по языку с fallback на en
+  const getText = (key) => {
+    // Сначала пробуем получить текст для текущего языка
+    const localeTexts = appearanceTexts[clientLocale];
+    if (localeTexts && localeTexts[key]) {
+      return localeTexts[key];
+    }
+    // Если нет, пробуем английский
+    const enTexts = appearanceTexts["en"];
+    if (enTexts && enTexts[key]) {
+      return enTexts[key];
+    }
+    // Если нет, используем дефолт
+    return getDefaultText(key);
+  };
+
+  // Дефолтные тексты
+  const getDefaultText = (key) => {
+    const defaults = {
+      heading: "Complete your purchase",
+      buttonText: "Add",
+      buttonVariant: "primary",
+    };
+    return defaults[key] || "";
+  };
+
+  const headingText = getText("heading");
+  const buttonText = getText("buttonText");
+  const buttonVariant = getText("buttonVariant") || "primary";
+
   return (
     <s-stack gap="base">
       {childProducts.length > 0 && (
         <>
-          <s-heading>Complete your purchase</s-heading>
+          <s-heading>{headingText}</s-heading>
           <s-grid
             gridTemplateColumns="repeat(auto-fill, minmax(300px, 1fr))"
             gap="base"
@@ -762,12 +820,12 @@ function Extension() {
                     </s-grid-item>
                     <s-grid-item gridColumn="auto">
                       <s-button
-                        variant="primary"
+                        variant={buttonVariant}
                         onClick={() => handleAddToCart(variantId)}
                         loading={isAdding}
                         disabled={isAdding}
                       >
-                        Add
+                        {buttonText}
                       </s-button>
                     </s-grid-item>
                   </s-grid>
