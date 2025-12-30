@@ -13,6 +13,7 @@ interface AddToCartParams {
   currentMarketplace: string;
   widgetId: string;
   publishCartEvent: (responseJson: unknown) => Promise<void>;
+  applyDiscountToEntireOrder?: boolean;
 }
 
 /**
@@ -75,6 +76,7 @@ export function useAddToCart() {
     currentMarketplace,
     widgetId,
     publishCartEvent,
+    applyDiscountToEntireOrder = false,
   }: AddToCartParams) => {
     try {
       const cartItems: Array<{
@@ -129,6 +131,8 @@ export function useAddToCart() {
         };
 
         // Добавляем атрибуты скидки только если нет промокода в корзине
+        // Устанавливаем атрибуты на товары всегда, чтобы тема могла их использовать
+        // даже когда applyDiscountToEntireOrder = true
         if (!hasPromoCode) {
           itemProperties["_sellence_discount"] = "true";
           itemProperties["_sellence_discount_percent"] =
@@ -168,6 +172,90 @@ export function useAddToCart() {
         await fetch("/cart.js");
       } catch {
         // Игнорируем ошибки обновления корзины
+      }
+
+      // Устанавливаем атрибуты корзины для применения скидки ко всему заказу
+      // и для отображения в теме
+      if (applyDiscountToEntireOrder) {
+        try {
+          // Получаем процент скидки из первого товара (если есть)
+          const discountPercent = discountData.discount.toString();
+
+          // Устанавливаем атрибуты корзины через Cart API
+          const updateResponse = await fetch("/cart/update.js", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              attributes: {
+                _sellence_apply_discount_to_entire_order: "true",
+                _sellence_discount_percent: discountPercent,
+              },
+            }),
+          });
+
+          if (updateResponse.ok) {
+            console.log(
+              "✅ Set apply discount to entire order attribute in cart",
+            );
+            console.log(
+              `✅ Set discount percent attribute in cart: ${discountPercent}%`,
+            );
+          } else {
+            console.error(
+              "Error setting apply discount to entire order attribute:",
+              await updateResponse.text(),
+            );
+          }
+        } catch (error) {
+          console.error(
+            "Error setting apply discount to entire order attribute:",
+            error,
+          );
+        }
+      } else {
+        // Удаляем атрибуты, если настройка выключена
+        try {
+          const cartResponse = await fetch("/cart.js");
+          const cart = await cartResponse.json();
+
+          // Проверяем, есть ли атрибуты в корзине
+          const hasApplyToEntireOrder =
+            cart.attributes &&
+            cart.attributes._sellence_apply_discount_to_entire_order;
+          const hasDiscountPercent =
+            cart.attributes && cart.attributes._sellence_discount_percent;
+
+          if (hasApplyToEntireOrder || hasDiscountPercent) {
+            // Удаляем атрибуты, устанавливая их в null
+            const attributesToRemove: Record<string, null> = {};
+            if (hasApplyToEntireOrder) {
+              attributesToRemove._sellence_apply_discount_to_entire_order =
+                null;
+            }
+            if (hasDiscountPercent) {
+              attributesToRemove._sellence_discount_percent = null;
+            }
+
+            const updateResponse = await fetch("/cart/update.js", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                attributes: attributesToRemove,
+              }),
+            });
+
+            if (updateResponse.ok) {
+              console.log(
+                "✅ Removed apply discount to entire order attributes from cart",
+              );
+            }
+          }
+        } catch (error) {
+          console.error(
+            "Error removing apply discount to entire order attribute:",
+            error,
+          );
+        }
       }
 
       // Публикуем кастомное событие для обновления корзины (счетчик товаров и т.д.)

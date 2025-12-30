@@ -5,6 +5,7 @@ import {
   Card,
   InlineStack,
   Button,
+  Checkbox,
 } from "@shopify/polaris";
 import React, { useEffect, useState } from "react";
 
@@ -12,10 +13,12 @@ interface WidgetSettingsProps {
   settings?: {
     discounts?: Array<{ [key: number]: number }>;
     placements?: string[];
+    applyDiscountToEntireOrder?: boolean;
   };
   onSettingsChange?: (settings: {
     discounts: Array<{ [key: number]: number }>;
     placements?: string[];
+    applyDiscountToEntireOrder?: boolean;
   }) => void;
 }
 
@@ -33,14 +36,14 @@ export const WidgetSettings = ({
       discount4: "",
       discount5: "",
     };
-    
+
     discounts.forEach((discount: any, index: number) => {
       const value = Object.values(discount)[0];
       if (index < 5) {
         result[`discount${index + 1}` as keyof typeof result] = String(value);
       }
     });
-    
+
     return result;
   };
 
@@ -69,6 +72,8 @@ export const WidgetSettings = ({
     return Math.min(Math.max(discountsArray.length || 1, 1), 5);
   })();
   const [visibleCount, setVisibleCount] = useState<number>(initialCount);
+  const [applyDiscountToEntireOrder, setApplyDiscountToEntireOrder] =
+    useState<boolean>(settings.applyDiscountToEntireOrder || false);
 
   // sync when settings prop changes (e.g., loaded from DB)
   useEffect(() => {
@@ -76,6 +81,7 @@ export const WidgetSettings = ({
     setDiscounts(next);
     const discountsArray = settings.discounts || [];
     setVisibleCount(Math.min(Math.max(discountsArray.length || 1, 1), 5));
+    setApplyDiscountToEntireOrder(settings.applyDiscountToEntireOrder || false);
   }, [settings]);
 
   const sanitizeToPercent = (raw: string) => {
@@ -86,7 +92,19 @@ export const WidgetSettings = ({
 
   const emitDiscounts = (all: typeof discounts) => {
     const discountsArray = convertToNewFormat(all);
-    onSettingsChange?.({ discounts: discountsArray });
+    onSettingsChange?.({
+      discounts: discountsArray,
+      applyDiscountToEntireOrder,
+    });
+  };
+
+  const handleApplyDiscountToEntireOrderChange = (value: boolean) => {
+    setApplyDiscountToEntireOrder(value);
+    const discountsArray = convertToNewFormat(discounts);
+    onSettingsChange?.({
+      discounts: discountsArray,
+      applyDiscountToEntireOrder: value,
+    });
   };
 
   const handleRemoveAt = (index: number) => {
@@ -194,6 +212,19 @@ export const WidgetSettings = ({
         <Text as="p" variant="bodySm" tone="subdued">
           Example: 10% discount for 1 product, 15% for 2 products, etc.
         </Text>
+
+        <BlockStack gap="200">
+          <Checkbox
+            label="Apply discount to entire order"
+            checked={applyDiscountToEntireOrder}
+            onChange={handleApplyDiscountToEntireOrderChange}
+          />
+          <Text as="p" variant="bodySm" tone="subdued">
+            {applyDiscountToEntireOrder
+              ? "Discount will be applied to all items in the cart based on the first Sellence product's discount percentage."
+              : "Discount will only be applied to child products of the Sellence widget."}
+          </Text>
+        </BlockStack>
       </BlockStack>
     </Card>
   );

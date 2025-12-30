@@ -30,9 +30,14 @@ export function cartTransformRun(input) {
   const hasDiscountCodeAttr = input.cart?.hasDiscountCode;
   const hasDiscountCode = hasDiscountCodeAttr?.value && hasDiscountCodeAttr.value.trim() !== '';
 
+  // Проверяем, нужно ли применять скидку ко всей корзине
+  const applyDiscountToEntireOrderAttr = input.cart?.applyDiscountToEntireOrder;
+  const applyDiscountToEntireOrder = applyDiscountToEntireOrderAttr?.value === 'true';
+
   console.log('=== CART TRANSFORM INPUT ===');
   console.log('Has discount code attribute:', hasDiscountCodeAttr);
   console.log('Has discount code:', hasDiscountCode);
+  console.log('Apply discount to entire order:', applyDiscountToEntireOrder);
 
   // Находим бесплатный товар и первый обычный товар
   let freeProductLine = null;
@@ -50,7 +55,7 @@ export function cartTransformRun(input) {
   }
 
   // Если есть бесплатный товар и есть хотя бы один обычный товар
-  if (freeProductLine && firstRegularLine && firstRegularLine.merchandise?.id) {
+  if (freeProductLine && firstRegularLine && 'id' in firstRegularLine.merchandise && firstRegularLine.merchandise.id) {
     // Сначала делаем бесплатный товар бесплатным (цена = 0)
     operations.push({
       lineUpdate: {
@@ -68,26 +73,61 @@ export function cartTransformRun(input) {
     // Затем объединяем бесплатный товар с первым обычным товаром
     // parentVariantId - это ID варианта, который будет представлять объединенную линию (основной товар)
     // cartLines - массив линий для объединения
-    operations.push({
-      linesMerge: {
-        parentVariantId: firstRegularLine.merchandise.id,
-        cartLines: [
-          {
-            cartLineId: firstRegularLine.id,
-            quantity: firstRegularLine.quantity,
-          },
-          {
-            cartLineId: freeProductLine.id,
-            quantity: freeProductLine.quantity,
-          },
-        ],
-      },
-    });
+    const parentVariantId = 'id' in firstRegularLine.merchandise ? firstRegularLine.merchandise.id : null;
+    if (parentVariantId) {
+      operations.push({
+        linesMerge: {
+          parentVariantId: parentVariantId,
+          cartLines: [
+            {
+              cartLineId: firstRegularLine.id,
+              quantity: firstRegularLine.quantity,
+            },
+            {
+              cartLineId: freeProductLine.id,
+              quantity: freeProductLine.quantity,
+            },
+          ],
+        },
+      });
+    }
 
     const currencyCode = firstRegularLine.cost?.amountPerQuantity?.currencyCode || "USD";
     console.log(`🎁 FREE PRODUCT - Merging free product (line ${freeProductLine.id}) with regular product (line ${firstRegularLine.id})`);
-    console.log(`  Parent variant ID: ${firstRegularLine.merchandise.id}`);
+    if (parentVariantId) {
+      console.log(`  Parent variant ID: ${parentVariantId}`);
+    }
     console.log(`  Free product price set to: 0.00 ${currencyCode}`);
+  }
+
+  // Проверяем, есть ли хотя бы один товар с атрибутами Sellence в корзине
+  // Это нужно для случая, когда пользователь удалил все товары Sellence, но остался товар с атрибутами
+  let hasAnySellenceProduct = false;
+  let sellenceDiscountPercent = null;
+
+  // Сначала проверяем все товары на наличие атрибутов Sellence
+  for (const line of input.cart.lines) {
+    const sellenceDiscountAttr = line.sellenceDiscount;
+    const sellenceDiscountPercentAttr = line.sellenceDiscountPercent;
+
+    if (sellenceDiscountAttr?.value === "true" && sellenceDiscountPercentAttr?.value) {
+      hasAnySellenceProduct = true;
+
+      // Если нужно применять скидку ко всей корзине, сохраняем процент скидки из первого товара
+      if (applyDiscountToEntireOrder && sellenceDiscountPercent === null) {
+        sellenceDiscountPercent = parseFloat(sellenceDiscountPercentAttr.value);
+        console.log(`🎯 APPLY TO ENTIRE ORDER - Found first Sellence product with discount:`, {
+          lineId: line.id,
+          discountPercent: sellenceDiscountPercent,
+        });
+      }
+    }
+  }
+
+  // Если нет товаров с атрибутами Sellence, не применяем скидку ни к одному товару
+  if (!hasAnySellenceProduct) {
+    console.log(`⚠️ No Sellence products found in cart, skipping discount application`);
+    return NO_CHANGES;
   }
 
   // Проходим по всем линиям корзины
@@ -132,12 +172,22 @@ export function cartTransformRun(input) {
     }
 
     // Если промокода нет или у товара нет оригинальной цены — применяем стандартную логику Sellence
-    // Проверяем, что скидка должна быть применена
-    if (!hasDiscountCode && sellenceDiscountAttr?.value === "true" && sellenceDiscountPercentAttr?.value) {
-      const discountPercent = parseFloat(sellenceDiscountPercentAttr.value);
+    // Если нужно применять скидку ко всей корзине, применяем скидку из первого товара ко всем товарам
+    // Но только если есть хотя бы один товар с атрибутами Sellence в корзине
+    if (!hasDiscountCode && hasAnySellenceProduct) {
+      let discountPercentToApply = null;
+
+      if (applyDiscountToEntireOrder && sellenceDiscountPercent !== null) {
+        // Применяем скидку из первого товара ко всем товарам в корзине
+        discountPercentToApply = sellenceDiscountPercent;
+        console.log(`🎯 APPLY TO ENTIRE ORDER - Applying discount ${discountPercentToApply}% to line ${line.id}`);
+      } else if (sellenceDiscountAttr?.value === "true" && sellenceDiscountPercentAttr?.value) {
+        // Стандартная логика: применяем скидку только к товарам с атрибутом
+        discountPercentToApply = parseFloat(sellenceDiscountPercentAttr.value);
+      }
 
       // Проверяем, что процент скидки валидный
-      if (!isNaN(discountPercent) && discountPercent > 0 && discountPercent <= 100) {
+      if (discountPercentToApply !== null && !isNaN(discountPercentToApply) && discountPercentToApply > 0 && discountPercentToApply <= 100) {
         // Получаем оригинальную цену и валюту
         // Если есть сохраненная оригинальная цена в атрибуте, используем её
         // Иначе используем текущую цену из cost
@@ -151,7 +201,7 @@ export function cartTransformRun(input) {
 
         if (!isNaN(originalPrice) && originalPrice > 0) {
           // Вычисляем цену со скидкой
-          const discountedPrice = originalPrice * (1 - discountPercent / 100);
+          const discountedPrice = originalPrice * (1 - discountPercentToApply / 100);
 
           // Вычисляем сумму скидки (разница между оригинальной и скидочной ценой)
           const discountAmount = originalPrice - discountedPrice;
@@ -174,6 +224,10 @@ export function cartTransformRun(input) {
           console.log(`  Original price: ${originalPrice} ${currencyCode}`);
           console.log(`  Discounted price: ${discountedPrice} ${currencyCode}`);
           console.log(`  Discount amount: ${discountAmount} ${currencyCode}`);
+          console.log(`  Discount percent: ${discountPercentToApply}%`);
+          if (applyDiscountToEntireOrder) {
+            console.log(`  Applied to entire order: true`);
+          }
         }
       }
     }

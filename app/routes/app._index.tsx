@@ -25,6 +25,7 @@ import {
   getWidgetsByShop,
   cloneWidget,
   updateAllProductHandles,
+  getWidgetById,
 } from "../services/widgetService";
 import { widgetCards } from "../data/default-data";
 import {
@@ -246,6 +247,40 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   }
 
+  // Проверяем, это обновление только типа виджета
+  const updateWidgetTypeId = formData.get("updateWidgetTypeId") as string;
+  if (updateWidgetTypeId) {
+    const newType = formData.get("newWidgetType") as string;
+    if (!newType) {
+      return { error: "Missing widget type", success: false };
+    }
+
+    try {
+      // Получаем текущий виджет для сохранения всех данных
+      const currentWidget = await getWidgetById(updateWidgetTypeId);
+      if (!currentWidget) {
+        return { error: "Widget not found", success: false };
+      }
+
+      // Обновляем только тип, сохраняя остальные данные
+      const widget = await updateWidget(
+        updateWidgetTypeId,
+        currentWidget.name,
+        newType,
+        currentWidget.products,
+        (currentWidget as any)?.settings,
+      );
+      return { success: true, widget, error: null };
+    } catch (error) {
+      console.error("Error updating widget type:", error);
+      return {
+        error: "Failed to update widget type",
+        success: false,
+        widget: null,
+      };
+    }
+  }
+
   // Проверяем, это обновление существующего виджета
   const updateWidgetId = formData.get("updateWidgetId") as string;
   if (updateWidgetId) {
@@ -335,6 +370,13 @@ export default function Index() {
     fetcher.submit(formData, { method: "POST" });
   };
 
+  const handleUpdateWidgetType = (widgetId: string, newType: string) => {
+    const formData = new FormData();
+    formData.append("updateWidgetTypeId", widgetId);
+    formData.append("newWidgetType", newType);
+    fetcher.submit(formData, { method: "POST" });
+  };
+
   const handleEditeWidgets = (widgets: string, name: string, type: string) => {
     // Находим виджет в данных для получения products
     const widget = loaderData?.widgets?.find((w) => w.id === widgets);
@@ -397,6 +439,26 @@ export default function Index() {
       }
     }
   }, [fetcher.state, fetcher.data, isSavingWidget]);
+  // Обновляем текущий виджет, если его тип был изменен в таблице
+  useEffect(() => {
+    if (
+      fetcher.state === "idle" &&
+      fetcher.data &&
+      (fetcher.data as any)?.widget
+    ) {
+      const updatedWidget = (fetcher.data as any)?.widget;
+      // Обновляем currentWidgets, если это тот же виджет
+      if (currentWidgets && currentWidgets.id === updatedWidget.id) {
+        setCurrentWidgets({
+          id: updatedWidget.id,
+          name: updatedWidget.name,
+          type: updatedWidget.type,
+          products: updatedWidget.products,
+          settings: (updatedWidget as any)?.settings,
+        });
+      }
+    }
+  }, [fetcher.state, fetcher.data, currentWidgets]);
 
   return (
     <Page>
@@ -466,6 +528,7 @@ export default function Index() {
                     deleteWidget={handleDeleteWidget}
                     handleEditeWidgets={handleEditeWidgets}
                     onCloneWidget={handleCloneWidget}
+                    onUpdateWidgetType={handleUpdateWidgetType}
                   />
                 )}
 

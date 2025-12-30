@@ -1,26 +1,6 @@
 import type { FC } from "react";
-
-interface PreviewProduct {
-  id: string;
-  title: string;
-  price: string;
-  compareAtPrice?: string;
-  image: string;
-}
-
-export interface PreviewTexts {
-  title?: string;
-  addedText?: string;
-  addText?: string;
-  totalPriceLabel?: string;
-  discountText?: string;
-  addToCartText?: string;
-  maxDiscountText?: string;
-  nextDiscountText?: string;
-  widgetBackgroundColor?: string;
-  buttonBackgroundColor?: string;
-  addedButtonBackgroundColor?: string;
-}
+import type { PreviewTexts } from "../types";
+import { mockProducts } from "../mockData";
 
 type PreviewTextKey = keyof PreviewTexts;
 
@@ -52,32 +32,7 @@ export const WidgetAppearancePreviewLite: FC<PreviewProps> = ({
   texts,
   onChange,
 }) => {
-  const products: PreviewProduct[] = [
-    {
-      id: "p1",
-      title: "Cross-sell product #1",
-      price: "$38.95",
-      compareAtPrice: "$41.00",
-      image:
-        "/images/widget-appearance/add-a-birthday-card-to-your-gift-5665969.webp",
-    },
-    {
-      id: "p2",
-      title: "Cross-sell product #2",
-      price: "$40.85",
-      compareAtPrice: "$43.00",
-      image:
-        "/images/widget-appearance/wunderbox-1-3-years-old-developmental-boxing-for-the-little-ones-778431.webp",
-    },
-    {
-      id: "p3",
-      title: "Cross-sell product #3",
-      price: "$40.85",
-      compareAtPrice: "$43.00",
-      image:
-        "/images/widget-appearance/wunderbox-4-7-years-old-developmental-box-for-kids-611288.webp",
-    },
-  ];
+  const products = mockProducts;
 
   const widgetBackgroundColor = texts.widgetBackgroundColor || "#f5f5ee";
   const buttonBackgroundColor = texts.buttonBackgroundColor || "#4B3E34";

@@ -3,6 +3,31 @@ import type { Widget } from "../graphql/createWidget";
 import type { ProductRelationship, ChildProduct } from "../components/types";
 
 /**
+ * Нормализует ID продукта: убирает префикс gid://shopify/Product/ если есть
+ * Всегда возвращает числовой ID для единообразия
+ */
+function normalizeProductId(id: string | null | undefined): string {
+  if (!id) return "";
+  // Если это GID формат, извлекаем числовой ID
+  if (id.startsWith("gid://shopify/Product/")) {
+    return id.replace("gid://shopify/Product/", "");
+  }
+  return id;
+}
+
+/**
+ * Нормализует parentProduct: может быть строка или массив строк
+ */
+function normalizeParentProduct(
+  parentProduct: string | string[],
+): string | string[] {
+  if (Array.isArray(parentProduct)) {
+    return parentProduct.map((id) => normalizeProductId(id));
+  }
+  return normalizeProductId(parentProduct);
+}
+
+/**
  * Преобразует данные из БД в формат ProductRelationship[]
  * для обратной совместимости с существующим кодом
  */
@@ -136,8 +161,43 @@ async function buildProductRelationships(
       };
     });
 
+    // Парсим parentProductId: может быть строка или JSON массив
+    let parentProduct: string | string[];
+    try {
+      const parsed = JSON.parse(wp.parentProductId);
+      if (Array.isArray(parsed)) {
+        parentProduct = parsed;
+        console.log(
+          `[buildProductRelationships] Parsed parentProduct as array:`,
+          parsed,
+        );
+      } else {
+        parentProduct = wp.parentProductId; // Если не массив, возвращаем как строку
+        console.log(
+          `[buildProductRelationships] Parsed parentProduct as string:`,
+          wp.parentProductId,
+        );
+      }
+    } catch (e) {
+      // Если не JSON, значит это просто строка (обратная совместимость)
+      parentProduct = wp.parentProductId;
+      console.log(
+        `[buildProductRelationships] parentProduct is plain string:`,
+        wp.parentProductId,
+      );
+    }
+
+    // Нормализуем ID (убираем GID префикс если есть)
+    const normalizedParentProduct = normalizeParentProduct(parentProduct);
+
+    console.log(
+      `[buildProductRelationships] Final parentProduct for widget product ${wp.id}:`,
+      normalizedParentProduct,
+      `(type: ${Array.isArray(normalizedParentProduct) ? "array" : "string"})`,
+    );
+
     return {
-      parentProduct: wp.parentProductId,
+      parentProduct: normalizedParentProduct,
       childProducts,
     };
   });
@@ -167,11 +227,19 @@ export async function createWidget(
     for (let order = 0; order < products.length; order++) {
       const productRel = products[order];
 
+      // Нормализуем parentProduct перед сохранением
+      const normalizedParentProduct = normalizeParentProduct(
+        productRel.parentProduct,
+      );
+      const parentProductIdToSave = Array.isArray(normalizedParentProduct)
+        ? JSON.stringify(normalizedParentProduct)
+        : normalizedParentProduct;
+
       // Создаем WidgetProduct
       const widgetProduct = await (prisma as any).widgetProduct.create({
         data: {
           widgetId: widget.id,
-          parentProductId: productRel.parentProduct,
+          parentProductId: parentProductIdToSave,
           order: order,
         },
       });
@@ -485,10 +553,18 @@ export async function updateWidget(
           continue;
         }
 
+        // Нормализуем parentProduct перед сохранением
+        const normalizedParentProduct = normalizeParentProduct(
+          productRel.parentProduct,
+        );
+        const parentProductIdToSave = Array.isArray(normalizedParentProduct)
+          ? JSON.stringify(normalizedParentProduct)
+          : normalizedParentProduct;
+
         const widgetProduct = await (prisma as any).widgetProduct.create({
           data: {
             widgetId: id,
-            parentProductId: productRel.parentProduct,
+            parentProductId: parentProductIdToSave,
             order: order,
           },
         });

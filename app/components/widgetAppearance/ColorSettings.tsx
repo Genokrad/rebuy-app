@@ -1,5 +1,5 @@
 import type { FC, ChangeEvent } from "react";
-import type { PreviewTexts } from "./WidgetAppearancePreviewLite";
+import type { PreviewTexts } from "./widgetTypes/types";
 
 interface ColorSettingsProps {
   texts: PreviewTexts;

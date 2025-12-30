@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import {
   useParams,
   useSearchParams,
@@ -7,15 +7,13 @@ import {
 } from "@remix-run/react";
 import { Page, Layout, Text, BlockStack, Card, Badge } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import {
-  WidgetAppearancePreviewLite,
-  type PreviewTexts,
-} from "../components/widgetAppearance/WidgetAppearancePreviewLite";
-import { WidgetAppearanceControls } from "../components/widgetAppearance/WidgetAppearanceControls";
+import type { PreviewTexts } from "../components/widgetAppearance/widgetTypes/types";
+import { WidgetSettingsRouter } from "../components/widgetAppearance/widgetTypes";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 import { getWidgetById, updateWidget } from "../services/widgetService";
+import type { WidgetType } from "../components/widgetAppearance/widgetTypes";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { widgetId: paramWidgetId } = params;
@@ -44,6 +42,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   return json({
     success: true,
     widgetId,
+    widgetType: widget.type as WidgetType,
+    settings: (widget as any).settings || {},
     appearanceTexts,
   });
 };
@@ -115,56 +115,15 @@ export default function WidgetAppearanceRoute() {
     "fr",
     "de",
     "no",
-    "pt",
+    "pt-pt",
     "ro",
     "sl",
     "sv",
     "pl",
     "nl",
     "es",
+    "ua",
   ];
-  const initialAppearanceTexts = (loaderData as any).appearanceTexts || {};
-
-  const initialLocale = Object.keys(initialAppearanceTexts)[0] || "en";
-  const [currentLocale, setCurrentLocale] = useState(initialLocale);
-  const [previewTextsByLocale, setPreviewTextsByLocale] = useState<
-    Record<string, PreviewTexts>
-  >({
-    ...(initialAppearanceTexts || {
-      en: {
-        title: "Buy more at a lower price",
-        addedText: "Added",
-        addText: "Add",
-        totalPriceLabel: "Total Price:",
-        discountText: "Add 1 more product to unlock a 2% discount!",
-        addToCartText: "Add to cart",
-      },
-    }),
-  });
-
-  const handlePreviewTextChange = (key: keyof PreviewTexts, value: string) => {
-    setPreviewTextsByLocale((prev) => ({
-      ...prev,
-      [currentLocale]: {
-        ...prev[currentLocale],
-        [key]: value,
-      },
-    }));
-  };
-
-  const defaultTexts: PreviewTexts = {
-    title: "Buy more at a lower price",
-    addedText: "Added",
-    addText: "Add",
-    totalPriceLabel: "Total Price:",
-    discountText: "Add 1 more product to unlock a 2% discount!",
-    addToCartText: "Add to cart",
-  };
-
-  const currentTexts: PreviewTexts =
-    previewTextsByLocale[currentLocale] ||
-    previewTextsByLocale.en ||
-    defaultTexts;
 
   const placements = useMemo(() => {
     if (!placementsParam) return [];
@@ -190,6 +149,52 @@ export default function WidgetAppearanceRoute() {
 
   const isSaving = fetcher.state === "submitting";
 
+  const handleSave = (appearanceTexts: Record<string, PreviewTexts>) => {
+    if (!widgetId) return;
+    const formData = new FormData();
+    formData.append("intent", "saveTexts");
+    formData.append("widgetId", widgetId);
+    formData.append("previewTexts", JSON.stringify(appearanceTexts));
+    fetcher.submit(formData, { method: "post" });
+  };
+
+  if (!loaderData.success || !widgetId) {
+    const errorMessage =
+      "error" in loaderData ? loaderData.error : "Widget not found";
+    return (
+      <Page>
+        <TitleBar title="Widget Appearance" />
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <Text as="p" variant="bodyMd" tone="critical">
+                {errorMessage}
+              </Text>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
+
+  // Type guard: если success === true, то у нас есть все нужные поля
+  if (!("widgetType" in loaderData)) {
+    return (
+      <Page>
+        <TitleBar title="Widget Appearance" />
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <Text as="p" variant="bodyMd" tone="critical">
+                Invalid widget data
+              </Text>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
+
   return (
     <Page>
       <TitleBar title="Widget Appearance" />
@@ -202,6 +207,9 @@ export default function WidgetAppearanceRoute() {
               </Text>
               <Text as="p" variant="bodyMd">
                 Widget ID: {widgetId}
+              </Text>
+              <Text as="p" variant="bodySm" tone="subdued">
+                Type: {loaderData.widgetType}
               </Text>
               {placements.length > 0 ? (
                 <BlockStack gap="100">
@@ -218,46 +226,15 @@ export default function WidgetAppearanceRoute() {
                 </Text>
               )}
 
-              <BlockStack gap="200">
-                <Card>
-                  <BlockStack gap="200">
-                    <Text as="h3" variant="headingMd">
-                      Text settings by locale
-                    </Text>
-                    <WidgetAppearanceControls
-                      texts={currentTexts}
-                      onChange={handlePreviewTextChange}
-                      currentLocale={currentLocale}
+              <WidgetSettingsRouter
+                widgetId={widgetId}
+                widgetType={loaderData.widgetType}
+                settings={loaderData.settings}
+                appearanceTexts={loaderData.appearanceTexts}
                       availableLocales={availableLocales}
-                      onLocaleChange={setCurrentLocale}
+                onSave={handleSave}
                       isSaving={isSaving}
-                      onSave={() => {
-                        if (!widgetId) return;
-                        const formData = new FormData();
-                        formData.append("intent", "saveTexts");
-                        formData.append("widgetId", widgetId);
-                        formData.append(
-                          "previewTexts",
-                          JSON.stringify(previewTextsByLocale),
-                        );
-                        fetcher.submit(formData, { method: "post" });
-                      }}
-                    />
-                  </BlockStack>
-                </Card>
-
-                <Card>
-                  <BlockStack gap="200">
-                    <Text as="h3" variant="headingMd">
-                      Preview
-                    </Text>
-                    <WidgetAppearancePreviewLite
-                      texts={currentTexts}
-                      onChange={handlePreviewTextChange}
-                    />
-                  </BlockStack>
-                </Card>
-              </BlockStack>
+              />
             </BlockStack>
           </Card>
         </Layout.Section>

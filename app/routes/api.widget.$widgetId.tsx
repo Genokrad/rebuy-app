@@ -59,9 +59,54 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       );
     }
 
+    // Функция для нормализации ID продукта (убираем префикс gid://shopify/Product/ если есть)
+    const normalizeProductId = (id: string | null | undefined): string => {
+      if (!id) return "";
+      // Если это GID формат, извлекаем числовой ID
+      if (id.startsWith("gid://shopify/Product/")) {
+        return id.replace("gid://shopify/Product/", "");
+      }
+      return id;
+    };
+
+    // Функция для проверки, содержит ли parentProduct указанный ID
+    const parentProductContains = (
+      parentProduct: string | string[],
+      productId: string,
+    ): boolean => {
+      const normalizedProductId = normalizeProductId(productId);
+
+      if (Array.isArray(parentProduct)) {
+        return parentProduct.some((id) => {
+          const normalizedId = normalizeProductId(id);
+          return normalizedId === normalizedProductId;
+        });
+      }
+      const normalizedParentId = normalizeProductId(parentProduct);
+      return normalizedParentId === normalizedProductId;
+    };
+
+    const normalizedCurrentProductId = normalizeProductId(currentProductId);
+
+    console.log("[api.widget] Searching for product:", {
+      currentProductId,
+      normalizedCurrentProductId,
+      widgetProductsCount: widget.products?.length || 0,
+      parentProducts: widget.products?.map((p: any) => ({
+        parentProduct: p.parentProduct,
+        childProductsCount: p.childProducts?.length || 0,
+      })),
+    });
+
     const currentproductObject = widget.products?.find((product) =>
-      product.parentProduct.includes(currentProductId || ""),
+      parentProductContains(product.parentProduct, normalizedCurrentProductId),
     );
+
+    console.log("[api.widget] Found product object:", {
+      found: !!currentproductObject,
+      parentProduct: currentproductObject?.parentProduct,
+      childProductsCount: currentproductObject?.childProducts?.length || 0,
+    });
 
     // Загружаем variantDetails с marketsPrice для всех childProducts
     if (

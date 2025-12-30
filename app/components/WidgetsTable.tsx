@@ -7,6 +7,7 @@ import {
   InlineStack,
   ButtonGroup,
   Button,
+  Select,
 } from "@shopify/polaris";
 import { DeleteIcon, EditIcon, DuplicateIcon } from "@shopify/polaris-icons";
 import { formatDate } from "../services/utils";
@@ -17,6 +18,7 @@ interface WidgetsTableProps {
   deleteWidget: (widgetId: string) => void;
   handleEditeWidgets: (widgets: string, name: string, type: string) => void;
   onCloneWidget: (widgetId: string) => void;
+  onUpdateWidgetType: (widgetId: string, newType: string) => void;
 }
 
 export function WidgetsTable({
@@ -24,7 +26,14 @@ export function WidgetsTable({
   deleteWidget,
   handleEditeWidgets,
   onCloneWidget,
+  onUpdateWidgetType,
 }: WidgetsTableProps) {
+  const widgetTypeOptions = [
+    { label: "Products page", value: "products-page" },
+    { label: "Cart", value: "cart" },
+    { label: "Checkout page", value: "checkout" },
+  ];
+
   const tableRows = widgets.map((widget) => [
     <InlineStack key={`${widget.id}-name`} gap="200" align="start">
       <input type="checkbox" />
@@ -32,13 +41,14 @@ export function WidgetsTable({
         {widget.name}
       </Text>
     </InlineStack>,
-    <Text key={`${widget.id}-widget`} as="span" variant="bodyMd">
-      {widget.type === "products-page"
-        ? "Products page"
-        : widget.type === "cart"
-          ? "Cart"
-          : "Checkout page"}
-    </Text>,
+    <Select
+      key={`${widget.id}-widget`}
+      label=""
+      labelHidden
+      options={widgetTypeOptions}
+      value={widget.type}
+      onChange={(value) => onUpdateWidgetType(widget.id, value)}
+    />,
     <Text key={`${widget.id}-id`} as="span" variant="bodyMd">
       {widget.id}
     </Text>,
@@ -66,6 +76,8 @@ export function WidgetsTable({
       />
     </ButtonGroup>,
   ]);
+
+  console.log("widgets =====>>>>>", widgets);
 
   return (
     <Card>

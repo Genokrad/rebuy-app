@@ -12,6 +12,10 @@ export default async () => {
   render(<Extension />, document.body);
 };
 
+const WIDGET_ID_FOR_CHECKOUT_APP = "cmjbgas460000uo5u16xoc2x8";
+const URL_FOR_CHECKOUT_APP =
+  " https://score-celebrities-eco-assembled.trycloudflare.com";
+
 function Extension() {
   // Хуки должны вызываться до любых ранних return'ов
   const cartLines = useCartLines();
@@ -30,6 +34,54 @@ function Extension() {
     const variantIds = cartLines.map((line) => line.merchandise.id);
     setCartLinesVariantIds(variantIds);
   }, [cartLines]);
+
+  // Сохраняем настройку applyDiscountToEntireOrder в атрибут корзины для Cart Transform Function
+  useEffect(() => {
+    const updateApplyDiscountToEntireOrderAttribute = async () => {
+      if (!widgetData?.widget?.settings?.applyDiscountToEntireOrder) {
+        // Если настройка выключена или не существует, удаляем атрибут
+        try {
+          const result = await shopify.applyAttributeChange({
+            type: "removeAttribute",
+            key: "_sellence_apply_discount_to_entire_order",
+          });
+          if (result.type === "success") {
+            console.log("✅ Removed apply discount to entire order attribute");
+          }
+        } catch (error) {
+          console.error(
+            "Error removing apply discount to entire order attribute:",
+            error,
+          );
+        }
+        return;
+      }
+
+      // Если настройка включена, устанавливаем атрибут
+      try {
+        const result = await shopify.applyAttributeChange({
+          type: "updateAttribute",
+          key: "_sellence_apply_discount_to_entire_order",
+          value: "true",
+        });
+        if (result.type === "success") {
+          console.log("✅ Set apply discount to entire order attribute: true");
+        } else {
+          console.error(
+            "Error setting apply discount to entire order attribute:",
+            result.message,
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Error setting apply discount to entire order attribute:",
+          error,
+        );
+      }
+    };
+
+    updateApplyDiscountToEntireOrderAttribute();
+  }, [widgetData?.widget?.settings?.applyDiscountToEntireOrder]);
 
   // Сохраняем discount codes в атрибут корзины для Cart Transform Function
   useEffect(() => {
@@ -164,15 +216,31 @@ function Extension() {
 
   // Получаем настройки из extension
   const widgetId =
-    shopify.settings.value.widget_id || "cmhz7l5xc0001uo39ym9vq6f5";
-  const appUrl =
-    shopify.settings.value.app_url ||
-    "https://folder-geological-managers-anything.trycloudflare.com";
+    shopify.settings.value.widget_id || WIDGET_ID_FOR_CHECKOUT_APP;
+  const appUrl = shopify.settings.value.app_url || URL_FOR_CHECKOUT_APP;
   const showBothPrices = shopify.settings.value.show_both_prices === true;
   const normalizedAppUrl =
     typeof appUrl === "string"
       ? appUrl.replace(/\/$/, "")
       : String(appUrl || "").replace(/\/$/, "");
+
+  // Получаем язык клиента из локализации
+  // В Shopify checkout UI extensions язык доступен через shopify.localization.language
+  const getClientLocale = () => {
+    try {
+      const language = shopify.localization?.language?.value;
+      if (language) {
+        // isoCode может быть в формате "EN" или "en-US", нормализуем
+        const isoCode = language.isoCode;
+        if (isoCode) {
+          return isoCode.toLowerCase().split("-")[0];
+        }
+      }
+    } catch (e) {
+      console.warn("Could not get client locale:", e);
+    }
+    return "en"; // Fallback на английский
+  };
 
   const shopDomainFromContext =
     shopInfo?.myshopifyDomain ||
@@ -329,10 +397,19 @@ function Extension() {
               Array.isArray(childProducts) &&
               childProducts.length > 0
             ) {
-              // console.log(
-              //   `Found product with ${childProducts.length} child products!`,
-              //   data,
-              // );
+              // Логируем для отладки переводов
+              if (data.widget.settings?.appearanceTexts) {
+                console.log(
+                  "✅ Widget appearanceTexts loaded:",
+                  data.widget.settings.appearanceTexts,
+                );
+              } else {
+                console.log(
+                  "⚠️ Widget settings found but no appearanceTexts:",
+                  data.widget.settings,
+                );
+              }
+
               setWidgetData(data);
               setSlideCount(data?.widget?.settings?.slideCount || 0);
               setLoading(false);
@@ -595,11 +672,48 @@ function Extension() {
     return null;
   }
 
+  // Получаем переводы из настроек виджета
+  // appearanceTexts приходят вместе с данными виджета в одном API запросе
+  const appearanceTexts = widgetData?.widget?.settings?.appearanceTexts || {};
+  const clientLocale = getClientLocale();
+
+  // Логируем для отладки
+
+  // Функция для получения текста по языку с fallback на en
+  const getText = (key) => {
+    // Сначала пробуем получить текст для текущего языка
+    const localeTexts = appearanceTexts[clientLocale];
+    if (localeTexts && localeTexts[key]) {
+      return localeTexts[key];
+    }
+    // Если нет, пробуем английский
+    const enTexts = appearanceTexts["en"];
+    if (enTexts && enTexts[key]) {
+      return enTexts[key];
+    }
+    // Если нет, используем дефолт
+    return getDefaultText(key);
+  };
+
+  // Дефолтные тексты
+  const getDefaultText = (key) => {
+    const defaults = {
+      heading: "Complete your purchase",
+      buttonText: "Add",
+      buttonVariant: "primary",
+    };
+    return defaults[key] || "";
+  };
+
+  const headingText = getText("heading");
+  const buttonText = getText("buttonText");
+  const buttonVariant = getText("buttonVariant") || "primary";
+
   return (
     <s-stack gap="base">
       {childProducts.length > 0 && (
         <>
-          <s-heading>Complete your purchase</s-heading>
+          <s-heading>{headingText}</s-heading>
           <s-grid
             gridTemplateColumns="repeat(auto-fill, minmax(300px, 1fr))"
             gap="base"
@@ -713,12 +827,12 @@ function Extension() {
                     </s-grid-item>
                     <s-grid-item gridColumn="auto">
                       <s-button
-                        variant="primary"
+                        variant={buttonVariant}
                         onClick={() => handleAddToCart(variantId)}
                         loading={isAdding}
                         disabled={isAdding}
                       >
-                        Add
+                        {buttonText}
                       </s-button>
                     </s-grid-item>
                   </s-grid>

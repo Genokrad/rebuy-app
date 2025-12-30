@@ -1,5 +1,5 @@
 export interface ProductRelationship {
-  parentProduct: string; // productId
+  parentProduct: string | string[]; // productId or array of productIds (for multiple parent products with same children)
   childProducts: ChildProduct[]; // array of child products with variants
 }
 
