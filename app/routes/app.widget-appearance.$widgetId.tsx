@@ -231,9 +231,9 @@ export default function WidgetAppearanceRoute() {
                 widgetType={loaderData.widgetType}
                 settings={loaderData.settings}
                 appearanceTexts={loaderData.appearanceTexts}
-                      availableLocales={availableLocales}
+                availableLocales={availableLocales}
                 onSave={handleSave}
-                      isSaving={isSaving}
+                isSaving={isSaving}
               />
             </BlockStack>
           </Card>
