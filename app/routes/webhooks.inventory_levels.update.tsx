@@ -1,6 +1,7 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
-import { ApiVersion, shopifyApi } from "@shopify/shopify-api";
+import type { ApiVersion } from "@shopify/shopify-api";
+import { shopifyApi } from "@shopify/shopify-api";
 import { updateChildProductVariantDetails } from "../services/widgetService";
 import { getVariantDetailsWithAdmin } from "../graphql/variantDetailsService";
 import prisma from "../db.server";
@@ -9,7 +10,7 @@ import prisma from "../db.server";
 const api = shopifyApi({
   apiKey: process.env.SHOPIFY_API_KEY || "",
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
-  apiVersion: ApiVersion.January25,
+  apiVersion: "2026-01" as ApiVersion,
   scopes: process.env.SCOPES?.split(",") || [],
   hostName: process.env.SHOPIFY_APP_URL?.replace(/https?:\/\//, "") || "",
   isEmbeddedApp: true,

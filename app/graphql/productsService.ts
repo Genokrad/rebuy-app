@@ -14,7 +14,7 @@ export async function getAllProducts(request: Request): Promise<Product[]> {
       first: 150, // Получаем первые 150 продуктов
       query: "status:active OR status:unlisted", // Активные + unlisted (не отображаемые на сайте) продукты
     },
-    apiVersion: ApiVersion.January25,
+    apiVersion: "2026-01" as ApiVersion,
   });
 
   const responseJson = await response.json();

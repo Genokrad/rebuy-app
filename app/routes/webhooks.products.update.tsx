@@ -9,7 +9,7 @@ import prisma from "../db.server";
 const api = shopifyApi({
   apiKey: process.env.SHOPIFY_API_KEY || "",
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
-  apiVersion: ApiVersion.January25,
+  apiVersion: "2026-01" as ApiVersion,
   scopes: process.env.SCOPES?.split(",") || [],
   hostName: process.env.SHOPIFY_APP_URL?.replace(/https?:\/\//, "") || "",
   isEmbeddedApp: true,

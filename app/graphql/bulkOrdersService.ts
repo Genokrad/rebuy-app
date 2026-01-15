@@ -168,7 +168,7 @@ async function runBulkOperation(
     variables: {
       query: fullQuery,
     },
-    apiVersion: ApiVersion.January25,
+    apiVersion: "2026-01" as ApiVersion,
   });
 
   const responseJson: any = await response.json();
@@ -233,7 +233,7 @@ async function waitForBulkOperation(
       variables: {
         id: operationId,
       },
-      apiVersion: ApiVersion.January25,
+      apiVersion: "2026-01" as ApiVersion,
     });
 
     const responseJson: any = await response.json();

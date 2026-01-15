@@ -447,18 +447,22 @@ export default function Index() {
       (fetcher.data as any)?.widget
     ) {
       const updatedWidget = (fetcher.data as any)?.widget;
-      // Обновляем currentWidgets, если это тот же виджет
-      if (currentWidgets && currentWidgets.id === updatedWidget.id) {
-        setCurrentWidgets({
-          id: updatedWidget.id,
-          name: updatedWidget.name,
-          type: updatedWidget.type,
-          products: updatedWidget.products,
-          settings: (updatedWidget as any)?.settings,
-        });
-      }
+      // Используем функциональное обновление, чтобы получить актуальный currentWidgets
+      setCurrentWidgets((prev) => {
+        // Обновляем currentWidgets, если это тот же виджет
+        if (prev && prev.id === updatedWidget.id) {
+          return {
+            id: updatedWidget.id,
+            name: updatedWidget.name,
+            type: updatedWidget.type,
+            products: updatedWidget.products,
+            settings: (updatedWidget as any)?.settings,
+          };
+        }
+        return prev; // Возвращаем предыдущее состояние, если виджет не совпадает
+      });
     }
-  }, [fetcher.state, fetcher.data, currentWidgets]);
+  }, [fetcher.state, fetcher.data]);
 
   return (
     <Page>

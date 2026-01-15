@@ -24,7 +24,7 @@ async function getVariantDetailsInternal(
       variables: {
         id: variantId,
       },
-      apiVersion: ApiVersion.January25,
+      apiVersion: "2026-01" as ApiVersion,
     });
 
     // Обрабатываем ответ: может быть Response или уже распарсенный объект
@@ -86,7 +86,7 @@ async function getVariantDetailsInternal(
               id: variantId,
               country: countryCode,
             },
-            apiVersion: ApiVersion.January25,
+            apiVersion: "2026-01" as ApiVersion,
           },
         );
 
@@ -189,7 +189,7 @@ async function getVariantDetailsInternal(
               id: variantId,
               country: marketCountryCode,
             },
-            apiVersion: ApiVersion.January25,
+            apiVersion: "2026-01" as ApiVersion,
           },
         );
 

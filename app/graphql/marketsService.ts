@@ -26,7 +26,7 @@ async function getAllMarketsInternal(admin: {
   try {
     const response = await admin.graphql(GET_MARKETS_QUERY, {
       variables: { first: 250 },
-      apiVersion: ApiVersion.January25,
+      apiVersion: "2026-01" as ApiVersion,
     });
 
     // Обрабатываем ответ: может быть Response или уже распарсенный объект
@@ -61,7 +61,7 @@ async function getAllMarketsInternal(admin: {
     try {
       const response = await admin.graphql(GET_MARKETS_QUERY_BASE, {
         variables: { first: 250 },
-        apiVersion: ApiVersion.January25,
+        apiVersion: "2026-01" as ApiVersion,
       });
 
       // Обрабатываем ответ: может быть Response или уже распарсенный объект
@@ -144,7 +144,7 @@ export async function getAllLocations(request: Request): Promise<Location[]> {
   try {
     const response = await admin.graphql(GET_LOCATIONS_QUERY, {
       variables: { first: 10 },
-      apiVersion: ApiVersion.January25,
+      apiVersion: "2026-01" as ApiVersion,
     });
 
     const responseJson =
