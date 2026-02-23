@@ -14,7 +14,7 @@ export default async () => {
 
 const WIDGET_ID_FOR_CHECKOUT_APP = "cmjbgas460000uo5u16xoc2x8";
 const URL_FOR_CHECKOUT_APP =
-  " https://score-celebrities-eco-assembled.trycloudflare.com";
+  " https://fcc-marketplace-advertisement-contributor.trycloudflare.com";
 
 function Extension() {
   // Хуки должны вызываться до любых ранних return'ов
@@ -759,8 +759,12 @@ function Extension() {
                         alt={productTitle}
                       ></s-product-thumbnail>
                     </s-grid-item>
-                    <s-grid-item gridColumn="auto">
-                      <s-stack gap="small">
+                    <s-grid-item
+                      gridColumn="auto"
+                      minInlineSize="0"
+                      overflow="hidden"
+                    >
+                      <s-stack gap="small" minInlineSize="0">
                         <s-text>{productTitle}</s-text>
                         <s-stack gap="small" direction="inline">
                           {(() => {
