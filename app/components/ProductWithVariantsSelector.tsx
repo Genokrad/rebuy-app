@@ -53,6 +53,13 @@ export function ProductWithVariantsSelector({
     new Set(),
   );
 
+  const normalizeProductId = (id: string): string => {
+    if (id.startsWith("gid://shopify/Product/")) {
+      return id.replace("gid://shopify/Product/", "");
+    }
+    return id;
+  };
+
   // Функция для получения первого варианта продукта
   const getFirstVariant = (product: Product): string | null => {
     if (!product.variants || product.variants.length === 0) {
@@ -63,20 +70,27 @@ export function ProductWithVariantsSelector({
 
   // Функция для проверки, выбран ли продукт
   const isProductSelected = (productId: string): boolean => {
-    return selectedProducts.some((cp) => cp.productId === productId);
+    const normalized = normalizeProductId(productId);
+    return selectedProducts.some(
+      (cp) => normalizeProductId(cp.productId) === normalized,
+    );
   };
 
   // Функция для проверки, выбран ли конкретный вариант
   const isVariantSelected = (productId: string, variantId: string): boolean => {
+    const normalizedPid = normalizeProductId(productId);
     return selectedProducts.some(
-      (cp) => cp.productId === productId && cp.variantId === variantId,
+      (cp) =>
+        normalizeProductId(cp.productId) === normalizedPid &&
+        cp.variantId === variantId,
     );
   };
 
   // Функция для получения выбранных вариантов продукта
   const getSelectedVariants = (productId: string): string[] => {
+    const normalized = normalizeProductId(productId);
     return selectedProducts
-      .filter((cp) => cp.productId === productId)
+      .filter((cp) => normalizeProductId(cp.productId) === normalized)
       .map((cp) => cp.variantId);
   };
 
@@ -93,8 +107,9 @@ export function ProductWithVariantsSelector({
 
     if (isSelected) {
       // Удаляем продукт из выбора
+      const normalizedId = normalizeProductId(product.id);
       const newSelection = selectedProducts.filter(
-        (cp) => cp.productId !== product.id,
+        (cp) => normalizeProductId(cp.productId) !== normalizedId,
       );
       onSelectionChange(newSelection);
     } else {
@@ -180,8 +195,13 @@ export function ProductWithVariantsSelector({
       }
 
       // Удаляем вариант
+      const normalizedPid = normalizeProductId(productId);
       const newSelection = selectedProducts.filter(
-        (cp) => !(cp.productId === productId && cp.variantId === variantId),
+        (cp) =>
+          !(
+            normalizeProductId(cp.productId) === normalizedPid &&
+            cp.variantId === variantId
+          ),
       );
       onSelectionChange(newSelection);
     } else {
@@ -334,10 +354,13 @@ export function ProductWithVariantsSelector({
                                 selectedVariants.includes(variant.id);
                               const isOnlyVariant =
                                 selectedVariants.length === 1;
+                              const normalizedProdId =
+                                normalizeProductId(product.id);
                               const selectedChildProduct =
                                 selectedProducts.find(
                                   (cp) =>
-                                    cp.productId === product.id &&
+                                    normalizeProductId(cp.productId) ===
+                                      normalizedProdId &&
                                     cp.variantId === variant.id,
                                 );
 

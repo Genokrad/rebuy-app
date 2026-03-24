@@ -238,7 +238,9 @@ export function ProductRelationshipSelector({
                     showOnlySelected
                       ? transformedProducts.filter((p) =>
                           selectedChildProducts.some(
-                            (cp) => cp.productId === p.id,
+                            (cp) =>
+                              normalizeProductId(cp.productId) ===
+                              normalizeProductId(p.id),
                           ),
                         )
                       : transformedProducts
